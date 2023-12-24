@@ -58,6 +58,10 @@ function loginWithGoogle() {
   // 導向到後端的 OAuth 2.0 授權端點
   window.location.href = "http://localhost:8080/oauth2/authorization/google";
 }
+
+function back() {
+  router.go(-1);
+}
 </script>
 
 <template>
@@ -67,7 +71,7 @@ function loginWithGoogle() {
     </div>
     <div class="card-form">
       <div class="card-nav">
-        <p class="card-nav-svg">
+        <p class="card-nav-svg" @click="back()">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             enable-background="new 0 0 24 24"
@@ -124,10 +128,10 @@ function loginWithGoogle() {
                   ></span>
                   Register Account
                 </button>
-                <div class="card-line-or">
+                <!-- <div class="card-line-or">
                   <p class="card-line"></p>
                   <span>or</span>
-                </div>
+                </div> -->
               </div>
             </div>
           </Form>
@@ -140,14 +144,14 @@ function loginWithGoogle() {
             {{ message }}
           </div>
 
-          <button
+          <!-- <button
             class="card-button auth-button"
             :disabled="loading"
             @click="loginWithGoogle()"
           >
             <img src="../assets/image/search.png" alt="" />
             Register with Google
-          </button>
+          </button> -->
         </div>
       </div>
     </div>

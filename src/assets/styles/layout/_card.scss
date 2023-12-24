@@ -81,7 +81,14 @@ svg {
 .card-nav-svg {
   display: inline-flex;
   align-items: center;
+  padding: 5px 8px 3px 1px;
+  transition: 0.3s;
   cursor: pointer;
+
+  &:hover {
+    background-color: rgba(114, 114, 118, 0.174);
+    border-radius: 10px;
+  }
 }
 
 .card-nav-p-set {
@@ -97,7 +104,7 @@ svg {
     font-size: 15px;
     position: absolute;
     top: -18px;
-    right: -18px;
+    right: -8px;
     width: 90px;
   }
 }
@@ -158,12 +165,13 @@ svg {
   span {
     background-color: $theme-body-background;
     position: absolute;
-    top: -13px;
+    top: -11px;
     left: 40%;
     z-index: 2;
     padding: 0 30px 0;
-    font-size: 16px;
+    font-size: 18px;
     color: $primary-text-gray-50;
+    user-select: none;
   }
 }
 
@@ -182,5 +190,15 @@ svg {
     height: 20px;
     position: absolute;
     left: 15%;
+  }
+}
+
+.card-register{
+  text-align: center;
+  margin-top: 15px;
+  color: $primary-text-gray-200;
+  span{
+    color: $primary-button-blue-100;
+    cursor: pointer;
   }
 }

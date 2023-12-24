@@ -45,6 +45,14 @@ function loginNewGoogle() {
   window.open(authUrl, "_blank", "width=550,height=550");
 }
 
+function back() {
+  router.go(-1);
+}
+
+function register() {
+  router.push('/register');
+}
+
 function handleLogin(user) {
   loading.value = true;
   authStore
@@ -72,7 +80,7 @@ function handleLogin(user) {
     </div>
     <div class="card-form">
       <div class="card-nav">
-        <p class="card-nav-svg">
+        <p class="card-nav-svg" @click="back()">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             enable-background="new 0 0 24 24"
@@ -91,7 +99,7 @@ function handleLogin(user) {
         </p>
         <div class="card-nav-p-set">
           <p>Personal Info.</p>
-          <p class="card-nav-p-abs">STEP 01/03</p>
+          <p>STEP 01/03</p>
         </div>
       </div>
       <div class="card-context">
@@ -142,6 +150,8 @@ function handleLogin(user) {
             <img src="../assets/image/search.png" alt="" />
             Login with Google
           </button>
+
+          <p class="card-register" @click="register()">還沒有帳號嗎? <span>我要註冊！</span></p>
         </div>
       </div>
     </div>

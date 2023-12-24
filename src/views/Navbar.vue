@@ -35,39 +35,36 @@ function logOut() {
   <nav class="nav">
     <div class="navbar-nav">
       <li class="nav-logo">
-        <RouterLink to="/" >
-          <img class="nav-logo" src="../assets/image/1.png" alt="">
+        <RouterLink to="/">
+          <img class="nav-logo" src="../assets/image/1.png" alt="" />
         </RouterLink>
       </li>
-
-      <li class="nav-item">
-        <RouterLink to="/home" class="nav-link">
-          <strong>Send</strong>Everything      
-        </RouterLink>
-      </li>
+      <RouterLink to="/home" class="nav-link">
+        <li class="nav-item"><strong>Send</strong>Everything</li>
+      </RouterLink>
     </div>
 
     <div class="navbar-nav">
       <div v-if="!currentUser" class="ml-auto">
-        <li class="nav-item">
-          <RouterLink to="/register" class="nav-link">
+        <!-- <RouterLink to="/register" class="nav-link">
+          <li class="nav-item">
             <font-awesome-icon icon="user-plus" /> Sign Up
-          </RouterLink>
-        </li>
-        <li class="nav-item">
-          <RouterLink to="/login" class="nav-link">
+          </li>
+        </RouterLink> -->
+        <RouterLink to="/login" class="nav-link">
+          <li class="nav-item">
             <font-awesome-icon icon="sign-in-alt" /> Login
-          </RouterLink>
-        </li>
+          </li>
+        </RouterLink>
       </div>
 
       <div v-if="currentUser" class="ml-auto">
-        <li class="nav-item">
-          <RouterLink to="/profile" class="nav-link">
+        <RouterLink to="/profile" class="nav-link">
+          <li class="nav-item">
             <font-awesome-icon icon="user" />
             {{ currentUser.username }}
-          </RouterLink>
-        </li>
+          </li>
+        </RouterLink>
         <li class="nav-item">
           <a class="nav-link" @click.prevent="logOut">
             <font-awesome-icon icon="sign-out-alt" /> LogOut
@@ -113,10 +110,10 @@ li {
   }
 }
 
-.nav-logo{
+.nav-logo {
   transform: translateY(11%);
   margin-right: -3px;
-  img{
+  img {
     width: 35px;
     height: 35px;
   }
