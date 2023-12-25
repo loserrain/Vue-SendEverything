@@ -1,0 +1,112 @@
+@import "../app.scss";
+
+.container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.upload-select {
+  background-color: #ffffff;
+  width: 40%;
+  height: 700px;
+  margin-top: 50px;
+  padding: 25px 20px 10px 20px;
+  border-radius: 10px;
+}
+
+.upload-switch {
+  span {
+    margin-right: 20px;
+    font-size: 18px;
+    color: $primary-text-gray-150;
+    cursor: pointer;
+  }
+
+  :first-child{
+    color:#000;
+  }
+}
+
+.upload-container {
+  margin: 20px 15px 0;
+
+  > div {
+    margin-bottom: 20px;
+  }
+}
+
+.upload-send {
+  height: 180px;
+  background-image: url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' rx='10' ry='10' stroke='%23BABABAFF' stroke-width='3' stroke-dasharray='10%2c10' stroke-dashoffset='0' stroke-linecap='square'/%3e%3c/svg%3e");
+  border-radius: 10px;
+  text-align: center;
+
+  .upload-font {
+    width: 25px;
+    height: 25px;
+    margin-top: 25px;
+    background-color: $primary-text-gray-20;
+    border-radius: 50px;
+    padding: 10px;
+    color: $primary-text-purple-200;
+    cursor: pointer;
+  }
+
+  span {
+    color: $primary-text-purple-200;
+    cursor: pointer;
+  }
+
+  p {
+    font-size: 18px;
+    margin-top: 20px;
+  }
+
+  .upload-send-maxfile {
+    font-size: 16px;
+    margin-top: 10px;
+  }
+}
+
+.upload-file {
+  height: 120px;
+  border: 2px solid $primary-text-gray-30;
+  border-radius: 7px;
+  padding: 15px 15px 20px;
+}
+
+.upload-set {
+  display: flex;
+  justify-content: space-between;
+  color: #000;
+  margin-bottom: 0px;
+
+  :nth-child(2){
+    width: 80%;
+    font-size: 18px;
+    
+    :nth-child(2){
+      font-size: 14px;
+      margin-top: 7px;
+      color: $primary-text-gray-150;
+    }
+  }
+
+  :nth-child(odd){
+    width: 20px;
+    height: 20px;
+  }
+}
+
+.upload-progress{
+
+  span{
+    margin:20px 0px 0 0;
+    border: solid 4px $primary-text-purple-200;
+    border-radius: 10px;
+    display: inline-block;
+    width: 84%;
+    margin-right: 22px;
+  }
+}

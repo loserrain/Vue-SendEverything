@@ -45,17 +45,19 @@ function logOut() {
     </div>
 
     <div class="navbar-nav">
-      <div v-if="!currentUser" class="ml-auto">
-        <!-- <RouterLink to="/register" class="nav-link">
+      <div>
+        <RouterLink to="/uploadfile" class="nav-link">
           <li class="nav-item">
-            <font-awesome-icon icon="user-plus" /> Sign Up
-          </li>
-        </RouterLink> -->
-        <RouterLink to="/login" class="nav-link">
-          <li class="nav-item">
-            <font-awesome-icon icon="sign-in-alt" /> Login
+            <font-awesome-icon icon="arrow-up-from-bracket" /> Upload
           </li>
         </RouterLink>
+        <div class="navbar-login" v-if="!currentUser">
+          <RouterLink to="/login" class="nav-link">
+            <li class="nav-item">
+              <font-awesome-icon icon="sign-in-alt" /> Login
+            </li>
+          </RouterLink>
+        </div>
       </div>
 
       <div v-if="currentUser" class="ml-auto">
@@ -95,6 +97,10 @@ li {
   font-size: 22px;
   color: dimgrey;
   cursor: pointer;
+}
+
+.navbar-login {
+  display: inline-block;
 }
 
 .nav-item {

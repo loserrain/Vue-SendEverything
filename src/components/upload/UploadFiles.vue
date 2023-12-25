@@ -1,6 +1,6 @@
 <script setup>
 import { onMounted, ref } from "vue";
-import UploadService from "../services/uploadFilesService.js";
+import UploadService from "../../services/uploadFilesService";
 
 const selectedFiles = ref(undefined);
 const file = ref(null);
@@ -29,9 +29,9 @@ function upload() {
       // The response object contains the data returned by the server
       let responseData = response.data;
       console.log(responseData);
-       // Open the download URL in a new browser tab
+
       window.open(responseData.fileDownloadUri, '_blank');
-      //return message
+
     })
     .then((files) => {
       fileInfos.value = files.data;
@@ -54,55 +54,69 @@ onMounted(() => {
 
 <template>
   <div class="container">
-    <div v-if="currentFile" class="progress">
-      <div
-        class="progress-bar progress-bar-info progress-bar-striped"
-        role="progressbar"
-        :aria-valuenow="progress"
-        aria-valuemin="0"
-        aria-valuemax="100"
-        :style="{ width: progress + '%' }"
-      >
-        {{ progress }}%
+    <div class="upload-select">
+      <div v-if="currentFile" class="progress">
+        <div
+          class="progress-bar progress-bar-info progress-bar-striped"
+          role="progressbar"
+          :aria-valuenow="progress"
+          aria-valuemin="0"
+          aria-valuemax="100"
+          :style="{ width: progress + '%' }"
+        >
+          {{ progress }}%
+        </div>
+      </div>
+  
+      <div class="label_style">
+        <label for="fileInput" class="">
+          <input type="file" id="fileInput" ref="file" @change="selectFile" />
+        </label>
+        <button
+          class="btn btn-success"
+          :disabled="!selectedFiles"
+          @click="upload"
+        >
+          Upload
+        </button>
+      </div>
+  
+      <div class="alert alert-light" role="alert">{{ message }}</div>
+  
+      <div class="card">
+        <div class="card-header">List of Files</div>
+        <ul class="list-group list-group-flush">
+          <li
+            class="list-group-item"
+            v-for="(file, index) in fileInfos"
+            :key="index"
+          >
+            <a :href="file.url">{{ file.name }}</a>
+          </li>
+        </ul>
       </div>
     </div>
 
-    <div class="label_style">
-      <label for="fileInput" class="">
-        <input type="file" id="fileInput" ref="file" @change="selectFile" />
-      </label>
-      <button
-        class="btn btn-success"
-        :disabled="!selectedFiles"
-        @click="upload"
-      >
-        Upload
-      </button>
+    <div class="upload-download">
+
     </div>
 
-    <div class="alert alert-light" role="alert">{{ message }}</div>
-
-    <div class="card">
-      <div class="card-header">List of Files</div>
-      <ul class="list-group list-group-flush">
-        <li
-          class="list-group-item"
-          v-for="(file, index) in fileInfos"
-          :key="index"
-        >
-          <a :href="file.url">{{ file.name }}</a>
-        </li>
-      </ul>
-    </div>
   </div>
 </template>
 
 <style scoped>
+@import "../../assets/styles/layout/_upload.scss";
+
+
+
+
+
+
 .label_style {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-top: 5px;
+  /* padding-top: 5px; */
 }
 
 .btn {
