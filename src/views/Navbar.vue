@@ -46,12 +46,12 @@ function logOut() {
 
     <div class="navbar-nav">
       <div>
-        <RouterLink to="/uploadfile" class="nav-link">
-          <li class="nav-item">
-            <font-awesome-icon icon="arrow-up-from-bracket" /> Upload
-          </li>
-        </RouterLink>
         <div class="navbar-login" v-if="!currentUser">
+          <RouterLink to="/uploadfile" class="nav-link">
+            <li class="nav-item">
+              <font-awesome-icon icon="arrow-up-from-bracket" /> Upload
+            </li>
+          </RouterLink>
           <RouterLink to="/login" class="nav-link">
             <li class="nav-item">
               <font-awesome-icon icon="sign-in-alt" /> Login
@@ -67,8 +67,13 @@ function logOut() {
             {{ currentUser.username }}
           </li>
         </RouterLink>
-        <li class="nav-item">
-          <a class="nav-link" @click.prevent="logOut">
+        <RouterLink to="/uploadfile" class="nav-link">
+          <li class="nav-item">
+            <font-awesome-icon icon="arrow-up-from-bracket" /> Upload
+          </li>
+        </RouterLink>
+        <li class="nav-item" @click.prevent="logOut">
+          <a class="nav-link">
             <font-awesome-icon icon="sign-out-alt" /> LogOut
           </a>
         </li>

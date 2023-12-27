@@ -21,7 +21,6 @@ function upload() {
 
   UploadService.upload(currentFile.value, (event) => {
     progress.value = Math.round((100 * event.loaded) / event.total);
-    
   })
     .then((response) => {
       //message.value = response.data.message;
@@ -30,8 +29,7 @@ function upload() {
       let responseData = response.data;
       console.log(responseData);
 
-      window.open(responseData.fileDownloadUri, '_blank');
-
+      window.open(responseData.fileDownloadUri, "_blank");
     })
     .then((files) => {
       fileInfos.value = files.data;
@@ -55,9 +53,10 @@ onMounted(() => {
 <template>
   <div class="container">
     <div class="upload-select">
-      <div v-if="currentFile" class="progress">
+      <!-- <div v-if="currentFile" class="progress"> -->
+      <div class="progress">
         <div
-          class="progress-bar progress-bar-info progress-bar-striped"
+          class="progress-bar progress-bar-striped"
           role="progressbar"
           :aria-valuenow="progress"
           aria-valuemin="0"
@@ -67,7 +66,7 @@ onMounted(() => {
           {{ progress }}%
         </div>
       </div>
-  
+
       <div class="label_style">
         <label for="fileInput" class="">
           <input type="file" id="fileInput" ref="file" @change="selectFile" />
@@ -80,9 +79,9 @@ onMounted(() => {
           Upload
         </button>
       </div>
-  
+
       <div class="alert alert-light" role="alert">{{ message }}</div>
-  
+
       <div class="card">
         <div class="card-header">List of Files</div>
         <ul class="list-group list-group-flush">
@@ -96,22 +95,10 @@ onMounted(() => {
         </ul>
       </div>
     </div>
-
-    <div class="upload-download">
-
-    </div>
-
   </div>
 </template>
 
 <style scoped>
-@import "../../assets/styles/layout/_upload.scss";
-
-
-
-
-
-
 .label_style {
   display: flex;
   align-items: center;
@@ -247,7 +234,6 @@ a {
 
 .progress-bar {
   display: flex;
-  -ms-flex-direction: column;
   flex-direction: column;
   -ms-flex-pack: center;
   justify-content: center;
