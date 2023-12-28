@@ -2,9 +2,9 @@ import { createRouter, createWebHistory } from 'vue-router'
 import Home from '@/components/Home.vue'
 import Login from '@/components/Login.vue'
 import Register from '@/components/Register.vue'
-import UploadFilesVue from '../components/upload/UploadFiles.vue'
-import UploadFileTest from '../views/Upload.vue'
+import UploadFileViews from '../views/Upload.vue'
 import CheckGoogle from '../components/CheckGoogle.vue';
+import ByteArrayImageVue from '../components/ByteArrayImage.vue'
 
 
 const Profile = () => import('@/components/Profile.vue')
@@ -40,17 +40,18 @@ const router = createRouter({
     {
       path: '/uploadfile',
       name: 'uploadfile',
-      component: UploadFilesVue
-    },
-    {
-      path: '/uploadtest',
-      name: 'uploadtest',
-      component: UploadFileTest
+      component: UploadFileViews
     },
     {
       path: '/checkGoogle',
       name: 'checkGoogle',
       component: CheckGoogle
+    },
+    {
+      path: '/bytearray',
+      name: 'bytearray',
+      component: ByteArrayImageVue
+
     }
   ]
 })

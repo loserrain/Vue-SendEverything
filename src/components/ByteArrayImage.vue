@@ -5,7 +5,7 @@ import { onMounted, ref } from 'vue';
 const imageUrl = ref(null);
 
 onMounted(() => {
-    axios.get('http://140.130.33.150:5279/qrcode', { responseType: 'json' })
+    axios.get('http://localhost:8080/api/auth/', { responseType: 'json' })
     .then(response => {
         const imageBase64 = response.data.message;
         console.log(imageBase64)
