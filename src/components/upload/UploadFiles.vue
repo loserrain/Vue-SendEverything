@@ -2,6 +2,8 @@
 import { ref, onMounted } from "vue";
 import UploadService from "../../services/uploadFilesService";
 
+const emits = defineEmits(['sendFileInfo']);
+
 const selectedFiles = ref(undefined);
 const file = ref(null);
 
@@ -16,7 +18,6 @@ const message = ref();
 const fileInfos = ref([]);
 const fileSort = ref([]);
 
-
 const fileReceive = ref([]);
 const qrCodeImage = ref(null);
 
@@ -26,8 +27,14 @@ function upload() {
 
   currentFile.value = selectedFiles.value.item(0);
 
+  let fileNames = currentFile.value.name;
+
+  if(fileNames.length > 24){
+    fileNames = currentFile.value.name.slice(0, 10) + " --- " + currentFile.value.name.slice(-14);
+  }
+ 
   const fileInfo = {
-    fileName: currentFile.value.name,
+    fileName: fileNames,
     fileSize: Math.round(currentFile.value.size / 1024),
   };
 
@@ -38,12 +45,10 @@ function upload() {
   })
     .then((response) => {
       message.value = response.data.message;
-      console.log(response.data)
+      console.log(response.data);
       qrCodeImage.value = `data:image/png;base64,${response.data.qrcodeImg}`;
+      emits('sendFileInfo', response.data);
       return response.data;
-    })
-    .then((files) => {
-      fileInfos.value = files.data;
     })
     .catch(() => {
       progress.value = 0;
@@ -56,25 +61,27 @@ function upload() {
   selectedFiles.value = undefined;
 }
 
+function shortFileName(fileNames) {
+  fileNames.forEach((fileName, index) => {
+    if (fileName.length > 24) {
+      fileNames[index] = `${fileName.slice(0, 10)} --- ${fileName.slice(-14)}`;
+    }
+  });
+}
+
 function uploadGetFiles() {
   UploadService.getFiles().then((response) => {
     fileInfos.value = response.data;
     const fileNames = fileInfos.value.fileName || [];
     const fileData = fileInfos.value.fileData || [];
 
-    fileNames.forEach((fileName, index) => {
-      if (fileName.length > 24) {
-        fileNames[index] = `${fileName.slice(0, 10)} --- ${fileName.slice(-14)}`;
-      }
-    });
-
+    shortFileName(fileNames);
 
     if (fileNames.length === fileData.length) {
       fileSort.value = fileNames.map((fileName, index) => ({
         fileName: fileName,
         fileSize: fileData[index],
       }));
-      // console.log(fileNames[0]);
     }
   });
 }
@@ -85,7 +92,8 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="upload-container">
+  <div class="upload-file-container">
+    <!-- upload的檔案傳送列表 -->
     <div class="upload-send">
       <label for="fileInput" class="upload-fileinput">
         <font-awesome-icon icon="folder-plus" class="upload-font" />
@@ -101,6 +109,7 @@ onMounted(() => {
       <p class="upload-send-maxfile">(Max. File size: 25 MB)</p>
     </div>
 
+    <!-- 上傳時的檔案區 -->
     <div class="upload-file" v-for="file in fileReceive" :key="file.fileName">
       <div class="upload-set">
         <div>
@@ -128,6 +137,7 @@ onMounted(() => {
       </div>
     </div>
 
+    <!-- 上傳後的檔案區 -->
     <div class="upload-file" v-for="(files, index) in fileSort" :key="index">
       <div class="upload-set">
         <div>
@@ -148,8 +158,9 @@ onMounted(() => {
       </div>
     </div>
   </div>
+
   <div v-if="qrCodeImage">
-    <img :src="qrCodeImage" alt="QR Code">
+    <img :src="qrCodeImage" alt="QR Code" />
   </div>
 </template>
 

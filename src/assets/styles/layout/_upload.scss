@@ -3,15 +3,15 @@
 .upload-select {
   background-color: #ffffff;
   width: 45%;
-  height: 720px;
+  height: 721px;
   overflow-y: auto;
   margin-top: 50px;
-  padding: 25px 20px 10px 20px;
+  padding: 25px 20px 0px 20px;
   border-radius: 10px;
 }
 
 .upload-switch {
-  button {
+  > button {
     padding: 0;
     margin-right: 20px;
     font-size: 18px;
@@ -20,13 +20,9 @@
     background: none;
     cursor: pointer;
   }
-
-  :first-child{
-    color:#000;
-  }
 }
 
-.upload-container {
+.upload-file-container {
   margin: 20px 15px 0;
 
   > div {
@@ -80,7 +76,7 @@
 
   p {
     font-size: 18px;
-    margin-top: 18px;
+    margin-top: 22px;
   }
 
   .upload-send-maxfile {

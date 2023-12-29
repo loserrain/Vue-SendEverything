@@ -4,8 +4,6 @@ import Login from '@/components/Login.vue'
 import Register from '@/components/Register.vue'
 import UploadFileViews from '../views/Upload.vue'
 import CheckGoogle from '../components/CheckGoogle.vue';
-import ByteArrayImageVue from '../components/ByteArrayImage.vue'
-
 
 const Profile = () => import('@/components/Profile.vue')
 
@@ -46,12 +44,6 @@ const router = createRouter({
       path: '/checkGoogle',
       name: 'checkGoogle',
       component: CheckGoogle
-    },
-    {
-      path: '/bytearray',
-      name: 'bytearray',
-      component: ByteArrayImageVue
-
     }
   ]
 })
