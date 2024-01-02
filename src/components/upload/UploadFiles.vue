@@ -28,14 +28,26 @@ function upload() {
   currentFile.value = selectedFiles.value.item(0);
 
   let fileNames = currentFile.value.name;
+  let fileSize = currentFile.value.size;
 
   if(fileNames.length > 24){
     fileNames = currentFile.value.name.slice(0, 10) + " --- " + currentFile.value.name.slice(-14);
   }
+
+
+  // 決定檔案大小的單位
+  let sizeUnit;
+  if(fileSize / 1024 < 1000) {
+    fileSize = Math.round(fileSize / 1024);
+    sizeUnit = "KB";
+  } else {
+    fileSize = (fileSize / 1024 / 1024).toFixed(2);
+    sizeUnit = "MB"
+  }
  
   const fileInfo = {
     fileName: fileNames,
-    fileSize: Math.round(currentFile.value.size / 1024),
+    fileSize: `${fileSize} ${sizeUnit}`,
   };
 
   fileReceive.value.push(fileInfo);
@@ -100,7 +112,7 @@ onMounted(() => {
         <input type="file" id="fileInput" ref="file" @change="selectFile" />
       </label>
       <div v-if="selectedFiles">{{ selectedFiles[0].name }}</div>
-      <div v-else class="upload-send-file-noselect">No file selected.</div>
+      <div v-else class="upload-send-file-noselect">Please select a file.</div>
       <p>
         <button @click="upload" :disabled="!selectedFiles">
           Click to Upload
@@ -117,7 +129,7 @@ onMounted(() => {
         </div>
         <div>
           <span>{{ file.fileName }}</span>
-          <p>{{ file.fileSize }} KB</p>
+          <p>{{ file.fileSize }}</p>
         </div>
         <div>
           <font-awesome-icon icon="trash-can" />

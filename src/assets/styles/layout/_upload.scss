@@ -38,17 +38,23 @@
   text-align: center;
 
   .upload-font {
-    width: 35px;
-    height: 35px;
-    margin-top: 35px;
+    width: 40px;
+    height: 40px;
+    margin-top: 25px;
     // background-color: $theme-body-background;
-    border: 2px solid #28a745;
-    // box-shadow: 4px 1px 6px rgba(0, 0, 0, 0.135);
+    border: 5px solid #28a745;
+    box-shadow: 1px 1px 6px rgba(0, 0, 0, 0.135);
     border-radius: 50px;
-    padding: 10px;
+    padding: 7px;
     color: #28a745;
     // color: #fab905bf;
     cursor: pointer;
+    transition: .3s;
+
+    &:hover {
+      color: $primary-button-blue-100;
+      border: 5px solid $primary-button-blue-100;
+    }
   }
 
   button {
@@ -84,6 +90,7 @@
     margin-top: 15px;
     color: $primary-button-blue-100;
     font-weight: 700;
+    font-size: 18px;
   }
 
   .upload-send-file-noselect{
@@ -92,7 +99,7 @@
 
   p {
     font-size: 18px;
-    margin-top: 22px;
+    margin-top: 16px;
   }
 
   .upload-send-maxfile {

@@ -2,7 +2,7 @@
 import axios from "axios";
 import { ref, watchEffect, defineEmits, nextTick } from "vue";
 
-const code = ref("384496");
+const code = ref("");
 const isComplete = ref(false);
 const downloadLink = ref(null);
 

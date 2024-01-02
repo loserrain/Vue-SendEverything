@@ -114,13 +114,15 @@ const handleSendFileInfo = (fileInfo) => {
 }
 
 .upload-explore {
-  padding: 25px 20px 0px 20px;
+  padding: 60px 20px 0px 20px;
 
   img {
-    width: 300px;
-    height: 300px;
+    width: 200px;
+    height: 200px;
     display: block;
     margin: 0 auto;
+    // border: 5px solid #c8dbec;
+    border-radius: 10px;
   }
 
   h2 {
@@ -133,8 +135,8 @@ const handleSendFileInfo = (fileInfo) => {
 
 .upload-qrcode {
   background-color: $theme-body-background;
-  padding: 20px 0 20px;
-  margin: 20px 50px 0;
+  padding: 25px 0 25px;
+  margin: 35px 90px 0;
   border-radius: 10px;
   border: 3px solid $primary-text-gray-150;
 }
