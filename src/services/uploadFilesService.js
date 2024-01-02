@@ -17,6 +17,10 @@ class UploadFilesService {
   getFiles() {
     return http.get(`/getFile`);
   }
+
+  uploadMessage(message){
+    return http.post("/uploadMessage", message);
+  }
 }
 
 export default new UploadFilesService();

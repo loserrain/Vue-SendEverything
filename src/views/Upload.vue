@@ -4,7 +4,7 @@ import Send from "../components/upload/UploadFiles.vue";
 import Receive from "../components/upload/UploadText.vue";
 import Message from "../components/upload/UploadMessage.vue";
 
-const currentTab = ref("Send");
+const currentTab = ref("Receive");
 const tabs = {
   Send,
   Receive,
@@ -47,31 +47,43 @@ const handleSendFileInfo = (fileInfo) => {
 
     <div class="upload-explore upload-select">
       <div v-if="uploadData">
-        <p>{{ uploadData.fileName }}</p>
+        <h2>{{ uploadData.fileName }}</h2>
         <div class="upload-qrcode">
           <img
             :src="`data:image/png;base64,${uploadData.qrcodeImg}`"
             alt="QR Code"
           />
         </div>
-        <p class="upload-downloadCode">{{ uploadData.downloadCode }}</p>
-        <div>
-          <p>Share Link:</p>
-          <p class="upload-shareLink">{{ uploadData.fileDownloadUri }}</p>
+        <div class="upload-key-box">
+          <span v-for="code in uploadData.downloadCode">
+            {{ code }}
+          </span>
+        </div>
+        <div class="upload-shareLink">
+          <h2>Share Link:</h2>
+          <p>{{ uploadData.fileDownloadUri }}</p>
         </div>
       </div>
+
       <div v-else>
-        <p>fileName.txt...</p>
+        <h2>fileName.txt...</h2>
         <div class="upload-qrcode">
           <img
             src="https://www.kphoto.com.tw/image/catalog/Product/ASS/93_arctic_white.gif"
             alt=""
           />
         </div>
-        <p class="upload-downloadCode">000000</p>
-        <div class="">
-          <p>Share Link:</p>
-          <p class="upload-shareLink">https://www.flaticon.com/free-icon/qr-code_241528</p>
+        <div class="upload-key-box">
+          <span>0</span>
+          <span>0</span>
+          <span>0</span>
+          <span>0</span>
+          <span>0</span>
+          <span>0</span>
+        </div>
+        <div class="upload-shareLink">
+          <h2>Share Link</h2>
+          <p>https://www.flaticon.com/free-icon/qr-code_241528</p>
         </div>
       </div>
     </div>
@@ -84,6 +96,11 @@ const handleSendFileInfo = (fileInfo) => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.upload-select{
+  border: 3px solid #ca878f4d;
+  box-shadow: 4px 5px 5px rgba(0, 0, 0, 0.135);
 }
 
 .upload-button {
@@ -106,30 +123,51 @@ const handleSendFileInfo = (fileInfo) => {
     margin: 0 auto;
   }
 
-  p:first-child {
+  h2 {
     font-size: 32px;
     font-weight: 700;
-  }
-
-  .upload-downloadCode {
-    font-size: 32px;
     text-align: center;
-    margin:60px 0 35px;
+    color: #011222c3;
   }
 }
 
 .upload-qrcode {
   background-color: $theme-body-background;
   padding: 20px 0 20px;
-  margin: 50px 50px 0;
+  margin: 20px 50px 0;
   border-radius: 10px;
   border: 3px solid $primary-text-gray-150;
 }
 
-.upload-shareLink{
-  background: $primary-text-gray-30;
-  margin-top: 20px;
-  padding: 13px 10px 13px;
-  border-radius: 10px;
+.upload-key-box {
+  margin-top: 50px;
+  text-align: center;
+  span {
+    background-color: #e5e4e445;
+    margin: 0 5px;
+    color: #011222c3;
+    font-size: 36px;
+    font-weight: 700;
+    text-align: center;
+    display: inline-block;
+    width: 40px;
+    line-height: 64px;
+  }
+}
+
+.upload-shareLink {
+  :first-child {
+    margin: 40px 0 20px;
+  }
+  p:nth-child(2) {
+    display: block;
+    background: $primary-text-gray-30;
+    border: 1px solid #01122217;
+    border-radius: 10px;
+    box-shadow: 1px 1px 10px rgba(0, 0, 0, 0.135);
+    text-align: center;
+    font-size: 18px;
+    padding: 13px 10px 13px;
+  }
 }
 </style>

@@ -96,7 +96,7 @@ onMounted(() => {
     <!-- upload的檔案傳送列表 -->
     <div class="upload-send">
       <label for="fileInput" class="upload-fileinput">
-        <font-awesome-icon icon="folder-plus" class="upload-font" />
+        <font-awesome-icon icon="plus" class="upload-font" />
         <input type="file" id="fileInput" ref="file" @change="selectFile" />
       </label>
       <div v-if="selectedFiles">{{ selectedFiles[0].name }}</div>

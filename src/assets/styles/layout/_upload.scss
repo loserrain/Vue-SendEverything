@@ -4,8 +4,9 @@
   background-color: #ffffff;
   width: 45%;
   height: 721px;
+  // height: 73.5vh;
   overflow-y: auto;
-  margin-top: 50px;
+  margin-top: 8vh;
   padding: 25px 20px 0px 20px;
   border-radius: 10px;
 }
@@ -40,7 +41,9 @@
     width: 35px;
     height: 35px;
     margin-top: 35px;
-    background-color: $theme-body-background;
+    // background-color: $theme-body-background;
+    border: 2px solid #28a745;
+    // box-shadow: 4px 1px 6px rgba(0, 0, 0, 0.135);
     border-radius: 50px;
     padding: 10px;
     color: #28a745;
@@ -53,13 +56,26 @@
     background-color: #28a745;
     border-radius: 7px;
     border: none;
+    box-shadow: 4px 5px 5px rgba(0, 0, 0, 0.135);
     font-size: 18px;
-    padding: 7px 12px 7px;
-    opacity: 1;
+    font-weight: 700;
+    padding: 8px 12px 7px;
+    transition: 0.2s;
+    position: relative;
     cursor: pointer;
 
+    &:hover{
+      opacity: .8;
+    }
+   
+
     &:disabled,&[disabled]{
-      opacity: .65;
+      background-color: $primary-text-gray-150;
+      opacity: .4;
+
+      &:hover{
+        padding: 8px 12px 7px;
+      }
     }
 
   }
