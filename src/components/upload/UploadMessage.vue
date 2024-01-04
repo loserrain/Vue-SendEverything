@@ -39,6 +39,8 @@ watchEffect(() => {
 }
 
 .upload-send {
+  margin-top: 200px;
+
   textarea {
     margin-top: 10px;
     padding: 7px 10px 5px;

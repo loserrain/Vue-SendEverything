@@ -15,6 +15,7 @@ const uploadData = ref(false);
 
 const handleSendFileInfo = (fileInfo) => {
   uploadData.value = fileInfo;
+  console.log(uploadData.value);
   if (uploadData.value.fileName.length > 20) {
     uploadData.value.fileName =
       uploadData.value.fileName.slice(0, 8) +
@@ -59,10 +60,6 @@ const handleSendFileInfo = (fileInfo) => {
             {{ code }}
           </span>
         </div>
-        <div class="upload-shareLink">
-          <h2>Share Link:</h2>
-          <p>{{ uploadData.fileDownloadUri }}</p>
-        </div>
       </div>
 
       <div v-else>
@@ -80,10 +77,6 @@ const handleSendFileInfo = (fileInfo) => {
           <span>0</span>
           <span>0</span>
           <span>0</span>
-        </div>
-        <div class="upload-shareLink">
-          <h2>Share Link</h2>
-          <p>https://www.flaticon.com/free-icon/qr-code_241528</p>
         </div>
       </div>
     </div>
@@ -114,7 +107,7 @@ const handleSendFileInfo = (fileInfo) => {
 }
 
 .upload-explore {
-  padding: 60px 20px 0px 20px;
+  padding: 130px 20px 0px 20px;
 
   img {
     width: 200px;
@@ -136,7 +129,7 @@ const handleSendFileInfo = (fileInfo) => {
 .upload-qrcode {
   background-color: $theme-body-background;
   padding: 25px 0 25px;
-  margin: 35px 90px 0;
+  margin: 45px 90px 0;
   border-radius: 10px;
   border: 3px solid $primary-text-gray-150;
 }

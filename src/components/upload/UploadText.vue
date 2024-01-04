@@ -85,7 +85,8 @@ const downloadCode = async () => {
 }
 
 .upload-send {
-  height: 150px;
+  height: 200px;
+  margin: 215px 0 0 0;
 }
 
 .upload-code-box {
@@ -93,7 +94,7 @@ const downloadCode = async () => {
     background-color: #dbdbdb44;
     border: 2px solid $primary-text-gray-100;
     border-radius: 5px;
-    margin: 25px 0 20px;
+    margin: 70px 0 20px;
     padding: 10px 10px;
     font-size: 20px;
     &:focus-visible {
