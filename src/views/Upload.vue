@@ -1,15 +1,25 @@
 <script setup>
-import { ref } from "vue";
+import { ref, computed } from "vue";
 import Send from "../components/upload/UploadFiles.vue";
 import Receive from "../components/upload/UploadText.vue";
 import Message from "../components/upload/UploadMessage.vue";
+import { useUploadTab } from "../stores/upload";
 
-const currentTab = ref("Receive");
+const uploadTab = useUploadTab();
+
+// const currentTab = ref("Send");
+const currentTab = computed(() => {
+  return uploadTab.selectedTab;
+})
 const tabs = {
   Send,
   Receive,
   Message,
 };
+
+function setSelectedTab(tab) {
+  uploadTab.setSelectedTab(tab)
+}
 
 const uploadData = ref(false);
 
@@ -35,7 +45,7 @@ const handleSendFileInfo = (fileInfo) => {
           v-for="(_, tab) in tabs"
           :key="tab"
           :class="['upload-button', { active: currentTab === tab }]"
-          @click="currentTab = tab"
+          @click="setSelectedTab(tab)"
         >
           {{ tab }}
         </button>

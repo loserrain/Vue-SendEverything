@@ -2,9 +2,11 @@
 import { RouterLink } from "vue-router";
 import OauthService from "../services/auth.service";
 import { useAuthStore } from "../stores/auth.module";
+import { useUploadTab } from "../stores/upload";
 import { onMounted } from "vue";
 
 const authStore = useAuthStore();
+const uploadTab = useUploadTab();
 
 // const oauth2 = async() => {
 //   try {
@@ -16,6 +18,10 @@ const authStore = useAuthStore();
 //   }
 // }
 
+function setSelectedTab(tab) {
+  uploadTab.setSelectedTab(tab);
+}
+
 onMounted(() => {
   authStore.oauth2();
 });
@@ -25,7 +31,7 @@ onMounted(() => {
   <div>
     <p><span class="send-word">Send</span>Everything</p>
     <p>Simple, Fast, and Free File Sharing</p>
-    <RouterLink to="/uploadfile"
+    <RouterLink to="/uploadfile" @click="setSelectedTab('Send')"
       ><button class="upload-button">+ UPLOAD</button></RouterLink
     >
   </div>

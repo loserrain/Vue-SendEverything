@@ -1,8 +1,11 @@
 <script setup>
-import { RouterLink, RouterView } from "vue-router";
+import { RouterLink } from "vue-router";
 import { useRouter } from "vue-router";
 import { useAuthStore } from "../stores/auth.module";
+import { useUploadTab } from "../stores/upload";
 import { computed } from "vue";
+
+const uploadTab = useUploadTab();
 
 const authStore = useAuthStore();
 const router = useRouter();
@@ -11,23 +14,13 @@ const currentUser = computed(() => {
   return authStore.dataStatus.user;
 });
 
-const showAdminBoard = computed(() => {
-  if (currentUser.value && currentUser["roles"]) {
-    return currentUser.value["roles"].includes("ROLE_ADMIN");
-  }
-  return false;
-});
-
-const showModeratorBoard = computed(() => {
-  if (currentUser.value && currentUser["roles"]) {
-    return currentUser.value["roles"].includes("ROLE_MODERATOR");
-  }
-  return false;
-});
-
 function logOut() {
   authStore.logout();
   router.push("/login");
+}
+
+function setSelectedTab(tab) {
+  uploadTab.setSelectedTab(tab);
 }
 </script>
 
@@ -47,9 +40,14 @@ function logOut() {
     <div class="navbar-nav">
       <div>
         <div class="navbar-login" v-if="!currentUser">
-          <RouterLink to="/uploadfile" class="nav-link">
+          <RouterLink to="/uploadfile" class="nav-link" @click="setSelectedTab('Send')">
             <li class="nav-item">
-              <font-awesome-icon icon="arrow-up-from-bracket" /> Upload
+              <font-awesome-icon icon="circle-arrow-up" /> Upload
+            </li>
+          </RouterLink>
+          <RouterLink to="/uploadfile" class="nav-link" @click="setSelectedTab('Receive')">
+            <li class="nav-item">
+              <font-awesome-icon icon="circle-arrow-down" /> Download
             </li>
           </RouterLink>
           <RouterLink to="/login" class="nav-link">
