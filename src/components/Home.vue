@@ -48,6 +48,8 @@ div {
   p,
   button {
     margin: 36px 0 0 0;
+    user-select: none;
+    cursor: default;
   }
 
   p:first-child {

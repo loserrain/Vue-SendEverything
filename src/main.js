@@ -1,20 +1,42 @@
-import './assets/styles/base/_main.scss'
+import "./assets/styles/base/_main.scss";
 
-import { createApp } from 'vue'
-import { createPinia } from 'pinia'
-import { FontAwesomeIcon } from './plugins/font-awesome'
-import { library } from '@fortawesome/fontawesome-svg-core'
-import { faUsers, faFileArrowUp, faFileLines, faArrowUpFromBracket, faTrashCan, faCircleCheck, faFolder, faFolderPlus, faPlus, faCircleArrowUp, faCircleArrowDown } from '@fortawesome/free-solid-svg-icons'
+import { createApp } from "vue";
+import { createPinia } from "pinia";
+import { FontAwesomeIcon } from "./plugins/font-awesome";
+import { library } from "@fortawesome/fontawesome-svg-core";
+import {
+  faUsers,
+  faFileArrowUp,
+  faFileLines,
+  faArrowUpFromBracket,
+  faTrashCan,
+  faCircleCheck,
+  faPlus,
+  faCircleArrowUp,
+  faCircleArrowDown,
+  faTriangleExclamation,
+} from "@fortawesome/free-solid-svg-icons";
 
-import App from './App.vue'
-import router from './router'
+import App from "./App.vue";
+import router from "./router";
 
-library.add(faUsers, faFileArrowUp, faFileLines, faArrowUpFromBracket, faTrashCan, faCircleCheck, faPlus, faCircleArrowUp, faCircleArrowDown)
+library.add(
+  faUsers,
+  faFileArrowUp,
+  faFileLines,
+  faArrowUpFromBracket,
+  faTrashCan,
+  faCircleCheck,
+  faPlus,
+  faCircleArrowUp,
+  faCircleArrowDown,
+  faTriangleExclamation
+);
 
-const app = createApp(App)
+const app = createApp(App);
 
-app.use(createPinia())
-app.use(router)
-app.component("font-awesome-icon", FontAwesomeIcon)
+app.use(createPinia());
+app.use(router);
+app.component("font-awesome-icon", FontAwesomeIcon);
 
-app.mount('#app')
+app.mount("#app");

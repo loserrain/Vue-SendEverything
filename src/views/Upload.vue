@@ -7,38 +7,47 @@ import { useUploadTab } from "../stores/upload";
 
 const uploadTab = useUploadTab();
 
-// const currentTab = ref("Send");
 const currentTab = computed(() => {
   return uploadTab.selectedTab;
-})
+});
+
 const tabs = {
   Send,
-  Receive,
   Message,
+  Receive,
+  
 };
 
 function setSelectedTab(tab) {
-  uploadTab.setSelectedTab(tab)
+  uploadTab.setSelectedTab(tab);
 }
 
 const uploadData = ref(false);
 
 const handleSendFileInfo = (fileInfo) => {
   uploadData.value = fileInfo;
-  console.log(uploadData.value);
   if (uploadData.value.fileName.length > 20) {
     uploadData.value.fileName =
       uploadData.value.fileName.slice(0, 8) +
       " --- " +
       uploadData.value.fileName.slice(-12);
-    console.log(uploadData.value.fileName);
   }
-  console.log(uploadData.value.fileName);
 };
+
+const previewImage = ref(null);
+
+const handleSelectedFile = (files) => {
+  const reader = new FileReader();
+  reader.readAsDataURL(files[0]);
+  reader.onload = () => {
+    previewImage.value = reader.result;
+  };
+};
+
 </script>
 
 <template>
-  <div class="container">
+  <div class="upload-view container">
     <div class="upload-select">
       <div class="upload-switch">
         <button
@@ -52,11 +61,14 @@ const handleSendFileInfo = (fileInfo) => {
         <component
           :is="tabs[currentTab]"
           @sendFileInfo="handleSendFileInfo"
+          @selectUploadFile="handleSelectedFile"
         ></component>
       </div>
     </div>
 
     <div class="upload-explore upload-select">
+      <!-- <div class="upload-decorations upload-top"></div>
+      <div class="upload-decorations upload-bottom"></div> -->
       <div v-if="uploadData">
         <h2>{{ uploadData.fileName }}</h2>
         <div class="upload-qrcode">
@@ -90,6 +102,10 @@ const handleSendFileInfo = (fileInfo) => {
         </div>
       </div>
     </div>
+
+    <!-- <div class="upload-img">
+      <img :src="previewImage" alt="" />
+    </div> -->
   </div>
 </template>
 
@@ -101,9 +117,18 @@ const handleSendFileInfo = (fileInfo) => {
   align-items: center;
 }
 
-.upload-select{
+// .upload-view{
+//   display: flex;
+//   justify-content: center;
+//   align-items: center;
+// }
+
+.upload-select {
   border: 3px solid #ca878f4d;
   box-shadow: 4px 5px 5px rgba(0, 0, 0, 0.135);
+  // width: 25%;
+  // margin-left: 2%;
+  // margin-right: 1%;
 }
 
 .upload-button {
@@ -117,7 +142,8 @@ const handleSendFileInfo = (fileInfo) => {
 }
 
 .upload-explore {
-  padding: 130px 20px 0px 20px;
+  padding: 110px 20px 0px 20px;
+  position: relative;
 
   img {
     width: 200px;
@@ -132,7 +158,11 @@ const handleSendFileInfo = (fileInfo) => {
     font-size: 32px;
     font-weight: 700;
     text-align: center;
-    color: #011222c3;
+    // color: #011222c3;
+    color: aliceblue;
+    background-color: #7492ea;
+    padding: 10px;
+    border-radius: 10px 0px;
   }
 }
 
@@ -173,6 +203,31 @@ const handleSendFileInfo = (fileInfo) => {
     text-align: center;
     font-size: 18px;
     padding: 13px 10px 13px;
+  }
+}
+
+.upload-decorations {
+  position: absolute;
+  left: 0%;
+  height: 70px;
+  width: 100%;
+  background-color: #d3dadf;
+}
+
+.upload-top {
+  top: 0%;
+}
+
+.upload-bottom {
+  bottom: 0%;
+}
+
+.upload-img{
+  width: 200px;
+  height: 200px;
+
+  img{
+    width: 100%;
   }
 }
 </style>

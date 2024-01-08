@@ -40,12 +40,20 @@ function setSelectedTab(tab) {
     <div class="navbar-nav">
       <div>
         <div class="navbar-login" v-if="!currentUser">
-          <RouterLink to="/uploadfile" class="nav-link" @click="setSelectedTab('Send')">
+          <RouterLink
+            to="/uploadfile"
+            class="nav-link"
+            @click="setSelectedTab('Send')"
+          >
             <li class="nav-item">
               <font-awesome-icon icon="circle-arrow-up" /> Upload
             </li>
           </RouterLink>
-          <RouterLink to="/uploadfile" class="nav-link" @click="setSelectedTab('Receive')">
+          <RouterLink
+            to="/uploadfile"
+            class="nav-link"
+            @click="setSelectedTab('Receive')"
+          >
             <li class="nav-item">
               <font-awesome-icon icon="circle-arrow-down" /> Download
             </li>
@@ -58,16 +66,29 @@ function setSelectedTab(tab) {
         </div>
       </div>
 
-      <div v-if="currentUser" class="ml-auto">
-        <RouterLink to="/profile" class="nav-link">
+      <div v-if="currentUser">
+        <!-- <RouterLink to="/profile" class="nav-link"> -->
+        <li class="nav-user">
+          <font-awesome-icon icon="user" />
+          {{ currentUser.username }}
+        </li>
+        <!-- </RouterLink> -->
+        <RouterLink
+          to="/uploadfile"
+          class="nav-link"
+          @click="setSelectedTab('Send')"
+        >
           <li class="nav-item">
-            <font-awesome-icon icon="user" />
-            {{ currentUser.username }}
+            <font-awesome-icon icon="circle-arrow-up" /> Upload
           </li>
         </RouterLink>
-        <RouterLink to="/uploadfile" class="nav-link">
+        <RouterLink
+          to="/uploadfile"
+          class="nav-link"
+          @click="setSelectedTab('Receive')"
+        >
           <li class="nav-item">
-            <font-awesome-icon icon="arrow-up-from-bracket" /> Upload
+            <font-awesome-icon icon="circle-arrow-down" /> Download
           </li>
         </RouterLink>
         <li class="nav-item" @click.prevent="logOut">
@@ -100,6 +121,11 @@ li {
   font-size: 22px;
   color: dimgrey;
   cursor: pointer;
+}
+
+.nav-user{
+  margin-right: 15px;
+  cursor: default;
 }
 
 .navbar-login {

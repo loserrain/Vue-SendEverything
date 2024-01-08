@@ -25,20 +25,15 @@ onMounted(() => {
   }
 });
 
-window.addEventListener('message', (event) => {
+// 跨視窗傳遞訊息，Google登入用
+window.addEventListener("message", (event) => {
   if (event.data.isAuthenticated) {
-    // 在這裡進行跳轉到首頁的操作
-    router.push('/');
+    router.push("/");
     setTimeout(() => {
       location.reload();
-    })
+    });
   }
 });
-
-function loginWithGoogle() {
-  // 導向到後端的 OAuth 2.0 授權端點
-  window.location.href = "http://localhost:8080/oauth2/authorization/google";
-}
 
 function loginNewGoogle() {
   const authUrl = "http://localhost:8080/oauth2/authorization/google";
@@ -50,7 +45,7 @@ function back() {
 }
 
 function register() {
-  router.push('/register');
+  router.push("/register");
 }
 
 function handleLogin(user) {
@@ -58,16 +53,28 @@ function handleLogin(user) {
   authStore
     .login(user)
     .then(() => {
-      router.push("/profile");
+      router.push("/uploadfile");
     })
     .catch((error) => {
       loading.value = false;
-      message.value =
-        (error.response &&
-          error.response.data &&
-          error.response.data.message) ||
-        error.message ||
-        error.toString();
+      console.log("Full error object:", error);
+      console.log("Response data:", error.response);
+      if (error.code) {
+        const errorCode = error.code;
+        console.log(errorCode);
+        switch (errorCode) {
+          case "ERR_BAD_REQUEST":
+            message.value = "Incorrect username or password. Try again.";
+            break;
+          case "ERR_NETWORK":
+            message.value = "Unable to connect to the server.";
+            break;
+          default:
+            message.value = "An unexpected error occurred during login.";
+        }
+      } else {
+        message.value = "An unexpected error occurred during login.";
+      }
     });
 }
 </script>
@@ -109,6 +116,20 @@ function handleLogin(user) {
             For the purpose of industry regulation, your details are required.
           </p>
           <p class="card-line"></p>
+
+          <transition name="fade-up">
+            <div
+              v-if="message"
+              class="login-alert"
+              role="alert"
+              :class="[{ active: message }]"
+            >
+              <font-awesome-icon icon="triangle-exclamation" />
+              {{ message }}
+            </div>
+          
+          </transition>
+
           <Form @submit="handleLogin" :validation-schema="schema">
             <div class="card-field">
               <label for="username">Username</label>
@@ -135,11 +156,11 @@ function handleLogin(user) {
               </div>
             </div>
 
-            <div class="">
-              <div v-if="message" class="alert alert-danger" role="alert">
+            <!-- <div class="">
+              <div v-if="message" class="login-alert" role="alert">
                 {{ message }}
               </div>
-            </div>
+            </div> -->
           </Form>
 
           <button
@@ -151,17 +172,39 @@ function handleLogin(user) {
             Login with Google
           </button>
 
-          <p class="card-register" @click="register()">還沒有帳號嗎? <span>我要註冊！</span></p>
+          <p class="card-register" @click="register()">
+            還沒有帳號嗎? <span>我要註冊！</span>
+          </p>
         </div>
       </div>
     </div>
   </div>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 @import "../assets/styles/layout/_card.scss";
 
 .error-feedback {
   color: red;
+}
+
+.login-alert {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  background-color: #fad4d1;
+  border-radius: 5px;
+  color: #d42212;
+  padding: 10px 0 10px 15px;
+  margin: 20px 0 20px 0;
+}
+
+.fade-up-enter-active, .fade-up-leave-active {
+  transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
+}
+
+.fade-up-enter-from, .fade-up-leave-to {
+  opacity: 0;
+  transform: translateY(15px);
 }
 </style>

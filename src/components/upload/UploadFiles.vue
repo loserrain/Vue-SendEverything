@@ -1,26 +1,44 @@
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, computed, onMounted } from "vue";
+import { useAuthStore } from "../../stores/auth.module";
 import UploadService from "../../services/uploadFilesService";
 
-const emits = defineEmits(['sendFileInfo']);
+const emits = defineEmits(["sendFileInfo", "selectUploadFile"]);
+
+const authStore = useAuthStore();
+
+const currentUser = computed(() => {
+  return authStore.dataStatus.user;
+});
 
 const selectedFiles = ref(undefined);
 const file = ref(null);
 
+const previewImage = ref(null);
+
 function selectFile() {
   selectedFiles.value = file.value.files;
-  console.log(selectedFiles.value[0].name);
+  emits("selectUploadFile", file.value.files);
+  // if(file.value.files) {
+  //   previewFile(file.value.files[0]);
+  // }
 }
+
+// const previewFile = (file) => {
+//   const reader = new FileReader();
+//   reader.onload = () => {
+//     previewImage.value = reader.result;
+//   }
+//   reader.readAsDataURL(file)
+// }
 
 const currentFile = ref(undefined);
 const progress = ref(0);
-const message = ref();
 const fileInfos = ref([]);
 const fileSort = ref([]);
 
 const fileReceive = ref([]);
 const qrCodeImage = ref(null);
-
 
 function upload() {
   progress.value = 0;
@@ -30,21 +48,24 @@ function upload() {
   let fileNames = currentFile.value.name;
   let fileSize = currentFile.value.size;
 
-  if(fileNames.length > 24){
-    fileNames = currentFile.value.name.slice(0, 10) + " --- " + currentFile.value.name.slice(-14);
+  // 檔名長度超過24，進行擷取
+  if (fileNames.length > 24) {
+    fileNames =
+      currentFile.value.name.slice(0, 10) +
+      " --- " +
+      currentFile.value.name.slice(-14);
   }
-
 
   // 決定檔案大小的單位
   let sizeUnit;
-  if(fileSize / 1024 < 1000) {
+  if (fileSize / 1024 < 1000) {
     fileSize = Math.round(fileSize / 1024);
     sizeUnit = "KB";
   } else {
     fileSize = (fileSize / 1024 / 1024).toFixed(2);
-    sizeUnit = "MB"
+    sizeUnit = "MB";
   }
- 
+
   const fileInfo = {
     fileName: fileNames,
     fileSize: `${fileSize} ${sizeUnit}`,
@@ -56,15 +77,13 @@ function upload() {
     progress.value = Math.round((100 * event.loaded) / event.total);
   })
     .then((response) => {
-      message.value = response.data.message;
       console.log(response.data);
       qrCodeImage.value = `data:image/png;base64,${response.data.qrcodeImg}`;
-      emits('sendFileInfo', response.data);
+      emits("sendFileInfo", response.data);
       return response.data;
     })
     .catch(() => {
       progress.value = 0;
-      message.value = "Could not upload the file!";
       currentFile.value = undefined;
       console.log(message.value);
       fileReceive.value = [];
@@ -81,6 +100,7 @@ function shortFileName(fileNames) {
   });
 }
 
+// 上傳檔案後取得資料
 function uploadGetFiles() {
   UploadService.getFiles().then((response) => {
     fileInfos.value = response.data;
@@ -122,35 +142,37 @@ onMounted(() => {
     </div>
 
     <!-- 上傳時的檔案區 -->
-    <div class="upload-file" v-for="file in fileReceive" :key="file.fileName">
-      <div class="upload-set">
-        <div>
-          <font-awesome-icon icon="file-lines" />
+    <div class="upload-sort" v-if="currentFile">
+      <div class="upload-file" v-for="file in fileReceive" :key="file.fileName">
+        <div class="upload-set">
+          <div>
+            <font-awesome-icon icon="file-lines" />
+          </div>
+          <div>
+            <span>{{ file.fileName }}</span>
+            <p>{{ file.fileSize }}</p>
+          </div>
+          <div>
+            <font-awesome-icon icon="trash-can" />
+          </div>
         </div>
-        <div>
-          <span>{{ file.fileName }}</span>
-          <p>{{ file.fileSize }}</p>
+        <div class="upload-progress-set">
+          <div class="upload-progress">
+            <div
+              class="upload-progress-bar upload-progress-bar-striped"
+              :aria-valuenow="progress"
+              aria-valuemin="0"
+              aria-valuemax="100"
+              :style="{ width: progress + '%' }"
+            ></div>
+          </div>
+          <div>{{ progress }}%</div>
         </div>
-        <div>
-          <font-awesome-icon icon="trash-can" />
-        </div>
-      </div>
-      <div class="upload-progress-set">
-        <div class="upload-progress">
-          <div
-            class="upload-progress-bar upload-progress-bar-striped"
-            :aria-valuenow="progress"
-            aria-valuemin="0"
-            aria-valuemax="100"
-            :style="{ width: progress + '%' }"
-          ></div>
-        </div>
-        <div>{{ progress }}%</div>
       </div>
     </div>
 
-    <!-- 上傳後的檔案區 -->
-    <div class="upload-file" v-for="(files, index) in fileSort" :key="index">
+    <!-- 上傳檔案區 -->
+    <!-- <div class="upload-file" v-for="(files, index) in fileSort" :key="index" v-if="!currentUser">
       <div class="upload-set">
         <div>
           <font-awesome-icon icon="file-lines" />
@@ -168,11 +190,37 @@ onMounted(() => {
 
         <div>100%</div>
       </div>
-    </div>
-  </div>
+    </div> -->
 
-  <div v-if="qrCodeImage">
-    <img :src="qrCodeImage" alt="QR Code" />
+    <!-- 歷史紀錄區(登入後) -->
+    <p class="uploat-history-line"></p>
+    <p class="upload-history-title">Historical record</p>
+    <div class="upload-history" v-if="fileSort">
+      <!-- <div class="upload-history-title">Historical record</div> -->
+      <div class="upload-file" v-for="(files, index) in fileSort" :key="index">
+        <div class="upload-set">
+          <div>
+            <font-awesome-icon icon="file-lines" />
+          </div>
+          <div>
+            <span>{{ files.fileName }}</span>
+            <p>{{ files.fileSize }}</p>
+          </div>
+          <div>
+            <font-awesome-icon icon="circle-check" class="upload-check" />
+          </div>
+        </div>
+        <div class="upload-progress-set">
+          <div class="upload-progress upload-progress-status"></div>
+
+          <div>100%</div>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="previewImage">
+      <img :src="previewImage" alt="" />
+    </div>
   </div>
 </template>
 
@@ -182,5 +230,55 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+// 將上傳時的檔案順序相反，使最新上傳檔案在最上面
+.upload-sort {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 20px;
+}
+
+.upload-history {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  border: 3px solid #01122217;
+  border-radius: 10px;
+  padding: 5px;
+  // margin-top: 50px;
+  position: relative;
+}
+
+.upload-history-title {
+  text-align: center;
+  margin-bottom: 10px;
+  margin-top: 15px;
+  font-size: 32px;
+  // color: $primary;
+
+  // font-size: 32px;
+  font-weight: 700;
+  // text-align: center;
+  color: aliceblue;
+  background-color: #7492ea;
+  padding: 10px;
+  border-radius: 10px 0px;
+
+  // position: absolute;
+  // top: -1%;
+  // left: 50%;
+
+  // top: -37px;
+  // left: 0;
+  // color: rgb(255, 255, 255);
+  // font-size: 18px;
+  // border-radius: 5px;
+  // background-color: #ec9ea9;
+  // padding: 5px 10px 5px;
+}
+
+.uploat-history-line{
+  border: 1.5px solid $primary-text-gray-100;
 }
 </style>

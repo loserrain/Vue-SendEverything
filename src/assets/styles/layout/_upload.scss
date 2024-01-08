@@ -8,6 +8,28 @@
   margin-top: 8vh;
   padding: 25px 20px 0px 20px;
   border-radius: 10px;
+
+  &::-webkit-scrollbar{
+    width: 12px;
+  }
+  &::-webkit-scrollbar-button{
+    background: transparent;
+    border-radius: 4px;
+  }
+  &::-webkit-scrollbar-track-piece{
+    background: transparent;
+  }
+  &::-webkit-scrollbar-thumb {
+    border-radius: 4px;
+    background-color: $primary-text-gray-50;
+
+    &:active{
+      background-color:#a9a9a9a5;
+    }
+  }
+  &::-webkit-scrollbar-track{
+    box-shadow: transparent;
+  }
 }
 
 .upload-switch {
@@ -33,6 +55,7 @@
 .upload-send {
   height: 230px;
   background-image: url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' rx='10' ry='10' stroke='%23BABABAFF' stroke-width='3' stroke-dasharray='10%2c10' stroke-dashoffset='0' stroke-linecap='square'/%3e%3c/svg%3e");
+  background-color: #FAFAFA;
   border-radius: 10px;
   text-align: center;
 
@@ -61,7 +84,7 @@
     background-color: #28a745;
     border-radius: 7px;
     border: none;
-    box-shadow: 4px 5px 5px rgba(0, 0, 0, 0.135);
+    box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.135);
     font-size: 18px;
     font-weight: 700;
     padding: 8px 12px 7px;
@@ -94,6 +117,7 @@
 
   .upload-send-file-noselect{
     color: $primary-text-gray-150;
+    cursor: default;
   }
 
   p {

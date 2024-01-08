@@ -16,15 +16,6 @@ const checkAuth = async () => {
   }
 };
 
-// const oauth2 = async() => {
-//   try {
-//     const response = await OauthService.oauth2();
-//     console.log("test oauth2", response.data);
-//   } catch (error) {
-//     console.log("error:", error)
-//   }
-// }
-
 onMounted(() => {
   if (!currentUser.value) {
     router.push("/login");
