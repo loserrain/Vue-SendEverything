@@ -4,31 +4,30 @@
   background-color: #ffffff;
   width: 45%;
   height: 721px;
+  overflow-x: auto;
   overflow-y: auto;
   margin-top: 8vh;
   padding: 25px 20px 0px 20px;
   border-radius: 10px;
+}
 
-  &::-webkit-scrollbar{
-    width: 12px;
-  }
-  &::-webkit-scrollbar-button{
-    background: transparent;
-    border-radius: 4px;
-  }
-  &::-webkit-scrollbar-track-piece{
-    background: transparent;
-  }
-  &::-webkit-scrollbar-thumb {
-    border-radius: 4px;
-    background-color: $primary-text-gray-50;
+::-webkit-scrollbar {
+  width: 12px;
+}
+// ::-webkit-scrollbar-button {
+  // background: transparent;
+  // border-radius: 4px;
+// }
 
-    &:active{
-      background-color:#a9a9a9a5;
-    }
-  }
-  &::-webkit-scrollbar-track{
-    box-shadow: transparent;
+::-webkit-scrollbar-thumb {
+  background-image: linear-gradient(180deg, #d0368a 0%, #708ad4 99%);
+  box-shadow: inset 2px 2px 5px 0 rgba(#fff, 0.5);
+  border-radius: 100px;
+  // border-radius: 10px;
+  // background-color: $primary-text-gray-50;
+
+  &:active {
+    background-color: #a9a9a9a5;
   }
 }
 
@@ -55,7 +54,7 @@
 .upload-send {
   height: 230px;
   background-image: url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' rx='10' ry='10' stroke='%23BABABAFF' stroke-width='3' stroke-dasharray='10%2c10' stroke-dashoffset='0' stroke-linecap='square'/%3e%3c/svg%3e");
-  background-color: #FAFAFA;
+  background-color: #fafafa;
   border-radius: 10px;
   text-align: center;
 
@@ -71,7 +70,7 @@
     color: #28a745;
     // color: #fab905bf;
     cursor: pointer;
-    transition: .3s;
+    transition: 0.3s;
 
     &:hover {
       color: $primary-button-blue-100;
@@ -92,30 +91,29 @@
     position: relative;
     cursor: pointer;
 
-    &:hover{
-      opacity: .8;
+    &:hover {
+      opacity: 0.8;
     }
-   
 
-    &:disabled,&[disabled]{
+    &:disabled,
+    &[disabled] {
       background-color: $primary-text-gray-150;
-      opacity: .4;
+      opacity: 0.4;
 
-      &:hover{
+      &:hover {
         padding: 8px 12px 7px;
       }
     }
-
   }
 
-  div{
+  div {
     margin-top: 15px;
     color: $primary-button-blue-100;
     font-weight: 700;
     font-size: 18px;
   }
 
-  .upload-send-file-noselect{
+  .upload-send-file-noselect {
     color: $primary-text-gray-150;
     cursor: default;
   }
@@ -145,33 +143,33 @@
   color: #000;
   margin-bottom: 0px;
 
-  :nth-child(2){
+  :nth-child(2) {
     width: 80%;
     font-size: 18px;
-    
-    :nth-child(2){
+
+    :nth-child(2) {
       font-size: 14px;
       margin-top: 7px;
       color: $primary-text-gray-150;
     }
   }
 
-  :nth-child(odd){
+  :nth-child(odd) {
     width: 20px;
     height: 20px;
   }
 }
 
-.upload-progress-set{
+.upload-progress-set {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-top: 15px;
 }
 
-.upload-progress{
+.upload-progress {
   display: flex;
-  height: .8rem;
+  height: 0.8rem;
   overflow: hidden;
   font-size: 0.75rem;
   background-color: #e9ecef;
@@ -191,7 +189,7 @@
     );
     background-size: 1rem 1rem;
   }
-  
+
   .upload-progress-bar {
     display: flex;
     flex-direction: column;
@@ -206,18 +204,16 @@
   }
 }
 
-.upload-progress-status{
+.upload-progress-status {
   background-color: #28a745;
 }
 
-
-.upload-check{
+.upload-check {
   color: #28a745;
   width: 20px;
   height: 20px;
 }
 
-
-input[type="file"]{
+input[type="file"] {
   display: none;
 }

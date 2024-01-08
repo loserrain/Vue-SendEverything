@@ -7,30 +7,29 @@ const emits = defineEmits(["sendFileInfo", "selectUploadFile"]);
 
 const authStore = useAuthStore();
 
-const currentUser = computed(() => {
-  return authStore.dataStatus.user;
-});
+// const currentUser = computed(() => {
+//   return authStore.dataStatus.user;
+// });
 
 const selectedFiles = ref(undefined);
 const file = ref(null);
+const selectFileName = ref('');
 
 const previewImage = ref(null);
 
 function selectFile() {
   selectedFiles.value = file.value.files;
+  selectFileName.value = shortenFileName(file.value.files[0].name, 24)
+  console.log(selectFileName.value);
   emits("selectUploadFile", file.value.files);
-  // if(file.value.files) {
-  //   previewFile(file.value.files[0]);
-  // }
 }
 
-// const previewFile = (file) => {
-//   const reader = new FileReader();
-//   reader.onload = () => {
-//     previewImage.value = reader.result;
-//   }
-//   reader.readAsDataURL(file)
-// }
+function shortenFileName(fileName, maxLength) {
+  if (fileName.length > maxLength) {
+    return `${fileName.slice(0, 10)} --- ${fileName.slice(-14)}`;
+  }
+  return fileName;
+}
 
 const currentFile = ref(undefined);
 const progress = ref(0);
@@ -39,22 +38,16 @@ const fileSort = ref([]);
 
 const fileReceive = ref([]);
 const qrCodeImage = ref(null);
+console.log("qwe", fileSort.value);
 
 function upload() {
   progress.value = 0;
 
   currentFile.value = selectedFiles.value.item(0);
 
-  let fileNames = currentFile.value.name;
-  let fileSize = currentFile.value.size;
-
   // 檔名長度超過24，進行擷取
-  if (fileNames.length > 24) {
-    fileNames =
-      currentFile.value.name.slice(0, 10) +
-      " --- " +
-      currentFile.value.name.slice(-14);
-  }
+  let fileNames = shortenFileName(currentFile.value.name, 24);
+  let fileSize = currentFile.value.size;
 
   // 決定檔案大小的單位
   let sizeUnit;
@@ -131,7 +124,7 @@ onMounted(() => {
         <font-awesome-icon icon="plus" class="upload-font" />
         <input type="file" id="fileInput" ref="file" @change="selectFile" />
       </label>
-      <div v-if="selectedFiles">{{ selectedFiles[0].name }}</div>
+      <div v-if="selectedFiles">{{ selectFileName }}</div>
       <div v-else class="upload-send-file-noselect">Please select a file.</div>
       <p>
         <button @click="upload" :disabled="!selectedFiles">
@@ -195,7 +188,7 @@ onMounted(() => {
     <!-- 歷史紀錄區(登入後) -->
     <p class="uploat-history-line"></p>
     <p class="upload-history-title">Historical record</p>
-    <div class="upload-history" v-if="fileSort">
+    <div class="upload-history">
       <!-- <div class="upload-history-title">Historical record</div> -->
       <div class="upload-file" v-for="(files, index) in fileSort" :key="index">
         <div class="upload-set">
@@ -243,9 +236,9 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: 20px;
-  border: 3px solid #01122217;
-  border-radius: 10px;
-  padding: 5px;
+  // border: 3px solid #01122217;
+  // border-radius: 10px;
+  // padding: 5px;
   // margin-top: 50px;
   position: relative;
 }

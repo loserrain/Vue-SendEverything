@@ -1,6 +1,6 @@
 <script setup>
 import axios from "axios";
-import { ref, watchEffect, defineEmits, nextTick } from "vue";
+import { ref, watchEffect } from "vue";
 
 const code = ref("");
 const isComplete = ref(false);
@@ -21,44 +21,10 @@ const downloadCode = async () => {
     console.log("Error downloading file:", error);
   }
 };
-
-// const emits = defineEmits(['emailCode']);
-// const verificationCodes = ref(['', '', '', '', '', '']);
-
-// const handleInput = (index, event) => {
-//   const value = event.target.value;
-//   verificationCodes.value[index] = value;
-
-//   // 判断是否输入完成
-//   if (verificationCodes.value.join('').length === 6) {
-//     emits('emailCode', verificationCodes.value.join(''));
-//   }
-
-//   // 自动跳到下一个输入框
-//   if (value && index < verificationCodes.value.length - 1) {
-//     const nextInput = event.target.nextElementSibling;
-//     if (nextInput) {
-//       nextTick(() => {
-//         nextInput.focus();
-//       });
-//     }
-//   }
-// };
-// const handleKeyDown = (index, event) => {
-//   // 处理删除操作
-//   if (event.key === 'Backspace' && !event.target.value && index > 0) {
-//     const prevInput = event.target.previousElementSibling;
-//     if (prevInput) {
-//       nextTick(() => {
-//         prevInput.focus();
-//       });
-//     }
-//   }
-// };
 </script>
 
 <template>
-  <div class="upload-file-container">
+  <div class="upload-receive-container">
     <div class="upload-send">
       <div class="upload-code-box">
         <input type="text" v-model="code" />
@@ -84,9 +50,13 @@ const downloadCode = async () => {
   align-items: center;
 }
 
+.upload-receive-container{
+  margin: 20px 15px 0;
+}
+
 .upload-send {
-  height: 200px;
-  margin: 215px 0 0 0;
+  height: 150px;
+  margin: 10px 0 0 0;
 }
 
 .upload-code-box {
@@ -94,7 +64,7 @@ const downloadCode = async () => {
     background-color: #dbdbdb44;
     border: 2px solid $primary-text-gray-100;
     border-radius: 5px;
-    margin: 70px 0 20px;
+    margin: 30px 0 20px;
     padding: 10px 10px;
     font-size: 20px;
     &:focus-visible {
