@@ -14,7 +14,7 @@ const downloadCode = async () => {
   try {
     if (isComplete.value) {
       const url = `http://localhost:8080/api/auth/downloadFileByCode/${code.value}`;
-      const response = await axios.get(url, {responseType: 'blob'});
+      const response = await axios.get(url, { responseType: "blob" });
       window.location.href = response.request.responseURL;
     }
   } catch (error) {
@@ -25,37 +25,60 @@ const downloadCode = async () => {
 
 <template>
   <div class="upload-receive-container">
-    <div class="upload-send">
-      <div class="upload-code-box">
-        <input type="text" v-model="code" />
-      </div>
-      <button
-        class="submit-btn"
-        :class="{ active: isComplete }"
-        :disabled="!isComplete"
-        @click="downloadCode"
-      >
-        Download
-      </button>
-      <a ref="downloadLink"></a>
+    <div class="upload-code-box">
+      <input type="text" v-model="code" />
     </div>
+    <button
+      class="submit-btn"
+      :class="{ active: isComplete }"
+      :disabled="!isComplete"
+      @click="downloadCode"
+    >
+      Download
+    </button>
+    <a ref="downloadLink"></a>
   </div>
 </template>
 
 <style lang="scss" scoped>
 @import "../../assets/styles/layout/upload";
-.container {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
+.upload-receive-container {
+  margin: 1.8vh 15px 0;
+  background-image: url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' rx='10' ry='10' stroke='%23BABABAFF' stroke-width='3' stroke-dasharray='10%2c10' stroke-dashoffset='0' stroke-linecap='square'/%3e%3c/svg%3e");
+  background-color: #fafafa;
+  border-radius: 10px;
+  height: 40%;
 
-.upload-receive-container{
-  margin: 20px 15px 0;
+  button {
+    color: #fff;
+    background-color: #28a745;
+    border-radius: 7px;
+    border: none;
+    box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.135);
+    font-size: 18px;
+    font-weight: 700;
+    padding: 8px 12px 7px;
+    transition: 0.2s;
+    position: relative;
+    cursor: pointer;
+
+    &:hover {
+      opacity: 0.8;
+    }
+
+    &:disabled {
+      background-color: $primary-text-gray-150;
+      opacity: 0.4;
+
+      &:hover {
+        padding: 8px 12px 7px;
+      }
+    }
+  }
 }
 
 .upload-send {
-  height: 150px;
+  height: 30px;
   margin: 10px 0 0 0;
 }
 
@@ -64,16 +87,20 @@ const downloadCode = async () => {
     background-color: #dbdbdb44;
     border: 2px solid $primary-text-gray-100;
     border-radius: 5px;
-    margin: 30px 0 20px;
+    margin: 3vh 0 2vh;
     padding: 10px 10px;
     font-size: 20px;
     &:focus-visible {
+      background-color: #ffffff;
       outline: none;
+      border: solid 2px $primary-button-blue-100;
+      box-shadow: 0px 1px 8px rgba(0, 0, 0, 0.28);
+      transition: 0.1s; 
     }
   }
 }
 
-a{
+a {
   display: none;
 }
 </style>

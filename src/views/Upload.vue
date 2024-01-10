@@ -14,7 +14,6 @@ const currentTab = computed(() => {
 const tabs = {
   Send,
   Message,
-  Receive,
 };
 
 function setSelectedTab(tab) {
@@ -42,6 +41,7 @@ const handleSelectedFile = (files) => {
     previewImage.value = reader.result;
   };
 };
+
 </script>
 
 <template>
@@ -67,11 +67,12 @@ const handleSelectedFile = (files) => {
     <div class="upload-explore-container">
       <div class="upload-explore-download">
         <div class="upload-explore-qrcode">
-          <div v-if="!uploadData">
+          <div class="upload-qrcode-bg" v-if="!uploadData">
             <img
-              src="https://www.kphoto.com.tw/image/catalog/Product/ASS/93_arctic_white.gif"
+              src="../assets/image/QRCodeExample.gif"
               alt=""
             />
+            <p>QR Code</p>
           </div>
           <div v-else>
             <img
@@ -83,7 +84,6 @@ const handleSelectedFile = (files) => {
 
         <div class="upload-explore-code">
           <div class="upload-code-border">
-
             <div class="upload-key-box" v-if="!uploadData">
               <span>0</span>
               <span>0</span>
@@ -110,61 +110,16 @@ const handleSelectedFile = (files) => {
       <div class="upload-explore-hr"></div>
 
       <div class="upload-explore-preview">
-          <p v-if="!previewImage" data-stroke="File Preview">File Preview.</p>
-          <img v-if="previewImage" :src="previewImage" alt="" />
+        <p v-if="!previewImage" data-stroke="File Preview">File Preview.</p>
+        <img v-if="previewImage" :src="previewImage" alt="" />
       </div>
     </div>
 
-    <!-- <div class="upload-explore upload-select">
-      <div class="upload-decorations upload-top"></div>
-      <div class="upload-decorations upload-bottom"></div>
-      <div v-if="uploadData">
-        <h2>{{ uploadData.fileName }}</h2>
-        <div class="upload-qrcode">
-          <img
-            :src="`data:image/png;base64,${uploadData.qrcodeImg}`"
-            alt="QR Code"
-          />
-        </div>
-        <div class="upload-key-box">
-          <span v-for="code in uploadData.downloadCode">
-            {{ code }}
-          </span>
-        </div>
-      </div>
-
-      <div v-else>
-        <h2>fileName.txt...</h2>
-        <div class="upload-qrcode">
-          <img
-            src="https://www.kphoto.com.tw/image/catalog/Product/ASS/93_arctic_white.gif"
-            alt=""
-          />
-        </div>
-        <div class="upload-key-box">
-          <span>0</span>
-          <span>0</span>
-          <span>0</span>
-          <span>0</span>
-          <span>0</span>
-          <span>0</span>
-        </div>
-      </div>
-    </div> -->
-
-    <!-- <div class="upload-img">
-      <img :src="previewImage" alt="" />
-    </div> -->
   </div>
 </template>
 
 <style lang="scss" scoped>
 @import "../assets/styles/layout/upload";
-.container {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
 
 .upload-view {
   display: flex;
@@ -176,8 +131,6 @@ const handleSelectedFile = (files) => {
   border: 3px solid #ca878f4d;
   box-shadow: 4px 5px 5px rgba(0, 0, 0, 0.135);
   width: 26%;
-  // margin-left: 2%;
-  // margin-right: 1%;
 }
 
 .upload-explore-container {
@@ -194,15 +147,15 @@ const handleSelectedFile = (files) => {
 
   .upload-explore-download {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    width: 98%;
+    align-items:center;
+    justify-content: space-evenly;
+    width: 100%;
   }
 
   .upload-explore-qrcode {
-    margin: 30px 0 30px 30px;
+    margin: 2.5vh 0 2.5vh 30px;
     width: 40%;
-    border: 2px solid #dbdbdbbf;
+    border: 5px solid #dbdbdbbf;
     border-radius: 5px;
 
     img {
@@ -211,12 +164,28 @@ const handleSelectedFile = (files) => {
     }
   }
 
+  .upload-qrcode-bg {
+    position: relative;
+
+    p {
+      position: absolute;
+      top: 50%;
+      text-align: center;
+      transform: translateY(-50%) ;
+      width: 100%;
+      font-size: 56px;
+      font-weight: 700;
+      color: $primary-text-gray-30;
+      user-select: none;
+      cursor: default;
+    }
+  }
+
   .upload-explore-code {
     width: 51%;
-    height: 330px;
-    // border: 2px solid #dbdbdbbf;
-    // border-radius: 5px;
-    margin: 0 20px 0 20px;
+    height: 100%;
+    // margin: 45px 20px 0 20px;
+    // padding: 10px 0px 10px 0px;
 
     div {
       text-align: center;
@@ -239,37 +208,38 @@ const handleSelectedFile = (files) => {
       background-image: url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' rx='10' ry='10' stroke='%23BABABAFF' stroke-width='3' stroke-dasharray='10%2c10' stroke-dashoffset='0' stroke-linecap='square'/%3e%3c/svg%3e");
       background-color: #fafafa;
       border-radius: 10px;
-      margin: 0 15px 0 15px;
+      margin: 2.8vh 15px 0 15px;
+      height: 40%;
     }
   }
 }
 
 .upload-key-box {
-  margin-top: 10px;
-  text-align: center;
+  // margin-top: 10px;
+  // text-align: center;
   span {
     background-color: #e5e4e445;
-    margin: 15px 5px 0 5px;
+    border: 1px solid $primary-text-gray-100;
+    border-radius: 5px;
+    margin: 23px 5px 0 5px;
     color: #011222c3;
-    font-size: 36px;
+    font-size: 32px;
     font-weight: 700;
     text-align: center;
     display: inline-block;
-    width: 40px;
-    line-height: 64px;
+    width: 35px;
+    line-height: 56px;
   }
 }
 
-.upload-explore-hr{
+.upload-explore-hr {
   border: 2px solid $primary-text-gray-100;
-  // margin: 0 45px;
   width: 90%;
 }
 
-.upload-explore-preview{
+.upload-explore-preview {
   background-color: #fafafa;
   background-image: url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' rx='10' ry='10' stroke='%23BABABAFF' stroke-width='3' stroke-dasharray='10%2c10' stroke-dashoffset='0' stroke-linecap='square'/%3e%3c/svg%3e");
-  // border: 3px solid $primary-text-gray-100;
   border-radius: 10px;
   width: 92%;
   height: 100%;
@@ -277,16 +247,10 @@ const handleSelectedFile = (files) => {
   overflow-y: auto;
   text-align: center;
   position: relative;
-  // width: 400px;
 
-  img{
+  img {
     display: block;
-    // object-fit: cover;
-    // object-fit: contain;
-    // border-radius: 5px;
-    // width: 100%;
     width: calc(100% - 0.3%);
-    // height: 100%;
   }
 
   p {
@@ -300,26 +264,8 @@ const handleSelectedFile = (files) => {
     color: $primary-text-gray-30;
     user-select: none;
     cursor: default;
-    // text-shadow: 
-    //   3px 3px 0 #ccc,
-    //   6px 6px 0 #c8b59c,
-    //   9px 9px 0 #b2a080;
-    
-    // text-shadow: -1px -1px 0 #efe4d1,
-    //           1px -1px 0 #efe4d1,
-    //           -1px 1px 0 #efe4d1,
-    //           1px 1px 0 #efe4d1;
-
-    // &::before{
-    //   content: attr(data-stroke);
-    //   position: absolute;
-    //   z-index: -1;
-    //   -webkit-text-stroke: 10px #cb9f62;
-    // }
   }
 }
-
-// -------------------------------------------------------------------------------------------------------
 .upload-button {
   &.active {
     color: black;
@@ -329,94 +275,4 @@ const handleSelectedFile = (files) => {
     color: black;
   }
 }
-
-// .upload-explore {
-//   padding: 110px 20px 0px 20px;
-//   position: relative;
-
-//   img {
-//     width: 200px;
-//     height: 200px;
-//     display: block;
-//     margin: 0 auto;
-//     // border: 5px solid #c8dbec;
-//     border-radius: 10px;
-//   }
-
-//   h2 {
-//     font-size: 32px;
-//     font-weight: 700;
-//     text-align: center;
-//     // color: #011222c3;
-//     color: aliceblue;
-//     background-color: #7492ea;
-//     padding: 10px;
-//     border-radius: 10px 0px;
-//   }
-// }
-
-// .upload-qrcode {
-//   background-color: $theme-body-background;
-//   padding: 25px 0 25px;
-//   margin: 45px 90px 0;
-//   border-radius: 10px;
-//   border: 3px solid $primary-text-gray-150;
-// }
-
-// .upload-key-box {
-//   margin-top: 50px;
-//   text-align: center;
-//   span {
-//     background-color: #e5e4e445;
-//     margin: 0 5px;
-//     color: #011222c3;
-//     font-size: 36px;
-//     font-weight: 700;
-//     text-align: center;
-//     display: inline-block;
-//     width: 40px;
-//     line-height: 64px;
-//   }
-// }
-
-// .upload-shareLink {
-//   :first-child {
-//     margin: 40px 0 20px;
-//   }
-//   p:nth-child(2) {
-//     display: block;
-//     background: $primary-text-gray-30;
-//     border: 1px solid #01122217;
-//     border-radius: 10px;
-//     box-shadow: 1px 1px 10px rgba(0, 0, 0, 0.135);
-//     text-align: center;
-//     font-size: 18px;
-//     padding: 13px 10px 13px;
-//   }
-// }
-
-// .upload-decorations {
-//   position: absolute;
-//   left: 0%;
-//   height: 70px;
-//   width: 100%;
-//   background-color: #d3dadf;
-// }
-
-// .upload-top {
-//   top: 0%;
-// }
-
-// .upload-bottom {
-//   bottom: 0%;
-// }
-
-// .upload-img{
-//   width: 200px;
-//   height: 200px;
-
-//   img{
-//     width: 100%;
-//   }
-// }
 </style>

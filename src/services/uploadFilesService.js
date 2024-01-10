@@ -10,7 +10,7 @@ class UploadFilesService {
       headers: {
         "Content-Type": "multipart/form-data"
       },
-      onUploadProgress
+      onUploadProgress: onUploadProgress
     });
   }
 

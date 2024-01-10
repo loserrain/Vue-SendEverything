@@ -1,15 +1,8 @@
 <script setup>
-import { ref, computed, onMounted } from "vue";
-import { useAuthStore } from "../../stores/auth.module";
+import { ref, onMounted } from "vue";
 import UploadService from "../../services/uploadFilesService";
 
 const emits = defineEmits(["sendFileInfo", "selectUploadFile"]);
-
-const authStore = useAuthStore();
-
-// const currentUser = computed(() => {
-//   return authStore.dataStatus.user;
-// });
 
 const selectedFiles = ref(undefined);
 const file = ref(null);
@@ -32,7 +25,8 @@ function shortenFileName(fileName, maxLength) {
 }
 
 const currentFile = ref(undefined);
-const progress = ref(0);
+const progress = ref([]);
+let progressFileCount = 0;
 const fileInfos = ref([]);
 const fileSort = ref([]);
 
@@ -40,8 +34,10 @@ const fileReceive = ref([]);
 const qrCodeImage = ref(null);
 console.log("qwe", fileSort.value);
 
+// watch(() => {})
+
 function upload() {
-  progress.value = 0;
+  progress.value[progressFileCount] = 0;
 
   currentFile.value = selectedFiles.value.item(0);
 
@@ -67,7 +63,10 @@ function upload() {
   fileReceive.value.push(fileInfo);
 
   UploadService.upload(currentFile.value, (event) => {
-    progress.value = Math.round((100 * event.loaded) / event.total);
+    progress.value[progressFileCount] = Math.round((100 * event.loaded) / event.total);
+
+    progressFileCount += 1;
+    console.log(progress.value)
   })
     .then((response) => {
       console.log(response.data);
@@ -114,7 +113,57 @@ function uploadGetFiles() {
 onMounted(() => {
   uploadGetFiles();
 });
+
+
+// ----------------------------------------測試區-------------------------------------------
+
+
+
+
+// 添加新的数据属性
+const chunkSize = ref(5 * 1024 * 1024); // 5MB
+const totalChunks = ref(0);
+const currentChunkIndex = ref(0);
+
+// 分割并上传文件
+function uploadChunks() {
+  if (!selectedFiles.value || selectedFiles.value.length === 0) return;
+
+  const file = selectedFiles.value[0];
+  totalChunks.value = Math.ceil(file.size / chunkSize.value);
+  currentChunkIndex.value = 0;
+  uploadNextChunk(file);
+}
+
+function uploadNextChunk(file) {
+  const start = currentChunkIndex.value * chunkSize.value;
+  const end = Math.min(start + chunkSize.value, file.size);
+  const chunk = file.slice(start, end);
+
+  // 创建FormData并添加分片
+  const formData = new FormData();
+  formData.append("fileChunk", chunk);
+  formData.append("chunkNumber", currentChunkIndex.value + 1);
+  formData.append("totalChunks", totalChunks.value);
+  formData.append("fileId", "unique-file-id"); // 生成或获取唯一文件标识
+
+  // 调用上传服务
+  UploadService.uploadChunk(formData).then(() => {
+    currentChunkIndex.value++;
+    if (currentChunkIndex.value < totalChunks.value) {
+      uploadNextChunk(file); // 上传下一个分片
+    } else {
+      // 所有分片上传完毕，通知后端合并
+      UploadService.completeFileUpload("unique-file-id");
+    }
+  });
+}
+
+
+
+// ----------------------------------------測試區-------------------------------------------
 </script>
+
 
 <template>
   <div class="upload-file-container">
@@ -136,7 +185,7 @@ onMounted(() => {
 
     <!-- 上傳時的檔案區 -->
     <div class="upload-sort" v-if="currentFile">
-      <div class="upload-file" v-for="file in fileReceive" :key="file.fileName">
+      <div class="upload-file" v-for="(file, index) in fileReceive" :key="index">
         <div class="upload-set">
           <div>
             <font-awesome-icon icon="file-lines" />
@@ -153,37 +202,16 @@ onMounted(() => {
           <div class="upload-progress">
             <div
               class="upload-progress-bar upload-progress-bar-striped"
-              :aria-valuenow="progress"
+              :aria-valuenow="progress[index]"
               aria-valuemin="0"
               aria-valuemax="100"
-              :style="{ width: progress + '%' }"
+              :style="{ width: progress[index] + '%' }"
             ></div>
           </div>
-          <div>{{ progress }}%</div>
+          <div>{{ progress[index] }}%</div>
         </div>
       </div>
     </div>
-
-    <!-- 上傳檔案區 -->
-    <!-- <div class="upload-file" v-for="(files, index) in fileSort" :key="index" v-if="!currentUser">
-      <div class="upload-set">
-        <div>
-          <font-awesome-icon icon="file-lines" />
-        </div>
-        <div>
-          <span>{{ files.fileName }}</span>
-          <p>{{ files.fileSize }}</p>
-        </div>
-        <div>
-          <font-awesome-icon icon="circle-check" class="upload-check" />
-        </div>
-      </div>
-      <div class="upload-progress-set">
-        <div class="upload-progress upload-progress-status"></div>
-
-        <div>100%</div>
-      </div>
-    </div> -->
 
     <!-- 歷史紀錄區(登入後) -->
     <p class="uploat-history-line"></p>
@@ -236,10 +264,6 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: 20px;
-  // border: 3px solid #01122217;
-  // border-radius: 10px;
-  // padding: 5px;
-  // margin-top: 50px;
   position: relative;
 }
 
@@ -248,27 +272,11 @@ onMounted(() => {
   margin-bottom: 10px;
   margin-top: 15px;
   font-size: 32px;
-  // color: $primary;
-
-  // font-size: 32px;
   font-weight: 700;
-  // text-align: center;
   color: aliceblue;
   background-color: #7492ea;
   padding: 10px;
   border-radius: 10px 0px;
-
-  // position: absolute;
-  // top: -1%;
-  // left: 50%;
-
-  // top: -37px;
-  // left: 0;
-  // color: rgb(255, 255, 255);
-  // font-size: 18px;
-  // border-radius: 5px;
-  // background-color: #ec9ea9;
-  // padding: 5px 10px 5px;
 }
 
 .uploat-history-line{

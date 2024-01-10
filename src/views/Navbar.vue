@@ -49,15 +49,6 @@ function setSelectedTab(tab) {
               <font-awesome-icon icon="circle-arrow-up" /> Upload
             </li>
           </RouterLink>
-          <RouterLink
-            to="/uploadfile"
-            class="nav-link"
-            @click="setSelectedTab('Receive')"
-          >
-            <li class="nav-item">
-              <font-awesome-icon icon="circle-arrow-down" /> Download
-            </li>
-          </RouterLink>
           <RouterLink to="/login" class="nav-link">
             <li class="nav-item">
               <font-awesome-icon icon="sign-in-alt" /> Login
@@ -80,15 +71,6 @@ function setSelectedTab(tab) {
         >
           <li class="nav-item">
             <font-awesome-icon icon="circle-arrow-up" /> Upload
-          </li>
-        </RouterLink>
-        <RouterLink
-          to="/uploadfile"
-          class="nav-link"
-          @click="setSelectedTab('Receive')"
-        >
-          <li class="nav-item">
-            <font-awesome-icon icon="circle-arrow-down" /> Download
           </li>
         </RouterLink>
         <li class="nav-item" @click.prevent="logOut">

@@ -186,6 +186,7 @@ function handleLogin(user) {
 
 .error-feedback {
   color: red;
+  margin-top: 5px;
 }
 
 .login-alert {
