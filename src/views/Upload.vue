@@ -34,13 +34,13 @@ const handleSendFileInfo = (fileInfo) => {
 
 const previewImage = ref(null);
 
-const handleSelectedFile = (files) => {
-  const reader = new FileReader();
-  reader.readAsDataURL(files[0]);
-  reader.onload = () => {
-    previewImage.value = reader.result;
-  };
-};
+// const handleSelectedFile = (files) => {
+//   const reader = new FileReader();
+//   reader.readAsDataURL(files[0]);
+//   reader.onload = () => {
+//     previewImage.value = reader.result;
+//   };
+// };
 
 </script>
 

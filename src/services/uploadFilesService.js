@@ -21,6 +21,26 @@ class UploadFilesService {
   uploadMessage(message){
     return http.post("/uploadMessage", message);
   }
+
+  uploadChunk(file) {
+    return http.post("/uploadChunk", file, {
+      headers: {
+        "content-Type": "multipart/form-data"
+      }
+    });
+  }
+
+  completeFileUpload(fileId, outputFileName) {
+    const formData = new FormData();
+    formData.append("fileId", fileId);
+    formData.append("outputFileName", outputFileName);
+  
+    return http.post("/completeUpload", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data"
+      }
+    });
+  }
 }
 
 export default new UploadFilesService();

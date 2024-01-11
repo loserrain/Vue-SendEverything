@@ -6,13 +6,15 @@ const emits = defineEmits(["sendFileInfo", "selectUploadFile"]);
 
 const selectedFiles = ref(undefined);
 const file = ref(null);
-const selectFileName = ref('');
+const selectFileName = ref("");
+const outputFileName = ref("");
 
 const previewImage = ref(null);
 
 function selectFile() {
   selectedFiles.value = file.value.files;
-  selectFileName.value = shortenFileName(file.value.files[0].name, 24)
+  outputFileName.value = file.value.files[0].name;
+  selectFileName.value = shortenFileName(file.value.files[0].name, 24);
   console.log(selectFileName.value);
   emits("selectUploadFile", file.value.files);
 }
@@ -32,9 +34,6 @@ const fileSort = ref([]);
 
 const fileReceive = ref([]);
 const qrCodeImage = ref(null);
-console.log("qwe", fileSort.value);
-
-// watch(() => {})
 
 function upload() {
   progress.value[progressFileCount] = 0;
@@ -63,10 +62,12 @@ function upload() {
   fileReceive.value.push(fileInfo);
 
   UploadService.upload(currentFile.value, (event) => {
-    progress.value[progressFileCount] = Math.round((100 * event.loaded) / event.total);
+    progress.value[progressFileCount] = Math.round(
+      (100 * event.loaded) / event.total
+    );
 
     progressFileCount += 1;
-    console.log(progress.value)
+    console.log(progress.value);
   })
     .then((response) => {
       console.log(response.data);
@@ -114,16 +115,13 @@ onMounted(() => {
   uploadGetFiles();
 });
 
-
 // ----------------------------------------測試區-------------------------------------------
 
-
-
-
 // 添加新的数据属性
-const chunkSize = ref(5 * 1024 * 1024); // 5MB
+const chunkSize = ref(10 * 1024 * 1024); // 5MB
 const totalChunks = ref(0);
 const currentChunkIndex = ref(0);
+const fileId = "some-unique-file-id";
 
 // 分割并上传文件
 function uploadChunks() {
@@ -145,7 +143,7 @@ function uploadNextChunk(file) {
   formData.append("fileChunk", chunk);
   formData.append("chunkNumber", currentChunkIndex.value + 1);
   formData.append("totalChunks", totalChunks.value);
-  formData.append("fileId", "unique-file-id"); // 生成或获取唯一文件标识
+  formData.append("fileId", fileId); // 生成或获取唯一文件标识
 
   // 调用上传服务
   UploadService.uploadChunk(formData).then(() => {
@@ -154,16 +152,19 @@ function uploadNextChunk(file) {
       uploadNextChunk(file); // 上传下一个分片
     } else {
       // 所有分片上传完毕，通知后端合并
-      UploadService.completeFileUpload("unique-file-id");
+      UploadService.completeFileUpload(fileId, outputFileName.value)
+        .then((response) => {
+          console.log("File upload completed", response.data);
+        })
+        .catch((error) => {
+          console.error("Error completing file upload", error);
+        });
     }
   });
 }
 
-
-
 // ----------------------------------------測試區-------------------------------------------
 </script>
-
 
 <template>
   <div class="upload-file-container">
@@ -176,7 +177,8 @@ function uploadNextChunk(file) {
       <div v-if="selectedFiles">{{ selectFileName }}</div>
       <div v-else class="upload-send-file-noselect">Please select a file.</div>
       <p>
-        <button @click="upload" :disabled="!selectedFiles">
+        <!-- <button @click="upload" :disabled="!selectedFiles"> -->
+        <button @click="uploadChunks" :disabled="!selectedFiles">
           Click to Upload
         </button>
       </p>
@@ -185,7 +187,11 @@ function uploadNextChunk(file) {
 
     <!-- 上傳時的檔案區 -->
     <div class="upload-sort" v-if="currentFile">
-      <div class="upload-file" v-for="(file, index) in fileReceive" :key="index">
+      <div
+        class="upload-file"
+        v-for="(file, index) in fileReceive"
+        :key="index"
+      >
         <div class="upload-set">
           <div>
             <font-awesome-icon icon="file-lines" />
@@ -279,7 +285,7 @@ function uploadNextChunk(file) {
   border-radius: 10px 0px;
 }
 
-.uploat-history-line{
+.uploat-history-line {
   border: 1.5px solid $primary-text-gray-100;
 }
 </style>
