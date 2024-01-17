@@ -22,5 +22,8 @@ export default defineConfig({
   // },
   server: {
     port: 8081,
-  }
+  },
+  build: {
+    ourDir: "F:/nginx-1.25.3/html"
+  },
 })

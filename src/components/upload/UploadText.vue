@@ -13,6 +13,7 @@ watchEffect(() => {
 const downloadCode = async () => {
   try {
     if (isComplete.value) {
+      // nginx 更改網址
       const url = `http://localhost:8080/api/auth/downloadFileByCode/${code.value}`;
       const response = await axios.get(url, { responseType: "blob" });
       window.location.href = response.request.responseURL;
@@ -48,6 +49,11 @@ const downloadCode = async () => {
   background-color: #fafafa;
   border-radius: 10px;
   height: 40%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-evenly;
+
 
   button {
     color: #fff;
@@ -87,9 +93,10 @@ const downloadCode = async () => {
     background-color: #dbdbdb44;
     border: 2px solid $primary-text-gray-100;
     border-radius: 5px;
-    margin: 3vh 0 2vh;
+    // margin: 3vh 0 2vh;
     padding: 10px 10px;
     font-size: 20px;
+    width: 80%;
     &:focus-visible {
       background-color: #ffffff;
       outline: none;

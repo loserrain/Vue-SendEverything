@@ -15,6 +15,7 @@ import {
   faCircleArrowUp,
   faCircleArrowDown,
   faTriangleExclamation,
+  faCloudArrowUp,
 } from "@fortawesome/free-solid-svg-icons";
 
 import App from "./App.vue";
@@ -30,7 +31,8 @@ library.add(
   faPlus,
   faCircleArrowUp,
   faCircleArrowDown,
-  faTriangleExclamation
+  faTriangleExclamation,
+  faCloudArrowUp
 );
 
 const app = createApp(App);

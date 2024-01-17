@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted } from "vue";
 import UploadService from "../../services/uploadFilesService";
+import SparkMD5 from "spark-md5";
 
 const emits = defineEmits(["sendFileInfo", "selectUploadFile"]);
 
@@ -11,6 +12,7 @@ const outputFileName = ref("");
 
 const previewImage = ref(null);
 
+// 當在input選擇檔案時，會做的動作，emit則是將資料傳至Upload.vue
 function selectFile() {
   selectedFiles.value = file.value.files;
   outputFileName.value = file.value.files[0].name;
@@ -19,6 +21,7 @@ function selectFile() {
   emits("selectUploadFile", file.value.files);
 }
 
+// 縮減選擇檔案時的檔名(以免檔名過長跑版)
 function shortenFileName(fileName, maxLength) {
   if (fileName.length > maxLength) {
     return `${fileName.slice(0, 10)} --- ${fileName.slice(-14)}`;
@@ -85,6 +88,7 @@ function upload() {
   selectedFiles.value = undefined;
 }
 
+// 檔案上傳後，檔名縮減
 function shortFileName(fileNames) {
   fileNames.forEach((fileName, index) => {
     if (fileName.length > 24) {
@@ -111,25 +115,108 @@ function uploadGetFiles() {
   });
 }
 
+// 當載入文件時，呼叫此函數，並從後端取得已上傳的歷史紀錄檔案
 onMounted(() => {
   uploadGetFiles();
 });
 
 // ----------------------------------------測試區-------------------------------------------
 
-// 添加新的数据属性
-const chunkSize = ref(10 * 1024 * 1024); // 5MB
+// 暫停與停止上傳狀態
+const isPaused = ref(false);
+const isStopped = ref(false);
+
+// function pauseUpload() {
+//   isPaused.value = true;
+// }
+
+// function stopUpload() {
+//   isStopped.value = true;
+// }
+
+// 增加檔案分割的資料
+const chunkSize = ref(5 * 1024 * 1024); // 5MB
 const totalChunks = ref(0);
 const currentChunkIndex = ref(0);
 const fileId = "some-unique-file-id";
 
-// 分割并上传文件
+// 用於儲存已上傳分片的 ID
+const uploadedChunksIds = [];
+
+
+// 計算分片的 ID
+function calculateChunkId(chunk) {
+  return new Promise((resolve, reject) => {
+    const spark = new SparkMD5.ArrayBuffer();
+
+    const fileReader = new FileReader();
+
+    fileReader.onload = function (e) {
+      spark.append(e.target.result); // Append chunk to SparkMD5
+      // console.log(e.target.result);
+      const chunkId = spark.end();
+      // console.log("Chunk ID:", chunkId);
+      resolve(chunkId);
+    };
+
+    fileReader.onerror = function (err) {
+      reject(err);
+    };
+
+    fileReader.readAsArrayBuffer(chunk);
+  });
+}
+
+// 計算已上傳分片的總體 ID
+function calculateTotalFileId(uploadedChunksIds) {
+  const spark = new SparkMD5();
+
+  // Append all chunk IDs to SparkMD5
+  uploadedChunksIds.forEach((chunkId) => {
+    spark.append(chunkId);
+  });
+
+  return spark.end();
+}
+
+// 分割並上傳文件
 function uploadChunks() {
   if (!selectedFiles.value || selectedFiles.value.length === 0) return;
+  // if (isPaused.value || isStopped.value) return;
 
   const file = selectedFiles.value[0];
   totalChunks.value = Math.ceil(file.size / chunkSize.value);
   currentChunkIndex.value = 0;
+
+  // 進度條設定初始值
+  progress.value[progressFileCount] = 0;
+
+  // 取得當前選擇檔案
+  currentFile.value = selectedFiles.value.item(0);
+
+  // 檔名長度超過24，進行擷取
+  let fileNames = shortenFileName(currentFile.value.name, 24);
+  let fileSize = currentFile.value.size;
+
+  // 決定檔案大小的單位
+  let sizeUnit;
+  if (fileSize / 1024 < 1000) {
+    fileSize = Math.round(fileSize / 1024);
+    sizeUnit = "KB";
+  } else {
+    fileSize = (fileSize / 1024 / 1024).toFixed(2);
+    sizeUnit = "MB";
+  }
+
+  // 上傳檔案區
+  const fileInfo = {
+    fileName: fileNames,
+    fileSize: `${fileSize} ${sizeUnit}`,
+  };
+
+  fileReceive.value.push(fileInfo);
+
+  // 使用遞迴上傳下一份分割的資料
   uploadNextChunk(file);
 }
 
@@ -137,29 +224,43 @@ function uploadNextChunk(file) {
   const start = currentChunkIndex.value * chunkSize.value;
   const end = Math.min(start + chunkSize.value, file.size);
   const chunk = file.slice(start, end);
+  progress.value[progressFileCount] = Math.ceil(
+    (100 * currentChunkIndex.value) / totalChunks.value
+  );
 
-  // 创建FormData并添加分片
-  const formData = new FormData();
-  formData.append("fileChunk", chunk);
-  formData.append("chunkNumber", currentChunkIndex.value + 1);
-  formData.append("totalChunks", totalChunks.value);
-  formData.append("fileId", fileId); // 生成或获取唯一文件标识
+  // 計算當前分片的 ID
+  calculateChunkId(chunk).then((chunkId) => {
+    uploadedChunksIds.push(chunkId);
 
-  // 调用上传服务
-  UploadService.uploadChunk(formData).then(() => {
-    currentChunkIndex.value++;
-    if (currentChunkIndex.value < totalChunks.value) {
-      uploadNextChunk(file); // 上传下一个分片
-    } else {
-      // 所有分片上传完毕，通知后端合并
-      UploadService.completeFileUpload(fileId, outputFileName.value)
-        .then((response) => {
-          console.log("File upload completed", response.data);
-        })
-        .catch((error) => {
-          console.error("Error completing file upload", error);
-        });
-    }
+    // 計算已上傳分片的總體 ID（動態計算）
+    const totalFileId = calculateTotalFileId(uploadedChunksIds);
+    console.log("totalFileId", totalFileId)
+
+    // 建立FormData並加入分割資料
+    const formData = new FormData();
+    formData.append("fileChunk", chunk);
+    formData.append("chunkNumber", currentChunkIndex.value + 1);
+    formData.append("totalChunks", totalChunks.value);
+    formData.append("fileId", fileId);
+    formData.append("totalFileId", totalFileId);
+
+    // 調用上傳函數
+    UploadService.uploadChunk(formData).then(() => {
+      currentChunkIndex.value++;
+      if (currentChunkIndex.value < totalChunks.value) {
+        uploadNextChunk(file); // 上傳下一個分割資料
+      } else {
+        // 當所有分割資料上傳完畢，通知spring合併檔案並回傳資料(檔名、大小、QRCODE與驗證碼等等)
+        UploadService.completeFileUpload(fileId, outputFileName.value)
+          .then((response) => {
+            console.log("File upload completed", response.data);
+            progressFileCount += 1;
+          })
+          .catch((error) => {
+            console.error("Error completing file upload", error);
+          });
+      }
+    });
   });
 }
 
@@ -171,7 +272,7 @@ function uploadNextChunk(file) {
     <!-- upload的檔案傳送列表 -->
     <div class="upload-send">
       <label for="fileInput" class="upload-fileinput">
-        <font-awesome-icon icon="plus" class="upload-font" />
+        <font-awesome-icon icon="cloud-arrow-up" class="upload-font" />
         <input type="file" id="fileInput" ref="file" @change="selectFile" />
       </label>
       <div v-if="selectedFiles">{{ selectFileName }}</div>
@@ -200,7 +301,7 @@ function uploadNextChunk(file) {
             <span>{{ file.fileName }}</span>
             <p>{{ file.fileSize }}</p>
           </div>
-          <div>
+          <div class="upload-delete">
             <font-awesome-icon icon="trash-can" />
           </div>
         </div>
@@ -223,7 +324,6 @@ function uploadNextChunk(file) {
     <p class="uploat-history-line"></p>
     <p class="upload-history-title">Historical record</p>
     <div class="upload-history">
-      <!-- <div class="upload-history-title">Historical record</div> -->
       <div class="upload-file" v-for="(files, index) in fileSort" :key="index">
         <div class="upload-set">
           <div>
@@ -287,5 +387,9 @@ function uploadNextChunk(file) {
 
 .uploat-history-line {
   border: 1.5px solid $primary-text-gray-100;
+}
+
+.upload-delete {
+  cursor: pointer;
 }
 </style>
