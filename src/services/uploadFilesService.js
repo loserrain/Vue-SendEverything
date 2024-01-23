@@ -18,6 +18,11 @@ class UploadFilesService {
     return http.get(`/getFile`);
   }
 
+  test() {
+    return http.post(`/s3download`);
+  }
+
+
   uploadMessage(message){
     return http.post("/uploadMessage", message);
   }
@@ -30,10 +35,11 @@ class UploadFilesService {
     });
   }
 
-  completeFileUpload(fileId, outputFileName) {
+  completeFileUpload(fileId, outputFileName, totalFileId) {
     const formData = new FormData();
     formData.append("fileId", fileId);
     formData.append("outputFileName", outputFileName);
+    formData.append("totalFileId", totalFileId)
   
     return http.post("/completeUpload", formData, {
       headers: {

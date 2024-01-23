@@ -145,7 +145,7 @@ const copyVerificationCode = () => {
 
 .upload-select {
   border: 3px solid #ca878f4d;
-  box-shadow: 4px 5px 5px rgba(0, 0, 0, 0.135);
+  box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.135);
   width: 520px;
 }
 
@@ -155,7 +155,7 @@ const copyVerificationCode = () => {
   align-items: center;
   background-color: #ffffff;
   border: 3px solid #ca878f4d;
-  box-shadow: 4px 5px 5px rgba(0, 0, 0, 0.135);
+  box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.135);
   width: 800px;
   height: 721px;
   margin: 8vh 0 0 30px;

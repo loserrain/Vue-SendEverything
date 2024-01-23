@@ -1,7 +1,8 @@
 <script setup>
 import { ref, onMounted } from "vue";
 import UploadService from "../../services/uploadFilesService";
-import SparkMD5 from "spark-md5";
+// import SparkMD5 from "spark-md5";
+import { calculateChunkId } from "../../uploadService/calculateChunkId.js";
 
 const emits = defineEmits(["sendFileInfo", "selectUploadFile"]);
 
@@ -17,6 +18,12 @@ function selectFile() {
   selectedFiles.value = file.value.files;
   outputFileName.value = file.value.files[0].name;
   selectFileName.value = shortenFileName(file.value.files[0].name, 24);
+  // console.log("selectedFiles.value", selectedFiles.value)
+  // 計算整個檔案的雜湊值
+  // calculateFileId(selectedFiles.value.item(0)).then((fileId) => {
+  //   console.log("File ID:", fileId);
+  //   // 這裡可以使用 fileId 進行後續操作
+  // });
   console.log(selectFileName.value);
   emits("selectUploadFile", file.value.files);
 }
@@ -103,6 +110,7 @@ function uploadGetFiles() {
     fileInfos.value = response.data;
     const fileNames = fileInfos.value.fileName || [];
     const fileData = fileInfos.value.fileData || [];
+    console.log(response.data);
 
     shortFileName(fileNames);
 
@@ -122,77 +130,109 @@ onMounted(() => {
 
 // ----------------------------------------測試區-------------------------------------------
 
-// 暫停與停止上傳狀態
-const isPaused = ref(false);
-const isStopped = ref(false);
-
-// function pauseUpload() {
-//   isPaused.value = true;
-// }
-
-// function stopUpload() {
-//   isStopped.value = true;
-// }
-
 // 增加檔案分割的資料
-const chunkSize = ref(5 * 1024 * 1024); // 5MB
+const chunkSize = 5 * 1024 * 1024; // 5MB
 const totalChunks = ref(0);
 const currentChunkIndex = ref(0);
+const totalThreads = 4;
 const fileId = "some-unique-file-id";
+const result = [];
+
+async function uploadChunkThreads(file) {
+  try {
+    const chunkCount = Math.ceil(file.size / chunkSize);
+    const workerChunkCount = Math.ceil(chunkCount / totalThreads);
+    let finishCount = 0;
+
+    for (let i = 0; i < totalThreads; i++) {
+      const worker = new Worker(new URL("./uploadWorker.js", import.meta.url), {
+        type: "module",
+      });
+
+      const startIndex = i * workerChunkCount;
+      let endIndex = startIndex + workerChunkCount;
+      if (endIndex >= chunkCount) {
+        endIndex = chunkCount;
+      }
+      worker.postMessage({
+        file,
+        chunkSize,
+        startIndex,
+        endIndex,
+      });
+      worker.onmessage = async (e) => {
+        for (let i = startIndex; i < endIndex; i++) {
+          // console.log(e.data);
+          // currentChunkIndex.value++;
+
+          result[i] = e.data[i - startIndex];
+          const fileChunk = result[i].fileChunk;
+          // const fileId = result[i].fileId;
+          const chunkId = result[i].chunkId;
+          const totalChunks = result[i].totalChunks;
+          const chunkNumber = result[i].chunkNumber;
+
+          const formData = new FormData();
+          formData.append("fileChunk", fileChunk);
+          formData.append("chunkNumber", chunkNumber);
+          formData.append("totalChunks", totalChunks);
+          formData.append("fileId", fileId);
+          formData.append("chunkId", chunkId);
+
+          // 調用上傳函數
+          UploadService.uploadChunk(formData).then(() => {
+            currentChunkIndex.value++;
+            progress.value[progressFileCount] = Math.ceil(
+              (100 * currentChunkIndex.value) / totalChunks
+            );
+            if (currentChunkIndex.value === totalChunks) {
+              UploadService.completeFileUpload(
+                fileId,
+                outputFileName.value,
+                chunkId
+              )
+                .then((response) => {
+                  console.log("File upload completed", response.data);
+                })
+                .catch((error) => {
+                  console.error("Error completing file upload", error);
+                });
+            }
+          });
+        }
+        worker.terminate();
+        finishCount++;
+      };
+
+      worker.onerror = (error) => {
+        console.error("Worker error: ", error);
+      };
+    }
+  } catch {
+    console.log(worker);
+    console.error("Error in uploadChunkThreads: ", error);
+  }
+}
 
 // 用於儲存已上傳分片的 ID
 const uploadedChunksIds = [];
 
-
-// 計算分片的 ID
-function calculateChunkId(chunk) {
-  return new Promise((resolve, reject) => {
-    const spark = new SparkMD5.ArrayBuffer();
-
-    const fileReader = new FileReader();
-
-    fileReader.onload = function (e) {
-      spark.append(e.target.result); // Append chunk to SparkMD5
-      // console.log(e.target.result);
-      const chunkId = spark.end();
-      // console.log("Chunk ID:", chunkId);
-      resolve(chunkId);
-    };
-
-    fileReader.onerror = function (err) {
-      reject(err);
-    };
-
-    fileReader.readAsArrayBuffer(chunk);
-  });
-}
-
-// 計算已上傳分片的總體 ID
-function calculateTotalFileId(uploadedChunksIds) {
-  const spark = new SparkMD5();
-
-  // Append all chunk IDs to SparkMD5
-  uploadedChunksIds.forEach((chunkId) => {
-    spark.append(chunkId);
-  });
-
-  return spark.end();
-}
-
 // 分割並上傳文件
 function uploadChunks() {
   if (!selectedFiles.value || selectedFiles.value.length === 0) return;
-  // if (isPaused.value || isStopped.value) return;
 
-  const file = selectedFiles.value[0];
-  totalChunks.value = Math.ceil(file.size / chunkSize.value);
+  // 取得當前選擇檔案
+  // const file = selectedFiles.value[0];
+  currentFile.value = selectedFiles.value.item(0);
+
+  totalChunks.value = Math.ceil(currentFile.value.size / chunkSize);
   currentChunkIndex.value = 0;
+
+  // 上傳檔案歸零
+  fileReceive.value = [];
 
   // 進度條設定初始值
   progress.value[progressFileCount] = 0;
-
-  // 取得當前選擇檔案
-  currentFile.value = selectedFiles.value.item(0);
 
   // 檔名長度超過24，進行擷取
   let fileNames = shortenFileName(currentFile.value.name, 24);
@@ -215,17 +255,19 @@ function uploadChunks() {
   };
 
   fileReceive.value.push(fileInfo);
+  console.log(fileInfo);
 
   // 使用遞迴上傳下一份分割的資料
-  uploadNextChunk(file);
+  uploadChunkThreads(currentFile.value);
+  // uploadNextChunk(file)
 }
 
 function uploadNextChunk(file) {
-  const start = currentChunkIndex.value * chunkSize.value;
-  const end = Math.min(start + chunkSize.value, file.size);
+  const start = currentChunkIndex.value * chunkSize;
+  const end = Math.min(start + chunkSize, file.size);
   const chunk = file.slice(start, end);
   progress.value[progressFileCount] = Math.ceil(
-    (100 * currentChunkIndex.value) / totalChunks.value
+    (100 * (currentChunkIndex.value + 1)) / totalChunks.value
   );
 
   // 計算當前分片的 ID
@@ -234,7 +276,6 @@ function uploadNextChunk(file) {
 
     // 計算已上傳分片的總體 ID（動態計算）
     const totalFileId = calculateTotalFileId(uploadedChunksIds);
-    console.log("totalFileId", totalFileId)
 
     // 建立FormData並加入分割資料
     const formData = new FormData();
@@ -251,10 +292,13 @@ function uploadNextChunk(file) {
         uploadNextChunk(file); // 上傳下一個分割資料
       } else {
         // 當所有分割資料上傳完畢，通知spring合併檔案並回傳資料(檔名、大小、QRCODE與驗證碼等等)
-        UploadService.completeFileUpload(fileId, outputFileName.value)
+        UploadService.completeFileUpload(
+          fileId,
+          outputFileName.value,
+          totalFileId
+        )
           .then((response) => {
             console.log("File upload completed", response.data);
-            progressFileCount += 1;
           })
           .catch((error) => {
             console.error("Error completing file upload", error);
@@ -262,6 +306,16 @@ function uploadNextChunk(file) {
       }
     });
   });
+}
+
+function test() {
+  UploadService.test()
+    .then((response) => {
+      console.log("test", response.data);
+    })
+    .catch((error) => {
+      console.error("Error completing file upload", error);
+    });
 }
 
 // ----------------------------------------測試區-------------------------------------------
@@ -278,7 +332,6 @@ function uploadNextChunk(file) {
       <div v-if="selectedFiles">{{ selectFileName }}</div>
       <div v-else class="upload-send-file-noselect">Please select a file.</div>
       <p>
-        <!-- <button @click="upload" :disabled="!selectedFiles"> -->
         <button @click="uploadChunks" :disabled="!selectedFiles">
           Click to Upload
         </button>
