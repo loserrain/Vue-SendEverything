@@ -1,7 +1,6 @@
 <script setup>
 import { ref, onMounted } from "vue";
 import UploadService from "../../services/uploadFilesService";
-// import SparkMD5 from "spark-md5";
 import { calculateChunkId } from "../../uploadService/calculateChunkId.js";
 
 const emits = defineEmits(["sendFileInfo", "selectUploadFile"]);
@@ -134,14 +133,16 @@ onMounted(() => {
 const chunkSize = 5 * 1024 * 1024; // 5MB
 const totalChunks = ref(0);
 const currentChunkIndex = ref(0);
-const totalThreads = 4;
-const fileId = "some-unique-file-id";
-const result = [];
+const totalThreads =  2;
+// const fileId = "some-unique-file-id";
+const result = ref([]);
+const uploadLoading = ref(false);
 
 async function uploadChunkThreads(file) {
   try {
-    const chunkCount = Math.ceil(file.size / chunkSize);
-    const workerChunkCount = Math.ceil(chunkCount / totalThreads);
+    const chunkCount = Math.ceil(file.size / chunkSize); // 檔案總分片次數
+    const workerChunkCount = Math.ceil(chunkCount / totalThreads); // 每個worker分配到的分片數量
+    const workerPromises = []; // 用來存放每個 worker 的 Promise
     let finishCount = 0;
 
     for (let i = 0; i < totalThreads; i++) {
@@ -154,62 +155,84 @@ async function uploadChunkThreads(file) {
       if (endIndex >= chunkCount) {
         endIndex = chunkCount;
       }
-      worker.postMessage({
-        file,
-        chunkSize,
-        startIndex,
-        endIndex,
+      // 使用 Promise 包裹 worker 的執行
+      const workerPromise = new Promise((resolve) => {
+
+        worker.postMessage({
+          file,
+          chunkSize,
+          startIndex,
+          endIndex,
+        });
+
+        worker.onmessage = (e) => {
+          for (let i = startIndex; i < endIndex; i++) {
+            result.value[i] = e.data[i - startIndex];
+          }
+          worker.terminate();
+          finishCount++;
+          resolve(); // 告訴外部這個 worker 完成了
+        };
+
+        worker.onerror = (error) => {
+          console.error("Worker error: ", error);
+          resolve(); // 發生錯誤也算是完成
+        };
+
       });
-      worker.onmessage = async (e) => {
-        for (let i = startIndex; i < endIndex; i++) {
-          // console.log(e.data);
-          // currentChunkIndex.value++;
 
-          result[i] = e.data[i - startIndex];
-          const fileChunk = result[i].fileChunk;
-          // const fileId = result[i].fileId;
-          const chunkId = result[i].chunkId;
-          const totalChunks = result[i].totalChunks;
-          const chunkNumber = result[i].chunkNumber;
-
-          const formData = new FormData();
-          formData.append("fileChunk", fileChunk);
-          formData.append("chunkNumber", chunkNumber);
-          formData.append("totalChunks", totalChunks);
-          formData.append("fileId", fileId);
-          formData.append("chunkId", chunkId);
-
-          // 調用上傳函數
-          UploadService.uploadChunk(formData).then(() => {
-            currentChunkIndex.value++;
-            progress.value[progressFileCount] = Math.ceil(
-              (100 * currentChunkIndex.value) / totalChunks
-            );
-            if (currentChunkIndex.value === totalChunks) {
-              UploadService.completeFileUpload(
-                fileId,
-                outputFileName.value,
-                chunkId
-              )
-                .then((response) => {
-                  console.log("File upload completed", response.data);
-                })
-                .catch((error) => {
-                  console.error("Error completing file upload", error);
-                });
-            }
-          });
-        }
-        worker.terminate();
-        finishCount++;
-      };
-
-      worker.onerror = (error) => {
-        console.error("Worker error: ", error);
-      };
+      workerPromises.push(workerPromise);
     }
+    // 等待所有 worker 完成
+    await Promise.all(workerPromises);
+
+    uploadLoading.value = false;
+
+    // 這裡使用 setTimeout 實現每100毫秒發送一次請求
+    console.log(totalThreads)
+    let i = 0;
+    const interval = setInterval(() => {
+      if (i < result.value.length) {
+        const fileChunk = result.value[i].fileChunk;
+        const chunkNumber = result.value[i].chunkNumber + 1;
+        const totalChunks = result.value[i].totalChunks;
+        const fileId = result.value[i].fileId;
+        const chunkId = result.value[i].chunkId;
+
+        const formData = new FormData();
+        formData.append("fileChunk", fileChunk);
+        formData.append("chunkNumber", chunkNumber);
+        formData.append("totalChunks", totalChunks);
+        formData.append("fileId", fileId);
+        formData.append("chunkId", chunkId);
+
+        // 調用上傳函數
+        UploadService.uploadChunk(formData).then(() => {
+          currentChunkIndex.value++;
+          progress.value[progressFileCount] = Math.ceil(
+            (100 * currentChunkIndex.value) / totalChunks
+          );
+          if (currentChunkIndex.value === totalChunks) {
+            UploadService.completeFileUpload(
+              fileId,
+              outputFileName.value,
+              chunkId
+            )
+              .then((response) => {
+                console.log("File upload completed", response.data);
+              })
+              .catch((error) => {
+                console.error("Error completing file upload", error);
+              });
+          }
+        });
+
+        i++;
+      } else {
+        clearInterval(interval); // 當所有結果都處理完後停止定時器
+      }
+    }, 50);
   } catch {
-    console.log(worker);
     console.error("Error in uploadChunkThreads: ", error);
   }
 }
@@ -223,8 +246,7 @@ function uploadChunks() {
 
   // 取得當前選擇檔案
   // const file = selectedFiles.value[0];
-  currentFile.value = selectedFiles.value.item(0);
-
+  currentFile.value = selectedFiles.value[0];
   totalChunks.value = Math.ceil(currentFile.value.size / chunkSize);
   currentChunkIndex.value = 0;
 
@@ -256,6 +278,14 @@ function uploadChunks() {
 
   fileReceive.value.push(fileInfo);
   console.log(fileInfo);
+
+  result.value = []; // 清空result
+
+  // 清空選擇的檔案
+  selectedFiles.value = undefined; 
+  file.value.value = null;
+
+  uploadLoading.value = true; // 加載進度條
 
   // 使用遞迴上傳下一份分割的資料
   uploadChunkThreads(currentFile.value);
@@ -332,10 +362,12 @@ function test() {
       <div v-if="selectedFiles">{{ selectFileName }}</div>
       <div v-else class="upload-send-file-noselect">Please select a file.</div>
       <p>
-        <button @click="uploadChunks" :disabled="!selectedFiles">
-          Click to Upload
+        <button @click="uploadChunks" :disabled="!selectedFiles || uploadLoading">
+          <span v-if="!uploadLoading">Click to Upload</span>
+          <div v-else class="loader"></div>
         </button>
       </p>
+      
       <p class="upload-send-maxfile">(Max. File size: 25 MB)</p>
     </div>
 
@@ -444,5 +476,25 @@ function test() {
 
 .upload-delete {
   cursor: pointer;
+}
+
+.loader{
+  margin-top: 0px;
+  border: 3px solid #f3f3f3;
+  border-radius: 50%;
+  border-top: 3px solid #1e1d1e;
+  width: 20px;
+  height: 20px;
+  margin-left: 43%;
+  animation: spin 1.5s linear infinite
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 </style>

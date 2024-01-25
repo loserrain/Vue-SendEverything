@@ -89,6 +89,7 @@ const downloadCode = async () => {
 }
 
 .upload-code-box {
+  margin-top: 10px;
   input {
     background-color: #dbdbdb44;
     border: 2px solid $primary-text-gray-100;

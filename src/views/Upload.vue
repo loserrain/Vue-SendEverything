@@ -7,6 +7,8 @@ import { useUploadTab } from "../stores/upload";
 
 const uploadTab = useUploadTab();
 
+const times = ref(10 * 60 * 1000);
+
 const currentTab = computed(() => {
   return uploadTab.selectedTab;
 });
@@ -20,14 +22,14 @@ function setSelectedTab(tab) {
   uploadTab.setSelectedTab(tab);
 }
 
-const verificationCode = ref('');
+const verificationCode = ref("");
 
 const uploadData = ref(false);
 
 const handleSendFileInfo = (fileInfo) => {
   uploadData.value = fileInfo;
   verificationCode.value = uploadData.value.downloadCode;
-  console.log(verificationCode.value)
+  console.log(verificationCode.value);
   if (uploadData.value.fileName.length > 20) {
     uploadData.value.fileName =
       uploadData.value.fileName.slice(0, 8) +
@@ -51,17 +53,28 @@ const handleSelectedFile = (files) => {
 };
 
 const copyVerificationCode = () => {
-  const blob = new Blob([verificationCode.value], { type: 'text/plain' });
-  const clipboardItem = new ClipboardItem({ 'text/plain': blob });
+  const blob = new Blob([verificationCode.value], { type: "text/plain" });
+  const clipboardItem = new ClipboardItem({ "text/plain": blob });
   navigator.clipboard.write([clipboardItem]).then(
     () => {
-      console.log('Verification code copied!');
+      console.log("Verification code copied!");
     },
     (err) => {
-      console.error('Unable to copy verification code', err);
+      console.error("Unable to copy verification code", err);
     }
   );
-}
+};
+
+const transformSlotProps = (props) => {
+  const formattedProps = {};
+
+  Object.entries(props).forEach(([key, value]) => {
+    formattedProps[key] = value < 10 ? `0${value}` : String(value);
+  });
+
+  return formattedProps;
+};
+
 </script>
 
 <template>
@@ -119,6 +132,13 @@ const copyVerificationCode = () => {
             <div>
               <p>Verification code</p>
             </div>
+            <vue-countdown
+              :time="10 * 60 * 1000"
+              :transform="transformSlotProps"
+              v-slot="{ minutes, seconds }"
+            >
+              {{ minutes }} : {{ seconds }}
+            </vue-countdown>
           </div>
           <Receive />
         </div>
@@ -127,7 +147,7 @@ const copyVerificationCode = () => {
       <div class="upload-explore-hr"></div>
 
       <div class="upload-explore-preview">
-        <p v-if="!previewImage" data-stroke="File Preview">File Preview.</p>
+        <p v-if="!previewImage" data-stroke="File Preview">Picture Preview.</p>
         <img v-if="previewImage" :src="previewImage" alt="" />
       </div>
     </div>
@@ -207,19 +227,6 @@ const copyVerificationCode = () => {
       text-align: center;
     }
 
-    // p {
-    //   display: inline-block;
-    //   margin: auto;
-    //   font-size: 20px;
-    //   font-weight: 700;
-    //   background-color: #fad4d1;
-    //   border: 2px solid #d42212c1;
-    //   border-radius: 5px;
-    //   color: #d42212c1;
-    //   margin: 15px 0 15px;
-    //   padding: 3px;
-    // }
-
     .upload-code-border {
       background-image: url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' rx='10' ry='10' stroke='%23BABABAFF' stroke-width='3' stroke-dasharray='10%2c10' stroke-dashoffset='0' stroke-linecap='square'/%3e%3c/svg%3e");
       background-color: #fafafa;
@@ -230,21 +237,30 @@ const copyVerificationCode = () => {
       flex-direction: column;
       align-items: center;
       // justify-content: center;
+      position: relative;
 
       p {
         font-size: 20px;
         font-weight: 700;
-        margin-top: 10px;
+        margin-top: 15px;
         color: #c1c1c1;
         user-select: none;
         cursor: default;
+      }
+      > span {
+        font-size: 18px;
+        font-weight: 700;
+        color: #912323;
+        position: absolute;
+        right: 2%;
+        top: 5%;
       }
     }
   }
 }
 
 .upload-key-box {
-  margin-top: 33px;
+  margin-top: 32px;
   width: 280px;
   cursor: pointer;
   span {
@@ -264,7 +280,8 @@ const copyVerificationCode = () => {
 
 .upload-explore-hr {
   border: 2px solid $primary-text-gray-100;
-  width: 90%;
+  margin-right: 3px;
+  width: 92%;
 }
 
 .upload-explore-preview {

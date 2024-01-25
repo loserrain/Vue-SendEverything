@@ -48,7 +48,7 @@
 }
 
 .upload-send {
-  height: 210px;
+  height: 200px;
   background-image: url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' rx='10' ry='10' stroke='%23BABABAFF' stroke-width='3' stroke-dasharray='10%2c10' stroke-dashoffset='0' stroke-linecap='square'/%3e%3c/svg%3e");
   background-color: #fafafa;
   border-radius: 10px;
@@ -68,7 +68,7 @@
     transition: 0.3s;
 
     &:hover {
-      opacity: .7;
+      opacity: 0.7;
       // color: $primary-button-blue-100;
       // border: 5px solid $primary-button-blue-100;
     }
@@ -83,6 +83,8 @@
     font-size: 18px;
     font-weight: 700;
     padding: 8px 12px 7px;
+    width: 155px;
+    height: 35px;
     transition: 0.2s;
     position: relative;
     cursor: pointer;
@@ -100,10 +102,15 @@
         padding: 8px 12px 7px;
       }
     }
+
+    span {
+      font-size: 18px;
+      font-weight: 700;
+    }
   }
 
   div {
-    margin-top: 10px;
+    // margin-top: 10px;
     color: $primary-button-blue-100;
     font-weight: 700;
     font-size: 18px;
