@@ -1,7 +1,8 @@
 <script setup>
 import { ref, onMounted } from "vue";
 import UploadService from "../../services/uploadFilesService";
-import { calculateChunkId } from "../../uploadService/calculateChunkId.js";
+// import { calculateChunkId } from "../../uploadService/calculateChunkId.js";
+import { saveAs } from "file-saver";
 
 const emits = defineEmits(["sendFileInfo", "selectUploadFile"]);
 
@@ -10,22 +11,66 @@ const file = ref(null);
 const selectFileName = ref("");
 const outputFileName = ref("");
 
+// 檔案上傳目錄
+const fileList = ref([]);
+
 const previewImage = ref(null);
+
+// 壓縮檔案使用
+const zipFileBlob = ref(undefined);
+const zipFileName = ref("SendEverything");
 
 // 當在input選擇檔案時，會做的動作，emit則是將資料傳至Upload.vue
 function selectFile() {
   selectedFiles.value = file.value.files;
   outputFileName.value = file.value.files[0].name;
   selectFileName.value = shortenFileName(file.value.files[0].name, 24);
-  // console.log("selectedFiles.value", selectedFiles.value)
-  // 計算整個檔案的雜湊值
-  // calculateFileId(selectedFiles.value.item(0)).then((fileId) => {
-  //   console.log("File ID:", fileId);
-  //   // 這裡可以使用 fileId 進行後續操作
-  // });
-  console.log(selectFileName.value);
+  // console.log(selectFileName.value);
+  fileList.value.push(file.value.files[0]);
+  // console.log("current:", selectedFiles.value[0])
+  console.log("fileList:", fileList.value)
+
+  // createZipFile();
+
   emits("selectUploadFile", file.value.files);
 }
+
+const createZipFile = async () => {
+  const filesData = fileList.value.map((file) => ({
+    name: file.name,
+    content: file,
+  }));
+
+  console.log(filesData);
+
+  const worker = new Worker(new URL("./zipWorker.js", import.meta.url), {
+    type: "module",
+  });
+
+  const zipWorker = new Promise((resolve) => {
+    worker.postMessage({
+      filesData,
+      zipFileName: zipFileName.value
+    });
+
+    worker.onmessage = (event) => {
+      zipFileBlob.value = event.data;
+      console.log("zipFileBlob:", zipFileBlob.value);
+
+      worker.terminate();
+      resolve();
+    };
+
+    worker.onerror = (error) => {
+      console.error("Worker error: ", error);
+      resolve(); // 發生錯誤也算是完成
+    };
+
+  });
+
+  await zipWorker;
+  // saveAs(zipFileBlob.value, "example.zip")
+};
 
 // 縮減選擇檔案時的檔名(以免檔名過長跑版)
 function shortenFileName(fileName, maxLength) {
@@ -109,7 +154,7 @@ function uploadGetFiles() {
     fileInfos.value = response.data;
     const fileNames = fileInfos.value.fileName || [];
     const fileData = fileInfos.value.fileData || [];
-    console.log(response.data);
+    // console.log(response.data);
 
     shortFileName(fileNames);
 
@@ -133,8 +178,7 @@ onMounted(() => {
 const chunkSize = 5 * 1024 * 1024; // 5MB
 const totalChunks = ref(0);
 const currentChunkIndex = ref(0);
-const totalThreads =  2;
-// const fileId = "some-unique-file-id";
+const totalThreads = navigator.hardwareConcurrency || 2;
 const result = ref([]);
 const uploadLoading = ref(false);
 
@@ -157,12 +201,13 @@ async function uploadChunkThreads(file) {
       }
       // 使用 Promise 包裹 worker 的執行
       const workerPromise = new Promise((resolve) => {
-
         worker.postMessage({
           file,
           chunkSize,
           startIndex,
           endIndex,
+          fileListLength: fileList.value.length,
+          zipFileName: zipFileName.value
         });
 
         worker.onmessage = (e) => {
@@ -178,7 +223,6 @@ async function uploadChunkThreads(file) {
           console.error("Worker error: ", error);
           resolve(); // 發生錯誤也算是完成
         };
-
       });
 
       workerPromises.push(workerPromise);
@@ -189,7 +233,7 @@ async function uploadChunkThreads(file) {
     uploadLoading.value = false;
 
     // 這裡使用 setTimeout 實現每100毫秒發送一次請求
-    console.log(totalThreads)
+    console.log(totalThreads);
     let i = 0;
     const interval = setInterval(() => {
       if (i < result.value.length) {
@@ -205,6 +249,9 @@ async function uploadChunkThreads(file) {
         formData.append("totalChunks", totalChunks);
         formData.append("fileId", fileId);
         formData.append("chunkId", chunkId);
+        if(fileList.value.length >= 2) {
+          outputFileName.value = fileId
+        }
 
         // 調用上傳函數
         UploadService.uploadChunk(formData).then(() => {
@@ -230,22 +277,19 @@ async function uploadChunkThreads(file) {
         i++;
       } else {
         clearInterval(interval); // 當所有結果都處理完後停止定時器
+        fileList.value = []; // 清除檔案列表
       }
-    }, 50);
-  } catch {
+    }, 100);
+   } catch {
     console.error("Error in uploadChunkThreads: ", error);
   }
 }
 
-// 用於儲存已上傳分片的 ID
-const uploadedChunksIds = [];
-
 // 分割並上傳文件
-function uploadChunks() {
+async function uploadChunks() {
   if (!selectedFiles.value || selectedFiles.value.length === 0) return;
 
   // 取得當前選擇檔案
-  // const file = selectedFiles.value[0];
   currentFile.value = selectedFiles.value[0];
   totalChunks.value = Math.ceil(currentFile.value.size / chunkSize);
   currentChunkIndex.value = 0;
@@ -257,8 +301,20 @@ function uploadChunks() {
   progress.value[progressFileCount] = 0;
 
   // 檔名長度超過24，進行擷取
-  let fileNames = shortenFileName(currentFile.value.name, 24);
-  let fileSize = currentFile.value.size;
+  zipFileName.value = "SendEverything";
+  zipFileName.value += "_" + Date.now() + ".zip"
+  let fileNames = "";
+  let fileSize = 0;
+  if(fileList.value.length >= 2) {
+    fileNames = zipFileName.value;
+    fileList.value.forEach((file) => {
+      fileSize += parseInt(file.size);
+    })
+  } else {
+    fileNames = shortenFileName(currentFile.value.name, 24);
+    fileSize = currentFile.value.size;
+  }
+  
 
   // 決定檔案大小的單位
   let sizeUnit;
@@ -282,61 +338,68 @@ function uploadChunks() {
   result.value = []; // 清空result
 
   // 清空選擇的檔案
-  selectedFiles.value = undefined; 
+  selectedFiles.value = undefined;
   file.value.value = null;
 
   uploadLoading.value = true; // 加載進度條
 
   // 使用遞迴上傳下一份分割的資料
-  uploadChunkThreads(currentFile.value);
+  if(fileList.value.length >= 2) {
+    await createZipFile();
+    uploadChunkThreads(zipFileBlob.value);
+  } else {
+    uploadChunkThreads(currentFile.value);
+  }
+  // uploadChunkThreads(zipFileBlob.value);
+  // uploadChunkThreads(currentFile.value);
   // uploadNextChunk(file)
 }
 
-function uploadNextChunk(file) {
-  const start = currentChunkIndex.value * chunkSize;
-  const end = Math.min(start + chunkSize, file.size);
-  const chunk = file.slice(start, end);
-  progress.value[progressFileCount] = Math.ceil(
-    (100 * (currentChunkIndex.value + 1)) / totalChunks.value
-  );
+// function uploadNextChunk(file) {
+//   const start = currentChunkIndex.value * chunkSize;
+//   const end = Math.min(start + chunkSize, file.size);
+//   const chunk = file.slice(start, end);
+//   progress.value[progressFileCount] = Math.ceil(
+//     (100 * (currentChunkIndex.value + 1)) / totalChunks.value
+//   );
 
-  // 計算當前分片的 ID
-  calculateChunkId(chunk).then((chunkId) => {
-    uploadedChunksIds.push(chunkId);
+//   // 計算當前分片的 ID
+//   calculateChunkId(chunk).then((chunkId) => {
+//     uploadedChunksIds.push(chunkId);
 
-    // 計算已上傳分片的總體 ID（動態計算）
-    const totalFileId = calculateTotalFileId(uploadedChunksIds);
+//     // 計算已上傳分片的總體 ID（動態計算）
+//     const totalFileId = calculateTotalFileId(uploadedChunksIds);
 
-    // 建立FormData並加入分割資料
-    const formData = new FormData();
-    formData.append("fileChunk", chunk);
-    formData.append("chunkNumber", currentChunkIndex.value + 1);
-    formData.append("totalChunks", totalChunks.value);
-    formData.append("fileId", fileId);
-    formData.append("totalFileId", totalFileId);
+//     // 建立FormData並加入分割資料
+//     const formData = new FormData();
+//     formData.append("fileChunk", chunk);
+//     formData.append("chunkNumber", currentChunkIndex.value + 1);
+//     formData.append("totalChunks", totalChunks.value);
+//     formData.append("fileId", fileId);
+//     formData.append("totalFileId", totalFileId);
 
-    // 調用上傳函數
-    UploadService.uploadChunk(formData).then(() => {
-      currentChunkIndex.value++;
-      if (currentChunkIndex.value < totalChunks.value) {
-        uploadNextChunk(file); // 上傳下一個分割資料
-      } else {
-        // 當所有分割資料上傳完畢，通知spring合併檔案並回傳資料(檔名、大小、QRCODE與驗證碼等等)
-        UploadService.completeFileUpload(
-          fileId,
-          outputFileName.value,
-          totalFileId
-        )
-          .then((response) => {
-            console.log("File upload completed", response.data);
-          })
-          .catch((error) => {
-            console.error("Error completing file upload", error);
-          });
-      }
-    });
-  });
-}
+//     // 調用上傳函數
+//     UploadService.uploadChunk(formData).then(() => {
+//       currentChunkIndex.value++;
+//       if (currentChunkIndex.value < totalChunks.value) {
+//         uploadNextChunk(file); // 上傳下一個分割資料
+//       } else {
+//         // 當所有分割資料上傳完畢，通知spring合併檔案並回傳資料(檔名、大小、QRCODE與驗證碼等等)
+//         UploadService.completeFileUpload(
+//           fileId,
+//           outputFileName.value,
+//           totalFileId
+//         )
+//           .then((response) => {
+//             console.log("File upload completed", response.data);
+//           })
+//           .catch((error) => {
+//             console.error("Error completing file upload", error);
+//           });
+//       }
+//     });
+//   });
+// }
 
 function test() {
   UploadService.test()
@@ -362,12 +425,15 @@ function test() {
       <div v-if="selectedFiles">{{ selectFileName }}</div>
       <div v-else class="upload-send-file-noselect">Please select a file.</div>
       <p>
-        <button @click="uploadChunks" :disabled="!selectedFiles || uploadLoading">
+        <button
+          @click="uploadChunks"
+          :disabled="!selectedFiles || uploadLoading"
+        >
           <span v-if="!uploadLoading">Click to Upload</span>
           <div v-else class="loader"></div>
         </button>
       </p>
-      
+
       <p class="upload-send-maxfile">(Max. File size: 25 MB)</p>
     </div>
 
@@ -478,7 +544,7 @@ function test() {
   cursor: pointer;
 }
 
-.loader{
+.loader {
   margin-top: 0px;
   border: 3px solid #f3f3f3;
   border-radius: 50%;
@@ -486,7 +552,7 @@ function test() {
   width: 20px;
   height: 20px;
   margin-left: 43%;
-  animation: spin 1.5s linear infinite
+  animation: spin 1.5s linear infinite;
 }
 
 @keyframes spin {
