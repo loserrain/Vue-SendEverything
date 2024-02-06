@@ -1,11 +1,18 @@
 <script setup>
 import { ref, onMounted } from "vue";
 import UploadService from "../../services/uploadFilesService";
-// import { calculateChunkId } from "../../uploadService/calculateChunkId.js";
-import { saveAs } from "file-saver";
 
-const emits = defineEmits(["sendFileInfo", "selectUploadFile"]);
+const emits = defineEmits(["sendFileInfo", "selectUploadFile", "sendUploadStatus"]);
 
+// emit 傳送檔案資訊
+const sendEmitFileName = ref([]);
+const sendEmitFileSize = ref([]);
+const TotalFileSize = ref(0);
+const sendTotalFileSize = ref(0);
+const sendFileStatus = ref(false);
+// emit 傳送檔案資訊
+
+// 取得檔案blob與資訊
 const selectedFiles = ref(undefined);
 const file = ref(null);
 const selectFileName = ref("");
@@ -14,25 +21,84 @@ const outputFileName = ref("");
 // 檔案上傳目錄
 const fileList = ref([]);
 
-const previewImage = ref(null);
-
 // 壓縮檔案使用
 const zipFileBlob = ref(undefined);
 const zipFileName = ref("SendEverything");
+
+// 檔案大小的轉換
+// function formatFileSize(fileSize) {
+//   let sizeUnit;
+//   if (fileSize / 1024 < 1000) {
+//     fileSize = Math.round(fileSize / 1024);
+//     sizeUnit = "KB";
+//   } else if (fileSize / 1024 / 1024 < 1000) {
+//     fileSize = (fileSize / 1024 / 1024).toFixed(2);
+//     sizeUnit = "MB";
+//   } else {
+//     fileSize = (fileSize / 1024 / 1024 / 1024).toFixed(2);
+//     sizeUnit = "GB";
+//   }
+//   return { fileSize, sizeUnit };
+// }
+
+function formatFileSize(fileSize) {
+  const KB = 1024;
+  const MB = KB * 1024;
+  const GB = MB * 1024;
+
+  let sizeUnit;
+  let sizeValue;
+
+  if(fileSize < KB) {
+    sizeValue = fileSize;
+    sizeUnit = "B";
+  } else if(fileSize < MB) {
+    sizeValue = (fileSize / KB).toFixed(2);
+    sizeUnit = "KB";
+  } else if(fileSize < GB) {
+    sizeValue = (fileSize / MB).toFixed(2);
+    sizeUnit = "MB";
+  } else {
+    sizeValue = (fileSize / GB).toFixed(2);
+    sizeUnit = "GB";
+  }
+
+  return { sizeValue, sizeUnit }
+}
 
 // 當在input選擇檔案時，會做的動作，emit則是將資料傳至Upload.vue
 function selectFile() {
   selectedFiles.value = file.value.files;
   outputFileName.value = file.value.files[0].name;
-  selectFileName.value = shortenFileName(file.value.files[0].name, 24);
-  // console.log(selectFileName.value);
-  fileList.value.push(file.value.files[0]);
-  // console.log("current:", selectedFiles.value[0])
-  console.log("fileList:", fileList.value)
+  selectFileName.value = shortenFileName(file.value.files[0].name, 24, 10, -14);
 
-  // createZipFile();
+  for (let i = 0; i < selectedFiles.value.length; i++) {
+    fileList.value.push(selectedFiles.value[i]);
 
-  emits("selectUploadFile", file.value.files);
+    // 計算傳給Upload.vue的Name與Size
+    let formattedSize = formatFileSize(selectedFiles.value[i].size);
+    sendEmitFileName.value.push(
+      shortenFileName(selectedFiles.value[i].name, 12, 4, -8)
+    );
+    sendEmitFileSize.value.push(
+      `${formattedSize.sizeValue} ${formattedSize.sizeUnit}`
+    );
+    TotalFileSize.value += selectedFiles.value[i].size;
+    // console.log('sendTotalFileSize', sendTotalFileSize.value);
+  }
+
+  let formattedTotalSize = formatFileSize(TotalFileSize.value)
+  sendTotalFileSize.value = `${formattedTotalSize.sizeValue} ${formattedTotalSize.sizeUnit}`
+  sendFileStatus.value = true;
+  console.log(sendTotalFileSize.value)
+
+  emits("selectUploadFile", {
+    fileList: fileList.value,
+    fileName: sendEmitFileName.value,
+    fileSize: sendEmitFileSize.value,
+    totalFileSize: sendTotalFileSize.value,
+    fileStatus: sendFileStatus.value
+  });
 }
 
 const createZipFile = async () => {
@@ -50,7 +116,7 @@ const createZipFile = async () => {
   const zipWorker = new Promise((resolve) => {
     worker.postMessage({
       filesData,
-      zipFileName: zipFileName.value
+      zipFileName: zipFileName.value,
     });
 
     worker.onmessage = (event) => {
@@ -65,17 +131,15 @@ const createZipFile = async () => {
       console.error("Worker error: ", error);
       resolve(); // 發生錯誤也算是完成
     };
-
   });
 
   await zipWorker;
-  // saveAs(zipFileBlob.value, "example.zip")
 };
 
-// 縮減選擇檔案時的檔名(以免檔名過長跑版)
-function shortenFileName(fileName, maxLength) {
+// 上傳檔案區:縮減選擇檔案時的檔名(以免檔名過長跑版)
+function shortenFileName(fileName, maxLength, front, end) {
   if (fileName.length > maxLength) {
-    return `${fileName.slice(0, 10)} --- ${fileName.slice(-14)}`;
+    return `${fileName.slice(0, front)} ... ${fileName.slice(end)}`;
   }
   return fileName;
 }
@@ -87,59 +151,8 @@ const fileInfos = ref([]);
 const fileSort = ref([]);
 
 const fileReceive = ref([]);
-const qrCodeImage = ref(null);
 
-function upload() {
-  progress.value[progressFileCount] = 0;
-
-  currentFile.value = selectedFiles.value.item(0);
-
-  // 檔名長度超過24，進行擷取
-  let fileNames = shortenFileName(currentFile.value.name, 24);
-  let fileSize = currentFile.value.size;
-
-  // 決定檔案大小的單位
-  let sizeUnit;
-  if (fileSize / 1024 < 1000) {
-    fileSize = Math.round(fileSize / 1024);
-    sizeUnit = "KB";
-  } else {
-    fileSize = (fileSize / 1024 / 1024).toFixed(2);
-    sizeUnit = "MB";
-  }
-
-  const fileInfo = {
-    fileName: fileNames,
-    fileSize: `${fileSize} ${sizeUnit}`,
-  };
-
-  fileReceive.value.push(fileInfo);
-
-  UploadService.upload(currentFile.value, (event) => {
-    progress.value[progressFileCount] = Math.round(
-      (100 * event.loaded) / event.total
-    );
-
-    progressFileCount += 1;
-    console.log(progress.value);
-  })
-    .then((response) => {
-      console.log(response.data);
-      qrCodeImage.value = `data:image/png;base64,${response.data.qrcodeImg}`;
-      emits("sendFileInfo", response.data);
-      return response.data;
-    })
-    .catch(() => {
-      progress.value = 0;
-      currentFile.value = undefined;
-      console.log(message.value);
-      fileReceive.value = [];
-    });
-
-  selectedFiles.value = undefined;
-}
-
-// 檔案上傳後，檔名縮減
+// 歷史檔案區:檔案上傳後，檔名縮減
 function shortFileName(fileNames) {
   fileNames.forEach((fileName, index) => {
     if (fileName.length > 24) {
@@ -154,7 +167,6 @@ function uploadGetFiles() {
     fileInfos.value = response.data;
     const fileNames = fileInfos.value.fileName || [];
     const fileData = fileInfos.value.fileData || [];
-    // console.log(response.data);
 
     shortFileName(fileNames);
 
@@ -207,7 +219,7 @@ async function uploadChunkThreads(file) {
           startIndex,
           endIndex,
           fileListLength: fileList.value.length,
-          zipFileName: zipFileName.value
+          zipFileName: zipFileName.value,
         });
 
         worker.onmessage = (e) => {
@@ -227,38 +239,53 @@ async function uploadChunkThreads(file) {
 
       workerPromises.push(workerPromise);
     }
+
     // 等待所有 worker 完成
     await Promise.all(workerPromises);
 
+    // 加載中
     uploadLoading.value = false;
 
     // 這裡使用 setTimeout 實現每100毫秒發送一次請求
-    console.log(totalThreads);
     let i = 0;
     const interval = setInterval(() => {
       if (i < result.value.length) {
+        // 檔案分片
         const fileChunk = result.value[i].fileChunk;
+        // 分片的編號與順序
         const chunkNumber = result.value[i].chunkNumber + 1;
+        // 檔案總分片大小
         const totalChunks = result.value[i].totalChunks;
+        // 檔名
         const fileId = result.value[i].fileId;
+        // 每個分片的hash code
         const chunkId = result.value[i].chunkId;
 
+        // 將訊息加入FormData並傳入後端解析
         const formData = new FormData();
         formData.append("fileChunk", fileChunk);
         formData.append("chunkNumber", chunkNumber);
         formData.append("totalChunks", totalChunks);
         formData.append("fileId", fileId);
         formData.append("chunkId", chunkId);
-        if(fileList.value.length >= 2) {
-          outputFileName.value = fileId
+
+        // 檔案列表為複數時，修改壓縮檔的檔名
+        if (fileList.value.length >= 2) {
+          outputFileName.value = fileId;
         }
+        // formData.append("outputFileName", outputFileName.value)
 
         // 調用上傳函數
         UploadService.uploadChunk(formData).then(() => {
+          // 計算當前分片數量
           currentChunkIndex.value++;
+
+          // 利用上傳分片數與總分片數計算進度條
           progress.value[progressFileCount] = Math.ceil(
             (100 * currentChunkIndex.value) / totalChunks
           );
+
+          // 若分片數量與總分片數量相同，通知後端合併
           if (currentChunkIndex.value === totalChunks) {
             UploadService.completeFileUpload(
               fileId,
@@ -267,6 +294,7 @@ async function uploadChunkThreads(file) {
             )
               .then((response) => {
                 console.log("File upload completed", response.data);
+                // emits('sendFileInfo', response.data);
               })
               .catch((error) => {
                 console.error("Error completing file upload", error);
@@ -280,7 +308,7 @@ async function uploadChunkThreads(file) {
         fileList.value = []; // 清除檔案列表
       }
     }, 100);
-   } catch {
+  } catch {
     console.error("Error in uploadChunkThreads: ", error);
   }
 }
@@ -302,34 +330,26 @@ async function uploadChunks() {
 
   // 檔名長度超過24，進行擷取
   zipFileName.value = "SendEverything";
-  zipFileName.value += "_" + Date.now() + ".zip"
+  zipFileName.value += "_" + Date.now() + ".zip";
   let fileNames = "";
   let fileSize = 0;
-  if(fileList.value.length >= 2) {
+  if (fileList.value.length >= 2) {
     fileNames = zipFileName.value;
     fileList.value.forEach((file) => {
       fileSize += parseInt(file.size);
-    })
+    });
   } else {
-    fileNames = shortenFileName(currentFile.value.name, 24);
+    fileNames = shortenFileName(currentFile.value.name, 24, 10, -14);
     fileSize = currentFile.value.size;
   }
-  
 
   // 決定檔案大小的單位
-  let sizeUnit;
-  if (fileSize / 1024 < 1000) {
-    fileSize = Math.round(fileSize / 1024);
-    sizeUnit = "KB";
-  } else {
-    fileSize = (fileSize / 1024 / 1024).toFixed(2);
-    sizeUnit = "MB";
-  }
+  const formattedSize = formatFileSize(fileSize);
 
   // 上傳檔案區
   const fileInfo = {
     fileName: fileNames,
-    fileSize: `${fileSize} ${sizeUnit}`,
+    fileSize: `${formattedSize.sizeValue} ${formattedSize.sizeUnit}`,
   };
 
   fileReceive.value.push(fileInfo);
@@ -343,72 +363,17 @@ async function uploadChunks() {
 
   uploadLoading.value = true; // 加載進度條
 
+  // 傳送檔案上傳狀態到upload
+  sendFileStatus.value = false;
+  emits("sendUploadStatus", sendFileStatus.value)
+
   // 使用遞迴上傳下一份分割的資料
-  if(fileList.value.length >= 2) {
+  if (fileList.value.length >= 2) {
     await createZipFile();
     uploadChunkThreads(zipFileBlob.value);
   } else {
     uploadChunkThreads(currentFile.value);
   }
-  // uploadChunkThreads(zipFileBlob.value);
-  // uploadChunkThreads(currentFile.value);
-  // uploadNextChunk(file)
-}
-
-// function uploadNextChunk(file) {
-//   const start = currentChunkIndex.value * chunkSize;
-//   const end = Math.min(start + chunkSize, file.size);
-//   const chunk = file.slice(start, end);
-//   progress.value[progressFileCount] = Math.ceil(
-//     (100 * (currentChunkIndex.value + 1)) / totalChunks.value
-//   );
-
-//   // 計算當前分片的 ID
-//   calculateChunkId(chunk).then((chunkId) => {
-//     uploadedChunksIds.push(chunkId);
-
-//     // 計算已上傳分片的總體 ID（動態計算）
-//     const totalFileId = calculateTotalFileId(uploadedChunksIds);
-
-//     // 建立FormData並加入分割資料
-//     const formData = new FormData();
-//     formData.append("fileChunk", chunk);
-//     formData.append("chunkNumber", currentChunkIndex.value + 1);
-//     formData.append("totalChunks", totalChunks.value);
-//     formData.append("fileId", fileId);
-//     formData.append("totalFileId", totalFileId);
-
-//     // 調用上傳函數
-//     UploadService.uploadChunk(formData).then(() => {
-//       currentChunkIndex.value++;
-//       if (currentChunkIndex.value < totalChunks.value) {
-//         uploadNextChunk(file); // 上傳下一個分割資料
-//       } else {
-//         // 當所有分割資料上傳完畢，通知spring合併檔案並回傳資料(檔名、大小、QRCODE與驗證碼等等)
-//         UploadService.completeFileUpload(
-//           fileId,
-//           outputFileName.value,
-//           totalFileId
-//         )
-//           .then((response) => {
-//             console.log("File upload completed", response.data);
-//           })
-//           .catch((error) => {
-//             console.error("Error completing file upload", error);
-//           });
-//       }
-//     });
-//   });
-// }
-
-function test() {
-  UploadService.test()
-    .then((response) => {
-      console.log("test", response.data);
-    })
-    .catch((error) => {
-      console.error("Error completing file upload", error);
-    });
 }
 
 // ----------------------------------------測試區-------------------------------------------
@@ -420,7 +385,13 @@ function test() {
     <div class="upload-send">
       <label for="fileInput" class="upload-fileinput">
         <font-awesome-icon icon="cloud-arrow-up" class="upload-font" />
-        <input type="file" id="fileInput" ref="file" @change="selectFile" />
+        <input
+          type="file"
+          id="fileInput"
+          multiple
+          ref="file"
+          @change="selectFile"
+        />
       </label>
       <div v-if="selectedFiles">{{ selectFileName }}</div>
       <div v-else class="upload-send-file-noselect">Please select a file.</div>
@@ -436,6 +407,7 @@ function test() {
 
       <p class="upload-send-maxfile">(Max. File size: 25 MB)</p>
     </div>
+    <!-- upload的檔案傳送列表 -->
 
     <!-- 上傳時的檔案區 -->
     <div class="upload-sort" v-if="currentFile">
@@ -470,6 +442,7 @@ function test() {
         </div>
       </div>
     </div>
+    <!-- 上傳時的檔案區 -->
 
     <!-- 歷史紀錄區(登入後) -->
     <p class="uploat-history-line"></p>
@@ -495,10 +468,7 @@ function test() {
         </div>
       </div>
     </div>
-
-    <div v-if="previewImage">
-      <img :src="previewImage" alt="" />
-    </div>
+    <!-- 歷史紀錄區(登入後) -->
   </div>
 </template>
 

@@ -40,6 +40,11 @@ function setSelectedTab(tab) {
     <div class="navbar-nav">
       <div>
         <div class="navbar-login" v-if="!currentUser">
+          <RouterLink to="/filesCard" class="nav-link">
+            <li class="nav-item">
+              <font-awesome-icon icon="circle-arrow-up" /> FilesCard
+            </li>
+          </RouterLink>
           <RouterLink
             to="/uploadfile"
             class="nav-link"
@@ -105,7 +110,7 @@ li {
   cursor: pointer;
 }
 
-.nav-user{
+.nav-user {
   margin-right: 15px;
   cursor: default;
 }

@@ -6,7 +6,7 @@ import UploadFileViews from '../views/Upload.vue'
 import CheckGoogle from '../components/CheckGoogle.vue';
 
 const Profile = () => import('@/components/Profile.vue')
-
+const FilesCard = () => import('../views/FilesCard.vue')
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -44,6 +44,11 @@ const router = createRouter({
       path: '/checkGoogle',
       name: 'checkGoogle',
       component: CheckGoogle
+    },
+    {
+      path: '/filesCard',
+      name: 'fileCsard',
+      component: FilesCard
     }
   ]
 })

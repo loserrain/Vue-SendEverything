@@ -1,7 +1,7 @@
 import JSZip from 'jszip';
 
 onmessage = (event) => {
-    const { filesData, zipFileName } = event.data;
+    const { filesData } = event.data;
     const zip = new JSZip();
 
     filesData.forEach(({ name, content }) => {

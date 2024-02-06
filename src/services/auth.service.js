@@ -18,7 +18,7 @@ class AuthService {
       });
   }
 
-  oauth2() {
+  async oauth2() {
     return axios
       .get(API_URL + "oauth2/redirect", {
         headers: {

@@ -5,12 +5,14 @@ export function calculateChunkId(file, chunkNumber, chunkSize, fileListLength, z
         const start = chunkNumber * chunkSize;
         const end = start + chunkSize;
         let fileId = "";
+
+        // 判斷檔案列表長度，如果大於二，修改fileId
         if(fileListLength >= 2){
             fileId = zipFileName;
         } else {
             fileId = file.name + "_" + file.lastModified.valueOf() + "_" + file.size;
         }
-        // console.log("workerFileid:", fileId)
+
         const spark = new SparkMD5.ArrayBuffer();
         const totalChunks = Math.ceil(file.size / chunkSize);
         const fileReader = new FileReader();

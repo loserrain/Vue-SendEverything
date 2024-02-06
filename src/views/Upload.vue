@@ -5,6 +5,8 @@ import Receive from "../components/upload/UploadText.vue";
 import Message from "../components/upload/UploadMessage.vue";
 import { useUploadTab } from "../stores/upload";
 
+const emits = defineEmits(["sendImgInfo"]);
+
 const uploadTab = useUploadTab();
 
 const times = ref(10 * 60 * 1000);
@@ -25,33 +27,77 @@ function setSelectedTab(tab) {
 const verificationCode = ref("");
 
 const uploadData = ref(false);
+const uploadFile = ref(undefined);
+// const uploadFileLength = ref(0);
+const uploadFileName = ref([]);
+const uploadFileSize = ref([]);
+const uploadFileTotalSize = ref(0);
+const uploadFileStatus = ref(false);
 
 const handleSendFileInfo = (fileInfo) => {
   uploadData.value = fileInfo;
   verificationCode.value = uploadData.value.downloadCode;
+
+  // 當取得驗證碼時，更改檔案列表狀態
+  // uploadFileStatus.value = false;
   console.log(verificationCode.value);
-  if (uploadData.value.fileName.length > 20) {
-    uploadData.value.fileName =
-      uploadData.value.fileName.slice(0, 8) +
-      " --- " +
-      uploadData.value.fileName.slice(-12);
-  }
 };
 
 const previewImage = ref(null);
 
-const handleSelectedFile = (files) => {
+const handleSelectedFile = (fileData) => {
   const reader = new FileReader();
-  const selectFileSize = files[0].size / 1024 / 1024;
-  // 大於30MB就不顯示檔案預覽
+
+  const { fileList, fileName, fileSize, totalFileSize, fileStatus } = fileData;
+  uploadFile.value = fileList;
+  // uploadFileLength.value = fileList.length;
+  uploadFileName.value = fileName;
+  uploadFileSize.value = fileSize;
+  uploadFileTotalSize.value = totalFileSize;
+  uploadFileStatus.value = fileStatus; // 檔案列表狀態
+
+  // console.log("uploadFileName.value:", uploadFileName.value);
+  // console.log("uploadFileSize.value:", uploadFileSize.value);
+  // console.log("uploadFileLength:", uploadFileLength.value);
+  console.log("fileList:", uploadFile.value);
+
+  // const selectFileSize = files[0].size / 1024 / 1024;
+  // // 大於30MB就不顯示檔案預覽
+  // if (selectFileSize < 30) {
+  //   reader.readAsDataURL(files[0]);
+  // }
+  // reader.onload = () => {
+  //   previewImage.value = reader.result;
+  // };
+};
+
+const handleUploadStatus = (fileStatus) => {
+  uploadFileStatus.value = fileStatus;
+  console.log("uploadFileStatus.value", uploadFileStatus.value);
+};
+
+const FileClickPreview = (index) => {
+  const reader = new FileReader();
+  const selectFileSize = uploadFile.value[index].size / 1024 / 1024;
   if (selectFileSize < 30) {
-    reader.readAsDataURL(files[0]);
+    reader.readAsDataURL(uploadFile.value[index]);
   }
   reader.onload = () => {
     previewImage.value = reader.result;
   };
 };
 
+// 放大圖片預覽區域
+const previewImageStatus = ref(false);
+
+const showBigImg = () => {
+  previewImageStatus.value = true;
+  emits("sendImgInfo", { img: previewImage.value, status: previewImageStatus.value })
+  previewImageStatus.value = false;
+}
+// 放大圖片預覽區域
+
+// 複製驗證碼
 const copyVerificationCode = () => {
   const blob = new Blob([verificationCode.value], { type: "text/plain" });
   const clipboardItem = new ClipboardItem({ "text/plain": blob });
@@ -74,7 +120,6 @@ const transformSlotProps = (props) => {
 
   return formattedProps;
 };
-
 </script>
 
 <template>
@@ -93,16 +138,48 @@ const transformSlotProps = (props) => {
           :is="tabs[currentTab]"
           @sendFileInfo="handleSendFileInfo"
           @selectUploadFile="handleSelectedFile"
-        ></component>
+          @sendUploadStatus="handleUploadStatus"
+        >
+        </component>
       </div>
     </div>
 
     <div class="upload-explore-container">
       <div class="upload-explore-download">
         <div class="upload-explore-qrcode">
-          <div class="upload-qrcode-bg" v-if="!uploadData">
-            <img src="../assets/image/QRCodeExample.gif" alt="" />
-            <p>QR Code</p>
+          <div v-if="!uploadData">
+            <div class="upload-qrcode-bg" v-if="!uploadFileStatus">
+              <img src="../assets/image/QRCodeExample.gif" alt="" />
+              <p>QR Code</p>
+            </div>
+            <div class="upload-fileList-block" v-else>
+              <h2>Upload File List:</h2>
+              <p></p>
+              <div>
+                <div class="upload-fileList">
+                  <div
+                    v-for="(fileName, index) in uploadFileName"
+                    :key="index"
+                    @click="FileClickPreview(index)"
+                  >
+                    <p>{{ fileName }}</p>
+                    <p>{{ uploadFileSize[index] }}</p>
+                  </div>
+                </div>
+              </div>
+
+              <p></p>
+
+              <div class="upload-totalFileSize">
+                <p>Total Size:</p>
+                <p>{{ uploadFileTotalSize }}</p>
+              </div>
+
+              <!-- <div class="Total-Size">
+                <span class="Total">Total Size:</span>
+                <span class="FileSize">123 MB</span>
+              </div> -->
+            </div>
           </div>
           <div v-else>
             <img
@@ -148,7 +225,7 @@ const transformSlotProps = (props) => {
 
       <div class="upload-explore-preview">
         <p v-if="!previewImage" data-stroke="File Preview">Picture Preview.</p>
-        <img v-if="previewImage" :src="previewImage" alt="" />
+        <img v-else :src="previewImage" @click="showBigImg" alt="" />
       </div>
     </div>
   </div>
@@ -156,6 +233,16 @@ const transformSlotProps = (props) => {
 
 <style lang="scss" scoped>
 @import "../assets/styles/layout/upload";
+
+// .upload-image {
+//   position: absolute;
+//   z-index: 2;
+//   width: 100%;
+//   display: flex;
+//   justify-content: center;
+//   // margin-top: 10%;
+
+// }
 
 .upload-view {
   display: flex;
@@ -202,6 +289,8 @@ const transformSlotProps = (props) => {
 
   .upload-qrcode-bg {
     position: relative;
+    width: 100%;
+    height: 100%;
 
     p {
       position: absolute;
@@ -215,6 +304,88 @@ const transformSlotProps = (props) => {
       user-select: none;
       cursor: default;
     }
+  }
+
+  .upload-fileList-block {
+    background-color: #fafafa;
+    width: 100%;
+    height: 310px;
+    // padding: 10px  5px 0;
+    overflow: hidden;
+
+    h2 {
+      background-color: #fafafa;
+      font-size: 20px;
+      font-weight: 700;
+
+      // box-shadow: 2px 2px 1px 2px rgba(0, 0, 0, 0.2);
+      padding: 10px 15px 6px 15px;
+    }
+
+    > p {
+      margin: 2px 0px 2px;
+      border: 1.5px solid #dedede;
+    }
+
+    > div {
+      overflow: auto;
+    }
+
+    .upload-fileList {
+
+      // 檔案列表反轉
+      display: flex;
+      flex-direction: column-reverse;
+      justify-content: start;
+      // 檔案列表反轉
+
+      height: 225px;
+      margin: 0 5px 0 5px;
+
+      div {
+        display: flex;
+        justify-content: space-between;
+        padding: 2px 3px 2px;
+        cursor: pointer;
+      }
+      div:nth-child(odd) {
+        background-color: #e0e0e0;
+
+        margin: 2px 0px 2px;
+        border-radius: 2px;
+      }
+    }
+
+    .upload-totalFileSize {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: #ececec;
+      height: 33px;
+      padding: 0 5px 0;
+      p {
+        font-size: 18px;
+        font-weight: 700;
+        color: #656565;
+      }
+    }
+
+    // .Total-Size{
+    //   margin: 0;
+    //   width: 100%;
+    //   height: 42px;
+    //   padding: 10px 10px;
+    //   background-color: #ececec;
+    // }
+
+    // .Total {
+    //   margin: 50% 0;
+    //   font-weight: bolder;
+    // }
+    // .FileSize{
+    //   float: right;
+    //   font-weight: bolder;
+    // }
   }
 
   .upload-explore-code {
@@ -247,6 +418,7 @@ const transformSlotProps = (props) => {
         user-select: none;
         cursor: default;
       }
+
       > span {
         font-size: 18px;
         font-weight: 700;
@@ -263,6 +435,7 @@ const transformSlotProps = (props) => {
   margin-top: 32px;
   width: 280px;
   cursor: pointer;
+
   span {
     background-color: #e5e4e445;
     border: 1px solid $primary-text-gray-100;
@@ -298,6 +471,7 @@ const transformSlotProps = (props) => {
   img {
     display: block;
     width: calc(100% - 0.3%);
+    cursor: pointer;
   }
 
   p {
@@ -313,6 +487,7 @@ const transformSlotProps = (props) => {
     cursor: default;
   }
 }
+
 .upload-button {
   &.active {
     color: black;

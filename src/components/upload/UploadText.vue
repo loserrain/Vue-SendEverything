@@ -1,13 +1,15 @@
 <script setup>
 import axios from "axios";
-import { ref, watchEffect } from "vue";
+import { ref, watchEffect, onMounted } from "vue";
 
 const code = ref("");
 const isComplete = ref(false);
 const downloadLink = ref(null);
 
-watchEffect(() => {
-  isComplete.value = code.value.length === 6;
+onMounted(() => {
+  watchEffect(() => {
+    isComplete.value = code.value.length === 6;
+  });
 });
 
 const downloadCode = async () => {
@@ -15,6 +17,8 @@ const downloadCode = async () => {
     if (isComplete.value) {
       // nginx 更改網址
       const url = `http://localhost:8080/api/auth/downloadFileByCode/${code.value}`;
+      // const response = await axios.get(url);
+      // window.location.href = response.data.fileDownloadUri;
       const response = await axios.get(url, { responseType: "blob" });
       window.location.href = response.request.responseURL;
     }
@@ -53,7 +57,6 @@ const downloadCode = async () => {
   flex-direction: column;
   align-items: center;
   justify-content: space-evenly;
-
 
   button {
     color: #fff;
@@ -103,7 +106,7 @@ const downloadCode = async () => {
       outline: none;
       border: solid 2px $primary-button-blue-100;
       box-shadow: 0px 1px 8px rgba(0, 0, 0, 0.28);
-      transition: 0.1s; 
+      transition: 0.1s;
     }
   }
 }
