@@ -4,13 +4,13 @@ import UploadService from "../../services/uploadFilesService";
 
 const emits = defineEmits(["sendFileInfo", "selectUploadFile", "sendUploadStatus"]);
 
-// emit 傳送檔案資訊
+// emit 傳送檔案資訊至Upload.vue元件
 const sendEmitFileName = ref([]);
 const sendEmitFileSize = ref([]);
 const TotalFileSize = ref(0);
 const sendTotalFileSize = ref(0);
 const sendFileStatus = ref(false);
-// emit 傳送檔案資訊
+// emit 傳送檔案資訊至Upload.vue元件
 
 // 取得檔案blob與資訊
 const selectedFiles = ref(undefined);
@@ -76,21 +76,20 @@ function selectFile() {
     fileList.value.push(selectedFiles.value[i]);
 
     // 計算傳給Upload.vue的Name與Size
-    let formattedSize = formatFileSize(selectedFiles.value[i].size);
     sendEmitFileName.value.push(
       shortenFileName(selectedFiles.value[i].name, 12, 4, -8)
     );
+    let formattedSize = formatFileSize(selectedFiles.value[i].size);
     sendEmitFileSize.value.push(
       `${formattedSize.sizeValue} ${formattedSize.sizeUnit}`
     );
     TotalFileSize.value += selectedFiles.value[i].size;
-    // console.log('sendTotalFileSize', sendTotalFileSize.value);
   }
 
   let formattedTotalSize = formatFileSize(TotalFileSize.value)
   sendTotalFileSize.value = `${formattedTotalSize.sizeValue} ${formattedTotalSize.sizeUnit}`
+  // 計算傳給Upload.vue的檔案列表狀態(是否顯現)
   sendFileStatus.value = true;
-  console.log(sendTotalFileSize.value)
 
   emits("selectUploadFile", {
     fileList: fileList.value,
@@ -101,28 +100,29 @@ function selectFile() {
   });
 }
 
+// ---------------------------- zip壓縮 ----------------------------
+// 多檔壓縮為zip檔，並使用WebWorker另開執行緒，加速壓縮時間，並使其不占用瀏覽器的效能
 const createZipFile = async () => {
   const filesData = fileList.value.map((file) => ({
     name: file.name,
     content: file,
   }));
 
-  console.log(filesData);
-
-  const worker = new Worker(new URL("./zipWorker.js", import.meta.url), {
+  const worker = new Worker(new URL("../../uploadService/zipWorker.js", import.meta.url), {
     type: "module",
   });
 
   const zipWorker = new Promise((resolve) => {
+    // 將訊息傳送給執行worker的JS檔案
     worker.postMessage({
       filesData,
       zipFileName: zipFileName.value,
     });
 
+    // 接收來自worker的JS檔案傳遞過來的參數
     worker.onmessage = (event) => {
       zipFileBlob.value = event.data;
-      console.log("zipFileBlob:", zipFileBlob.value);
-
+      // 停止worker的運行，並結束Promise
       worker.terminate();
       resolve();
     };
@@ -136,21 +136,16 @@ const createZipFile = async () => {
   await zipWorker;
 };
 
-// 上傳檔案區:縮減選擇檔案時的檔名(以免檔名過長跑版)
+// ---------------------------- zip壓縮 ----------------------------
+
+// ---------------------------- 上傳檔案區 ----------------------------
+// 縮減選擇檔案時的檔名(以免檔名過長跑版)
 function shortenFileName(fileName, maxLength, front, end) {
   if (fileName.length > maxLength) {
     return `${fileName.slice(0, front)} ... ${fileName.slice(end)}`;
   }
   return fileName;
 }
-
-const currentFile = ref(undefined);
-const progress = ref([]);
-let progressFileCount = 0;
-const fileInfos = ref([]);
-const fileSort = ref([]);
-
-const fileReceive = ref([]);
 
 // 歷史檔案區:檔案上傳後，檔名縮減
 function shortFileName(fileNames) {
@@ -161,6 +156,7 @@ function shortFileName(fileNames) {
   });
 }
 
+const fileSort = ref([]);
 // 上傳檔案後取得資料
 function uploadGetFiles() {
   UploadService.getFiles().then((response) => {
@@ -183,26 +179,32 @@ function uploadGetFiles() {
 onMounted(() => {
   uploadGetFiles();
 });
+// ---------------------------- 上傳檔案區 ----------------------------
 
-// ----------------------------------------測試區-------------------------------------------
+// --------------------------------------------------------
+const currentFile = ref(undefined);
+const progress = ref(0);
+const fileInfos = ref([]);
+const fileReceive = ref([]);
 
 // 增加檔案分割的資料
 const chunkSize = 5 * 1024 * 1024; // 5MB
 const totalChunks = ref(0);
 const currentChunkIndex = ref(0);
 const totalThreads = navigator.hardwareConcurrency || 2;
-const result = ref([]);
+const workerResult = ref([]);
 const uploadLoading = ref(false);
 
+// 多執行緒將檔案分片後上傳至陣列，使其按照順序將檔案上傳至後端進行管理
 async function uploadChunkThreads(file) {
   try {
     const chunkCount = Math.ceil(file.size / chunkSize); // 檔案總分片次數
     const workerChunkCount = Math.ceil(chunkCount / totalThreads); // 每個worker分配到的分片數量
     const workerPromises = []; // 用來存放每個 worker 的 Promise
-    let finishCount = 0;
 
     for (let i = 0; i < totalThreads; i++) {
-      const worker = new Worker(new URL("./uploadWorker.js", import.meta.url), {
+      // import.meta.url指向當前執行module的JavaScript文件的位置
+      const worker = new Worker(new URL("../../uploadService/uploadWorker.js", import.meta.url), {
         type: "module",
       });
 
@@ -224,10 +226,9 @@ async function uploadChunkThreads(file) {
 
         worker.onmessage = (e) => {
           for (let i = startIndex; i < endIndex; i++) {
-            result.value[i] = e.data[i - startIndex];
+            workerResult.value[i] = e.data[i - startIndex];
           }
           worker.terminate();
-          finishCount++;
           resolve(); // 告訴外部這個 worker 完成了
         };
 
@@ -249,17 +250,17 @@ async function uploadChunkThreads(file) {
     // 這裡使用 setTimeout 實現每100毫秒發送一次請求
     let i = 0;
     const interval = setInterval(() => {
-      if (i < result.value.length) {
+      if (i < workerResult.value.length) {
         // 檔案分片
-        const fileChunk = result.value[i].fileChunk;
+        const fileChunk = workerResult.value[i].fileChunk;
         // 分片的編號與順序
-        const chunkNumber = result.value[i].chunkNumber + 1;
+        const chunkNumber = workerResult.value[i].chunkNumber + 1;
         // 檔案總分片大小
-        const totalChunks = result.value[i].totalChunks;
+        const totalChunks = workerResult.value[i].totalChunks;
         // 檔名
-        const fileId = result.value[i].fileId;
+        const fileId = workerResult.value[i].fileId;
         // 每個分片的hash code
-        const chunkId = result.value[i].chunkId;
+        const chunkId = workerResult.value[i].chunkId;
 
         // 將訊息加入FormData並傳入後端解析
         const formData = new FormData();
@@ -281,7 +282,7 @@ async function uploadChunkThreads(file) {
           currentChunkIndex.value++;
 
           // 利用上傳分片數與總分片數計算進度條
-          progress.value[progressFileCount] = Math.ceil(
+          progress.value = Math.ceil(
             (100 * currentChunkIndex.value) / totalChunks
           );
 
@@ -306,6 +307,11 @@ async function uploadChunkThreads(file) {
       } else {
         clearInterval(interval); // 當所有結果都處理完後停止定時器
         fileList.value = []; // 清除檔案列表
+
+        // 清除傳遞給upload.vue父組件的檔名、檔案大小與總檔案大小
+        TotalFileSize.value = 0;
+        sendEmitFileName.value = [];
+        sendEmitFileSize.value = [];
       }
     }, 100);
   } catch {
@@ -326,7 +332,7 @@ async function uploadChunks() {
   fileReceive.value = [];
 
   // 進度條設定初始值
-  progress.value[progressFileCount] = 0;
+  progress.value = 0;
 
   // 檔名長度超過24，進行擷取
   zipFileName.value = "SendEverything";
@@ -355,13 +361,13 @@ async function uploadChunks() {
   fileReceive.value.push(fileInfo);
   console.log(fileInfo);
 
-  result.value = []; // 清空result
+  workerResult.value = []; // 清空workerResult
 
   // 清空選擇的檔案
   selectedFiles.value = undefined;
   file.value.value = null;
 
-  uploadLoading.value = true; // 加載進度條
+  uploadLoading.value = true; // 加載進度條完成
 
   // 傳送檔案上傳狀態到upload
   sendFileStatus.value = false;
@@ -432,13 +438,13 @@ async function uploadChunks() {
           <div class="upload-progress">
             <div
               class="upload-progress-bar upload-progress-bar-striped"
-              :aria-valuenow="progress[index]"
+              :aria-valuenow="progress"
               aria-valuemin="0"
               aria-valuemax="100"
-              :style="{ width: progress[index] + '%' }"
+              :style="{ width: progress + '%' }"
             ></div>
           </div>
-          <div>{{ progress[index] }}%</div>
+          <div>{{ progress }}%</div>
         </div>
       </div>
     </div>
@@ -474,11 +480,6 @@ async function uploadChunks() {
 
 <style lang="scss" scoped>
 @import "../../assets/styles/layout/upload";
-.container {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
 
 // 將上傳時的檔案順序相反，使最新上傳檔案在最上面
 .upload-sort {

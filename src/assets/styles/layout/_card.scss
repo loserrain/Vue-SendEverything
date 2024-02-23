@@ -113,33 +113,55 @@ svg {
   display: flex;
   flex-direction: column;
   margin-bottom: 20px;
+  position: relative;
 
   label {
-    font-size: 16px;
+    position: absolute;
+    top: 33px;
+    left: 25px;
+    font-size: 20px;
     color: $primary-text-gray-300;
+    transition: all .3s ease;
   }
 
-  input{
+  input {
     font-size: 18px;
   }
-}
 
-.form-control {
-  border: solid 1.5px $primary-text-gray-200;
-  border-radius: 5px;
-  height: 50px;
-  background: none;
-  margin: 10px 0 0px;
-  padding-left: 25px;
+  .form-control {
+    border: solid 1.5px $primary-text-gray-200;
+    border-radius: 5px;
+    height: 50px;
+    background: none;
+    margin: 20px 0 0px;
+    padding-left: 25px;
 
-  &:focus-visible {
-    background-color: #ffffff;
-    outline: none;
-    border: solid 1.5px $primary-button-blue-100;
-    box-shadow: 0px 1px 8px rgba(0, 0, 0, 0.28);
-    transition: 0.1s;
+    &:focus-visible {
+      background-color: #ffffff;
+      outline: none;
+      border: solid 1.5px $primary-button-blue-100;
+      box-shadow: 0px 1px 8px rgba(0, 0, 0, 0.28);
+      transition: 0.1s;
+    }
+
+    &:focus-visible + label, &:not(:placeholder-shown) + label {
+      top: -7px;
+      left: 0px;
+      font-size: 18px;
+      color: $primary-button-blue-100;
+    }
   }
+
+  // &:focus-within:not(:placeholder-shown) label {
+  //   top: -7px;
+  //   left: 0px;
+  //   font-size: 18px;
+  //   color: $primary-button-blue-100;
+  // }
+
 }
+
+
 
 
 .card-button {
@@ -176,7 +198,7 @@ svg {
 }
 
 .card-button-field {
-  margin-top: 30px;
+  margin-top: 40px;
 }
 
 .auth-button {
@@ -185,7 +207,7 @@ svg {
   color: #000000;
   position: relative;
 
-  img{
+  img {
     width: 20px;
     height: 20px;
     position: absolute;
@@ -193,11 +215,12 @@ svg {
   }
 }
 
-.card-register{
+.card-register {
   text-align: center;
   margin-top: 15px;
   color: $primary-text-gray-200;
-  span{
+
+  span {
     color: $primary-button-blue-100;
     cursor: pointer;
   }

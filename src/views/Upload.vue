@@ -28,7 +28,6 @@ const verificationCode = ref("");
 
 const uploadData = ref(false);
 const uploadFile = ref(undefined);
-// const uploadFileLength = ref(0);
 const uploadFileName = ref([]);
 const uploadFileSize = ref([]);
 const uploadFileTotalSize = ref(0);
@@ -50,25 +49,12 @@ const handleSelectedFile = (fileData) => {
 
   const { fileList, fileName, fileSize, totalFileSize, fileStatus } = fileData;
   uploadFile.value = fileList;
-  // uploadFileLength.value = fileList.length;
   uploadFileName.value = fileName;
   uploadFileSize.value = fileSize;
   uploadFileTotalSize.value = totalFileSize;
   uploadFileStatus.value = fileStatus; // 檔案列表狀態
-
-  // console.log("uploadFileName.value:", uploadFileName.value);
-  // console.log("uploadFileSize.value:", uploadFileSize.value);
-  // console.log("uploadFileLength:", uploadFileLength.value);
   console.log("fileList:", uploadFile.value);
 
-  // const selectFileSize = files[0].size / 1024 / 1024;
-  // // 大於30MB就不顯示檔案預覽
-  // if (selectFileSize < 30) {
-  //   reader.readAsDataURL(files[0]);
-  // }
-  // reader.onload = () => {
-  //   previewImage.value = reader.result;
-  // };
 };
 
 const handleUploadStatus = (fileStatus) => {
@@ -149,7 +135,7 @@ const transformSlotProps = (props) => {
         <div class="upload-explore-qrcode">
           <div v-if="!uploadData">
             <div class="upload-qrcode-bg" v-if="!uploadFileStatus">
-              <img src="../assets/image/QRCodeExample.gif" alt="" />
+              <!-- <img src="../assets/image/QRCodeExample.gif" alt="" /> -->
               <p>QR Code</p>
             </div>
             <div class="upload-fileList-block" v-else>
@@ -254,6 +240,7 @@ const transformSlotProps = (props) => {
   border: 3px solid #ca878f4d;
   box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.135);
   width: 520px;
+
 }
 
 .upload-explore-container {
@@ -276,7 +263,8 @@ const transformSlotProps = (props) => {
   }
 
   .upload-explore-qrcode {
-    margin: 2.5vh 0 2.5vh 10px;
+    // margin: 2.5vh 0 2.5vh 10px;
+    margin: 25px 0 25px 10px;
     width: 40%;
     border: 5px solid #dbdbdbbf;
     border-radius: 5px;
@@ -290,7 +278,8 @@ const transformSlotProps = (props) => {
   .upload-qrcode-bg {
     position: relative;
     width: 100%;
-    height: 100%;
+    height: 310px;
+    background-color: #F9F6F6;
 
     p {
       position: absolute;
@@ -402,7 +391,8 @@ const transformSlotProps = (props) => {
       background-image: url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' rx='10' ry='10' stroke='%23BABABAFF' stroke-width='3' stroke-dasharray='10%2c10' stroke-dashoffset='0' stroke-linecap='square'/%3e%3c/svg%3e");
       background-color: #fafafa;
       border-radius: 10px;
-      margin: 2.8vh 15px 0 15px;
+      // margin: 2.8vh 15px 0 15px;
+      margin: 28px 15px 0 15px;
       height: 40%;
       display: flex;
       flex-direction: column;
@@ -490,11 +480,15 @@ const transformSlotProps = (props) => {
 
 .upload-button {
   &.active {
-    color: black;
+    color: #327CCF;
+    background-color: #e7f0fc;
+    border-radius: 6px;
   }
 
   &:hover {
-    color: black;
+    color: #656973;
+    background-color: #ECEFF1;
+    border-radius: 6px;
   }
 }
 </style>

@@ -36,6 +36,7 @@ window.addEventListener("message", (event) => {
 });
 
 function loginNewGoogle() {
+  // google登入畫面
   const authUrl = "http://localhost:8080/oauth2/authorization/google";
   window.open(authUrl, "_blank", "width=550,height=550");
 }
@@ -132,13 +133,13 @@ function handleLogin(user) {
 
           <Form @submit="handleLogin" :validation-schema="schema">
             <div class="card-field">
+              <Field id="username" name="username" type="text" class="form-control" placeholder=" " />
               <label for="username">Username</label>
-              <Field name="username" type="text" class="form-control" />
               <ErrorMessage name="username" class="error-feedback" />
             </div>
             <div class="card-field">
+              <Field id="password" name="password" type="password" class="form-control" placeholder=" " />
               <label for="password">Password</label>
-              <Field name="password" type="password" class="form-control" />
               <ErrorMessage name="password" class="error-feedback" />
             </div>
 

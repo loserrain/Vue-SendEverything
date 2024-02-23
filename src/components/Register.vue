@@ -22,7 +22,7 @@ const schema = yup.object().shape({
     .max(50, "Must be maximum 50 characters!"),
   password: yup
     .string()
-    .required("Password is required")
+    .required("Password is required!")
     .min(6, "Must be at least 6 characters!")
     .max(40, "Must be maximum 40 characters!"),
 });
@@ -52,11 +52,6 @@ function handleRegister(user) {
       successful.value = false;
       loading.value = false;
     });
-}
-
-function loginWithGoogle() {
-  // 導向到後端的 OAuth 2.0 授權端點
-  window.location.href = "http://localhost:8080/oauth2/authorization/google";
 }
 
 function back() {
@@ -105,18 +100,18 @@ function back() {
           <Form @submit="handleRegister" :validation-schema="schema">
             <div v-if="!successful">
               <div class="card-field">
+                <Field id="username" name="username" type="text" class="form-control" placeholder=" " />
                 <label for="username">Username*</label>
-                <Field name="username" type="text" class="form-control" />
                 <ErrorMessage name="username" class="error-feedback" />
               </div>
               <div class="card-field">
+                <Field id="email" name="email" type="email" class="form-control" placeholder=" " />
                 <label for="email">Email*</label>
-                <Field name="email" type="email" class="form-control" />
                 <ErrorMessage name="email" class="error-feedback" />
               </div>
               <div class="card-field">
+                <Field id="password" name="password" type="password" class="form-control" placeholder=" " />
                 <label for="password">Password*</label>
-                <Field name="password" type="password" class="form-control" />
                 <ErrorMessage name="password" class="error-feedback" />
               </div>
 
@@ -163,5 +158,6 @@ function back() {
 
 .error-feedback {
   color: red;
+  margin-top: 5px;
 }
 </style>

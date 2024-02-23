@@ -1,6 +1,5 @@
 <script setup>
 import { ref, watchEffect } from "vue";
-import UploadService from "../../services/uploadFilesService";
 
 const textInput = ref("");
 
@@ -14,32 +13,43 @@ watchEffect(() => {
 <template>
   <div class="upload-file-container">
     <div class="upload-send">
+      <p class="p">Upload.</p>
+      <textarea
+        v-model="textInput"
+        name="message"
+        id="message"
+        cols="45"
+        rows="11"
+        placeholder="please input your message."
+      ></textarea>
+      <button>CLick to Upload</button>
+    </div>
+    <div class="upload-send">
       <p class="p">Message.</p>
       <textarea
         v-model="textInput"
         name="message"
         id="message"
         cols="45"
-        rows="7"
-        placeholder="please input your message."
+        rows="15"
       ></textarea>
-      <button>CLick to Upload</button>
-      <!-- <p>{{ textInput }}</p> -->
-      <!-- <p class="upload-send-maxfile">(Max. File size: 25 MB)</p> -->
     </div>
   </div>
 </template>
 
 <style lang="scss" scoped>
 @import "../../assets/styles/layout/upload";
-.container {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+
+.upload-file-container {
+
+  > div {
+    margin-bottom: 15px;
+  }
 }
 
 .upload-send {
-  margin-top: 200px;
+  margin-top: 20px;
+  height: 300px;
 
   textarea {
     margin-top: 10px;
@@ -68,8 +78,8 @@ watchEffect(() => {
   }
 
   p{
-    display: inline-block;
-    margin-top: 10px;
+    // 設定margin-top的話，此距會根據父元素的邊距進行設定
+    padding-top: 10px;
     font-size: 20px;
     font-weight: 700;
     color: #011222c3;
