@@ -14,8 +14,10 @@ export const useAuthStore = defineStore("auth", () => {
     try {
       const loggedInUser = await AuthService.oauth2();
       loginSuccess(loggedInUser);
-      console.log('asdasdasd')
     } catch (error) {
+      if(user) {
+        localStorage.removeItem("user");
+      }
       loginFailure();
       throw error;
     }

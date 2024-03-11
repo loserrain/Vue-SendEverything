@@ -4,7 +4,7 @@ const API_URL = "http://localhost:8080/api/auth/";
 axios.defaults.withCredentials = true;
 
 class AuthService {
-  login(user) {
+  async login(user) {
     return axios
       .post(API_URL + "signin", {
         username: user.username,
@@ -30,20 +30,6 @@ class AuthService {
         if (response.data.accessToken) {
           localStorage.setItem("user", JSON.stringify(response.data));
         }
-        return response.data;
-      });
-  }
-
-  test() {
-    return axios
-      .get(API_URL + "a", {
-        headers: {
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache'
-        }
-      })
-      .then((response) => {
-        console.log(response.data)
         return response.data;
       });
   }
@@ -74,14 +60,6 @@ class AuthService {
   checkAuth() {
     return axios.get(API_URL + "checkAuth");
   }
-
-
-
-
-
-  // oauth2() {
-  //   return axios.get(API_URL+ "oauth2/redirect");
-  // }
 }
 
 export default new AuthService();

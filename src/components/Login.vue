@@ -133,13 +133,13 @@ function handleLogin(user) {
 
           <Form @submit="handleLogin" :validation-schema="schema">
             <div class="card-field">
-              <Field id="username" name="username" type="text" class="form-control" placeholder=" " />
               <label for="username">Username</label>
+              <Field id="username" name="username" type="text" class="form-control" placeholder=" " />
               <ErrorMessage name="username" class="error-feedback" />
             </div>
             <div class="card-field">
-              <Field id="password" name="password" type="password" class="form-control" placeholder=" " />
               <label for="password">Password</label>
+              <Field id="password" name="password" type="password" class="form-control" placeholder=" " />
               <ErrorMessage name="password" class="error-feedback" />
             </div>
 

@@ -42,7 +42,12 @@ function setSelectedTab(tab) {
         <div class="navbar-login" v-if="!currentUser">
           <RouterLink to="/filesCard" class="nav-link">
             <li class="nav-item">
-              <font-awesome-icon icon="circle-arrow-up" /> FilesCard
+              <font-awesome-icon icon="circle-arrow-up" /> 佈告欄
+            </li>
+          </RouterLink>
+          <RouterLink to="/filesCard" class="nav-link">
+            <li class="nav-item">
+              <font-awesome-icon icon="circle-arrow-up" /> 作業版
             </li>
           </RouterLink>
           <RouterLink

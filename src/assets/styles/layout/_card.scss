@@ -109,19 +109,28 @@ svg {
   }
 }
 
+// .card-field {
+//   display: flex;
+//   flex-direction: column;
+//   margin-bottom: 20px;
+//   position: relative;
+
+//   label {
+//     position: absolute;
+//     top: 33px;
+//     left: 25px;
+//     font-size: 20px;
+//     color: $primary-text-gray-300;
+//     transition: all .3s ease;
+//   }
 .card-field {
   display: flex;
   flex-direction: column;
   margin-bottom: 20px;
-  position: relative;
 
   label {
-    position: absolute;
-    top: 33px;
-    left: 25px;
-    font-size: 20px;
+    font-size: 16px;
     color: $primary-text-gray-300;
-    transition: all .3s ease;
   }
 
   input {
@@ -133,7 +142,7 @@ svg {
     border-radius: 5px;
     height: 50px;
     background: none;
-    margin: 20px 0 0px;
+    margin: 10px 0 0px;
     padding-left: 25px;
 
     &:focus-visible {
@@ -143,22 +152,7 @@ svg {
       box-shadow: 0px 1px 8px rgba(0, 0, 0, 0.28);
       transition: 0.1s;
     }
-
-    &:focus-visible + label, &:not(:placeholder-shown) + label {
-      top: -7px;
-      left: 0px;
-      font-size: 18px;
-      color: $primary-button-blue-100;
-    }
   }
-
-  // &:focus-within:not(:placeholder-shown) label {
-  //   top: -7px;
-  //   left: 0px;
-  //   font-size: 18px;
-  //   color: $primary-button-blue-100;
-  // }
-
 }
 
 
@@ -198,7 +192,7 @@ svg {
 }
 
 .card-button-field {
-  margin-top: 40px;
+  margin-top: 30px;
 }
 
 .auth-button {

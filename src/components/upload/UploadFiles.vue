@@ -2,7 +2,11 @@
 import { ref, onMounted } from "vue";
 import UploadService from "../../services/uploadFilesService";
 
-const emits = defineEmits(["sendFileInfo", "selectUploadFile", "sendUploadStatus"]);
+const emits = defineEmits([
+  "sendFileInfo",
+  "selectUploadFile",
+  "sendUploadStatus",
+]);
 
 // emit 傳送檔案資訊至Upload.vue元件
 const sendEmitFileName = ref([]);
@@ -49,13 +53,13 @@ function formatFileSize(fileSize) {
   let sizeUnit;
   let sizeValue;
 
-  if(fileSize < KB) {
+  if (fileSize < KB) {
     sizeValue = fileSize;
     sizeUnit = "B";
-  } else if(fileSize < MB) {
+  } else if (fileSize < MB) {
     sizeValue = (fileSize / KB).toFixed(2);
     sizeUnit = "KB";
-  } else if(fileSize < GB) {
+  } else if (fileSize < GB) {
     sizeValue = (fileSize / MB).toFixed(2);
     sizeUnit = "MB";
   } else {
@@ -63,7 +67,34 @@ function formatFileSize(fileSize) {
     sizeUnit = "GB";
   }
 
-  return { sizeValue, sizeUnit }
+  return { sizeValue, sizeUnit };
+}
+
+// 儲存拖曳上傳的檔案
+const files = ref(null);
+const dropActive = ref(false);
+
+function handleDragActive() {
+  dropActive.value = true;
+}
+
+function handleDragNoActive(event) {
+  console.log("event", event)
+  if (!event.relatedTarget || !event.currentTarget.contains(event.relatedTarget)) {
+    dropActive.value = false;
+  }
+}
+
+function handleFileDrop(event) {
+  event.preventDefault();
+  
+  files.value = event.dataTransfer.files;
+  selectedFiles.value = files.value;
+  outputFileName.value = files.value[0].name;
+  selectFileName.value = shortenFileName(files.value[0].name, 24, 10, -14);
+
+  handleFileSelectAndDrop(files.value);
+  dropActive.value = false;
 }
 
 // 當在input選擇檔案時，會做的動作，emit則是將資料傳至Upload.vue
@@ -72,22 +103,24 @@ function selectFile() {
   outputFileName.value = file.value.files[0].name;
   selectFileName.value = shortenFileName(file.value.files[0].name, 24, 10, -14);
 
-  for (let i = 0; i < selectedFiles.value.length; i++) {
-    fileList.value.push(selectedFiles.value[i]);
+  handleFileSelectAndDrop(file.value.files);
+}
+
+function handleFileSelectAndDrop(file) {
+  for (let i = 0; i < file.length; i++) {
+    fileList.value.push(file[i]);
 
     // 計算傳給Upload.vue的Name與Size
-    sendEmitFileName.value.push(
-      shortenFileName(selectedFiles.value[i].name, 12, 4, -8)
-    );
-    let formattedSize = formatFileSize(selectedFiles.value[i].size);
+    sendEmitFileName.value.push(shortenFileName(file[i].name, 12, 4, -8));
+    let formattedSize = formatFileSize(file[i].size);
     sendEmitFileSize.value.push(
       `${formattedSize.sizeValue} ${formattedSize.sizeUnit}`
     );
-    TotalFileSize.value += selectedFiles.value[i].size;
+    TotalFileSize.value += file[i].size;
   }
 
-  let formattedTotalSize = formatFileSize(TotalFileSize.value)
-  sendTotalFileSize.value = `${formattedTotalSize.sizeValue} ${formattedTotalSize.sizeUnit}`
+  let formattedTotalSize = formatFileSize(TotalFileSize.value);
+  sendTotalFileSize.value = `${formattedTotalSize.sizeValue} ${formattedTotalSize.sizeUnit}`;
   // 計算傳給Upload.vue的檔案列表狀態(是否顯現)
   sendFileStatus.value = true;
 
@@ -96,7 +129,7 @@ function selectFile() {
     fileName: sendEmitFileName.value,
     fileSize: sendEmitFileSize.value,
     totalFileSize: sendTotalFileSize.value,
-    fileStatus: sendFileStatus.value
+    fileStatus: sendFileStatus.value,
   });
 }
 
@@ -108,9 +141,12 @@ const createZipFile = async () => {
     content: file,
   }));
 
-  const worker = new Worker(new URL("../../uploadService/zipWorker.js", import.meta.url), {
-    type: "module",
-  });
+  const worker = new Worker(
+    new URL("../../uploadService/zipWorker.js", import.meta.url),
+    {
+      type: "module",
+    }
+  );
 
   const zipWorker = new Promise((resolve) => {
     // 將訊息傳送給執行worker的JS檔案
@@ -204,9 +240,12 @@ async function uploadChunkThreads(file) {
 
     for (let i = 0; i < totalThreads; i++) {
       // import.meta.url指向當前執行module的JavaScript文件的位置
-      const worker = new Worker(new URL("../../uploadService/uploadWorker.js", import.meta.url), {
-        type: "module",
-      });
+      const worker = new Worker(
+        new URL("../../uploadService/uploadWorker.js", import.meta.url),
+        {
+          type: "module",
+        }
+      );
 
       const startIndex = i * workerChunkCount;
       let endIndex = startIndex + workerChunkCount;
@@ -345,7 +384,7 @@ async function uploadChunks() {
       fileSize += parseInt(file.size);
     });
   } else {
-    fileNames = shortenFileName(currentFile.value.name, 24, 10, -14);
+    fileNames = shortenFileName(currentFile.value.name, 18, 10, -8);
     fileSize = currentFile.value.size;
   }
 
@@ -371,7 +410,7 @@ async function uploadChunks() {
 
   // 傳送檔案上傳狀態到upload
   sendFileStatus.value = false;
-  emits("sendUploadStatus", sendFileStatus.value)
+  emits("sendUploadStatus", sendFileStatus.value);
 
   // 使用遞迴上傳下一份分割的資料
   if (fileList.value.length >= 2) {
@@ -388,7 +427,15 @@ async function uploadChunks() {
 <template>
   <div class="upload-file-container">
     <!-- upload的檔案傳送列表 -->
-    <div class="upload-send">
+    <div
+      class="upload-send"
+      :class="dropActive ? 'drop-active' : ''"
+      @drop="handleFileDrop"
+      @dragover.prevent="handleDragActive"
+      @dragenter.prevent="handleDragActive"
+      @dragleave="handleDragNoActive"
+      @dragend="handleDragNoActive"
+    >
       <label for="fileInput" class="upload-fileinput">
         <font-awesome-icon icon="cloud-arrow-up" class="upload-font" />
         <input
@@ -451,7 +498,7 @@ async function uploadChunks() {
     <!-- 上傳時的檔案區 -->
 
     <!-- 歷史紀錄區(登入後) -->
-    <p class="uploat-history-line"></p>
+    <p class="upload-history-line"></p>
     <p class="upload-history-title">Historical record</p>
     <div class="upload-history">
       <div class="upload-file" v-for="(files, index) in fileSort" :key="index">
@@ -507,7 +554,7 @@ async function uploadChunks() {
   border-radius: 10px 0px;
 }
 
-.uploat-history-line {
+.upload-history-line {
   border: 1.5px solid $primary-text-gray-100;
 }
 
@@ -524,6 +571,10 @@ async function uploadChunks() {
   height: 20px;
   margin-left: 43%;
   animation: spin 1.5s linear infinite;
+}
+
+.drop-active {
+  background-color: #d9f7c3;
 }
 
 @keyframes spin {

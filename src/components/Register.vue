@@ -100,18 +100,18 @@ function back() {
           <Form @submit="handleRegister" :validation-schema="schema">
             <div v-if="!successful">
               <div class="card-field">
-                <Field id="username" name="username" type="text" class="form-control" placeholder=" " />
                 <label for="username">Username*</label>
+                <Field id="username" name="username" type="text" class="form-control" placeholder=" " />
                 <ErrorMessage name="username" class="error-feedback" />
               </div>
               <div class="card-field">
-                <Field id="email" name="email" type="email" class="form-control" placeholder=" " />
                 <label for="email">Email*</label>
+                <Field id="email" name="email" type="email" class="form-control" placeholder=" " />
                 <ErrorMessage name="email" class="error-feedback" />
               </div>
               <div class="card-field">
-                <Field id="password" name="password" type="password" class="form-control" placeholder=" " />
                 <label for="password">Password*</label>
+                <Field id="password" name="password" type="password" class="form-control" placeholder=" " />
                 <ErrorMessage name="password" class="error-feedback" />
               </div>
 
@@ -130,7 +130,7 @@ function back() {
               </div>
             </div>
           </Form>
-
+          
           <div
             v-if="message"
             class="alert"
@@ -138,15 +138,6 @@ function back() {
           >
             {{ message }}
           </div>
-
-          <!-- <button
-            class="card-button auth-button"
-            :disabled="loading"
-            @click="loginWithGoogle()"
-          >
-            <img src="../assets/image/search.png" alt="" />
-            Register with Google
-          </button> -->
         </div>
       </div>
     </div>
@@ -156,7 +147,7 @@ function back() {
 <style lang="scss" scoped>
 @import "../assets/styles/layout/card";
 
-.error-feedback {
+.error-feedback, .alert {
   color: red;
   margin-top: 5px;
 }
