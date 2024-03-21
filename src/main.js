@@ -2,8 +2,19 @@ import "./assets/styles/base/_main.scss";
 
 import { createApp } from "vue";
 import { createPinia } from "pinia";
-import { FontAwesomeIcon } from "./plugins/font-awesome";
 import { library } from "@fortawesome/fontawesome-svg-core";
+import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
+import {
+  faEyeSlash,
+  faSquarePlus,
+  faEye,
+  faSquareCheck,
+  faSquare,
+  faPenToSquare,
+  faFolderOpen,
+  faFile,
+  faUser
+} from "@fortawesome/free-regular-svg-icons";
 import {
   faUsers,
   faFileArrowUp,
@@ -16,12 +27,24 @@ import {
   faCircleArrowDown,
   faTriangleExclamation,
   faCloudArrowUp,
+  faMagnifyingGlass,
+  faGlobe,
+  faLock,
+  faLockOpen,
+  faClockRotateLeft,
+  faHouseUser,
+  faChevronRight,
+  faChevronLeft,
+  faSignInAlt,
+  faXmark,
+  faGear,
+  faWrench
 } from "@fortawesome/free-solid-svg-icons";
 
 import App from "./App.vue";
 import router from "./router";
 
-import VueCountdown from '@chenfengyuan/vue-countdown';
+import VueCountdown from "@chenfengyuan/vue-countdown";
 
 library.add(
   faUsers,
@@ -34,7 +57,28 @@ library.add(
   faCircleArrowUp,
   faCircleArrowDown,
   faTriangleExclamation,
-  faCloudArrowUp
+  faCloudArrowUp,
+  faSquarePlus,
+  faMagnifyingGlass,
+  faGlobe,
+  faLock,
+  faLockOpen,
+  faClockRotateLeft,
+  faHouseUser,
+  faChevronRight,
+  faChevronLeft,
+  faSignInAlt,
+  faEyeSlash,
+  faEye,
+  faXmark,
+  faSquareCheck,
+  faSquare,
+  faPenToSquare,
+  faGear,
+  faFolderOpen,
+  faFile,
+  faUser,
+  faWrench
 );
 
 const app = createApp(App);

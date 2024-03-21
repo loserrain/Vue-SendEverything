@@ -76,11 +76,10 @@ const FileClickPreview = (index) => {
 // 放大圖片預覽區域
 const previewImageStatus = ref(false);
 
-const showBigImg = () => {
-  previewImageStatus.value = true;
-  emits("sendImgInfo", { img: previewImage.value, status: previewImageStatus.value })
-  previewImageStatus.value = false;
+function changdImgStatus(newStatus) {
+  previewImageStatus.value = newStatus;
 }
+
 // 放大圖片預覽區域
 
 // 複製驗證碼
@@ -109,6 +108,10 @@ const transformSlotProps = (props) => {
 </script>
 
 <template>
+  <div class="outer" v-if="previewImageStatus" @click="changdImgStatus(false)">
+    <img :src="previewImage" alt="" @click.stop />
+  </div>
+
   <div class="upload-view">
     <div class="upload-select">
       <div class="upload-switch">
@@ -161,10 +164,6 @@ const transformSlotProps = (props) => {
                 <p>{{ uploadFileTotalSize }}</p>
               </div>
 
-              <!-- <div class="Total-Size">
-                <span class="Total">Total Size:</span>
-                <span class="FileSize">123 MB</span>
-              </div> -->
             </div>
           </div>
           <div v-else>
@@ -211,7 +210,7 @@ const transformSlotProps = (props) => {
 
       <div class="upload-explore-preview">
         <p v-if="!previewImage" data-stroke="File Preview">Picture Preview.</p>
-        <img v-else :src="previewImage" @click="showBigImg" alt="" />
+        <img v-else :src="previewImage" @click="changdImgStatus(true)" alt="" />
       </div>
     </div>
   </div>
@@ -220,15 +219,21 @@ const transformSlotProps = (props) => {
 <style lang="scss" scoped>
 @import "../assets/styles/layout/upload";
 
-// .upload-image {
-//   position: absolute;
-//   z-index: 2;
-//   width: 100%;
-//   display: flex;
-//   justify-content: center;
-//   // margin-top: 10%;
+.outer {
+  position: fixed; /*此行指定黑色背景區塊不會隨著網頁捲動而隨著移動*/
+  left: 0px; /*此行指定黑色背景區塊貼齊瀏覽器左方*/
+  top: 0px; /*此行指定黑色背景區塊貼齊瀏覽器上方*/
+  width: 100vw; /*此行指定黑色背景區塊的寬度為整個瀏覽器的寬度*/
+  height: 100vh; /*此行指定黑色背景區塊的高度為整個瀏覽器的高度*/
+  background-color: rgba(0, 0, 0, 0.65); /*此行指定背景區塊的背景顏色70%的黑色*/
+  text-align: center; /*此行指定黑色背景區塊的內容會居中*/
+  z-index: 2;
 
-// }
+  img {
+    height: 70%;
+    margin-top: 13vh;
+  }
+}
 
 .upload-view {
   display: flex;
@@ -359,29 +364,11 @@ const transformSlotProps = (props) => {
       }
     }
 
-    // .Total-Size{
-    //   margin: 0;
-    //   width: 100%;
-    //   height: 42px;
-    //   padding: 10px 10px;
-    //   background-color: #ececec;
-    // }
-
-    // .Total {
-    //   margin: 50% 0;
-    //   font-weight: bolder;
-    // }
-    // .FileSize{
-    //   float: right;
-    //   font-weight: bolder;
-    // }
   }
 
   .upload-explore-code {
     width: 51%;
     height: 100%;
-    // margin: 45px 20px 0 20px;
-    // padding: 10px 0px 10px 0px;
 
     div {
       text-align: center;
@@ -457,10 +444,14 @@ const transformSlotProps = (props) => {
   overflow-y: auto;
   text-align: center;
   position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 
   img {
     display: block;
-    width: calc(100% - 0.3%);
+    max-height: calc(100% - 3%);
+    width: auto;
     cursor: pointer;
   }
 
