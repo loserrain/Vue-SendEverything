@@ -69,7 +69,7 @@ function togglefileEditStatus() {
                             <span><font-awesome-icon :icon="ckRoomIcon[index]" /></span>
                         </label>
                     </p>
-                    <div class="download-board-file-detail">
+                    <div class="download-board-file-detail" @click="handleRoomCheckboxToggle(index)">
                         <p class="download-board-file-name">Universal-Design-System-Web.mp4</p>
                         <p class="download-board-file-date">2024‎年‎3‎月‎7‎日 下午 08:39</p>
                         <p class="download-board-file-ID">11161101</p>
@@ -180,6 +180,7 @@ function togglefileEditStatus() {
                 align-items: center;
                 width: 100%;
                 text-align: center;
+                user-select: none;
 
                 .download-board-file-name {
                     width: 310px;

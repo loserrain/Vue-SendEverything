@@ -29,21 +29,6 @@ const fileList = ref([]);
 const zipFileBlob = ref(undefined);
 const zipFileName = ref("SendEverything");
 
-// 檔案大小的轉換
-// function formatFileSize(fileSize) {
-//   let sizeUnit;
-//   if (fileSize / 1024 < 1000) {
-//     fileSize = Math.round(fileSize / 1024);
-//     sizeUnit = "KB";
-//   } else if (fileSize / 1024 / 1024 < 1000) {
-//     fileSize = (fileSize / 1024 / 1024).toFixed(2);
-//     sizeUnit = "MB";
-//   } else {
-//     fileSize = (fileSize / 1024 / 1024 / 1024).toFixed(2);
-//     sizeUnit = "GB";
-//   }
-//   return { fileSize, sizeUnit };
-// }
 
 function formatFileSize(fileSize) {
   const KB = 1024;
@@ -300,6 +285,8 @@ async function uploadChunkThreads(file) {
         const fileId = workerResult.value[i].fileId;
         // 每個分片的hash code
         const chunkId = workerResult.value[i].chunkId;
+        // 檔案大小
+        const size = file.size;
 
         // 將訊息加入FormData並傳入後端解析
         const formData = new FormData();
@@ -308,6 +295,7 @@ async function uploadChunkThreads(file) {
         formData.append("totalChunks", totalChunks);
         formData.append("fileId", fileId);
         formData.append("chunkId", chunkId);
+        formData.append("size", size);
 
         // 檔案列表為複數時，修改壓縮檔的檔名
         if (fileList.value.length >= 2) {
@@ -411,7 +399,6 @@ async function uploadChunks() {
   // 傳送檔案上傳狀態到upload
   sendFileStatus.value = false;
   emits("sendUploadStatus", sendFileStatus.value);
-
   // 使用遞迴上傳下一份分割的資料
   if (fileList.value.length >= 2) {
     await createZipFile();

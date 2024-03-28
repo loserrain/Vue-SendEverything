@@ -1,20 +1,16 @@
 import SparkMD5 from "spark-md5";
 
-export function calculateChunkId(file, chunkNumber, chunkSize, fileListLength, zipFileName) {
+export function boardCalculateChunkId(file, chunkNumber, chunkSize) {
     return new Promise((resolve) => {
         const start = chunkNumber * chunkSize;
         const end = start + chunkSize;
         let fileId = "";
-
-        // 判斷檔案列表長度，如果大於二，修改fileId
-        if(fileListLength >= 2){
-            fileId = zipFileName;
-        } else {
-            fileId = file.name + "_" + file.lastModified.valueOf() + "_" + file.size;
-        }
+        
+        fileId = file.name + "_" + file.lastModified.valueOf() + "_" + file.size;
         const spark = new SparkMD5.ArrayBuffer();
         const totalChunks = Math.ceil(file.size / chunkSize);
         const fileReader = new FileReader();
+        const fileName = file.name;
 
         fileReader.onload = function(e) {
             spark.append(e.target.result);
@@ -27,7 +23,9 @@ export function calculateChunkId(file, chunkNumber, chunkSize, fileListLength, z
                 chunkId: chunkId,
                 fileChunk: file.slice(start, end),
                 fileId,
+                fileName
             });
+            // console.log("fileId", fileId)
         };
 
         fileReader.readAsArrayBuffer(file.slice(start, end))

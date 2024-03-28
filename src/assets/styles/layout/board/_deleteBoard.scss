@@ -1,0 +1,70 @@
+@import "./variableBoard";
+.delete-board-mask {
+  position: fixed;
+  left: 0px;
+  top: 0px;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.65);
+  z-index: 2;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.delete-board {
+  text-align: center;
+  width: 459px;
+  height: 270px;
+  background-color: $primary-board-white-80;
+  border: 6px solid $primary-board-gray-30;
+  border-radius: 40px;
+  padding: 1.5rem 0;
+
+  p {
+    display: inline-block;
+    font-size: 28px;
+    color: #f24646;
+    background-color: #f7d5d7;
+    border-radius: 50px;
+    padding: 5px 9px;
+  }
+
+  h2 {
+    font-size: 24px;
+    font-weight: bold;
+    margin: 1rem 0;
+  }
+
+  h3 {
+    font-size: 14px;
+    font-weight: bold;
+    color: $primary-board-gray-100;
+  }
+
+  .delete-board-decide {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 2rem;
+
+    button {
+      width: 141px;
+      height: 41px;
+      border: none;
+      border-radius: 5px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .delete-board-cancel {
+      background-color: #f0f0f0;
+    }
+
+    .delete-board-confirm {
+      color: #f0f0f0;
+      background-color: #f24646;
+    }
+  }
+}

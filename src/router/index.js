@@ -60,7 +60,7 @@ const router = createRouter({
       component: BulletinBoard
     },
     {
-      path: '/BulletinBoard/roomboard',
+      path: '/BulletinBoard/roomboard/:roomId',
       name: 'RoomBoard',
       component: RoomBoard
     },

@@ -40,6 +40,27 @@ watch(isPrivateChecked, (newValue) => {
     isPublicChecked.value = false;
   }
 });
+
+// 檔案預覽
+const file = ref(undefined);
+const previewImage = ref(null);
+const previewStatus = ref(false);
+function selectFile() {
+  console.log(file.value.files[0]);
+  handlePreviewImg(file.value.files);
+}
+function handlePreviewImg(file) {
+  const reader = new FileReader();
+  const selectFileSize = file[0].size / 1024 / 1024;
+  if (selectFileSize < 20) {
+    reader.readAsDataURL(file[0]);
+  }
+  reader.onload = () => {
+    previewImage.value = reader.result;
+  };
+  previewStatus.value = true;
+}
+
 </script>
 
 <template>
@@ -58,55 +79,44 @@ watch(isPrivateChecked, (newValue) => {
           <div class="create-board-description">
             <p>Room description</p>
             <label for="description"></label>
-            <textarea
-              name="description"
-              id="description"
-              cols="41"
-              rows="3"
-              v-model="inputDescription"
-            ></textarea>
+            <textarea name="description" id="description" cols="41" rows="3" v-model="inputDescription"></textarea>
           </div>
 
           <p>Password setting</p>
-          <div class="create-board-pwd">
-            <label for="pwd"></label>
-            <input type="password" name="pwd" id="pwd" v-model="inputPwd" />
-          </div>
+          <div class="create-board-pwd-flex">
+            <div class="create-board-pwd">
+              <label for="pwd"></label>
+              <input type="password" name="pwd" id="pwd" v-model="inputPwd" />
+            </div>
 
-          <div class="create-board-checkbox">
-            <label for="checkbox1">
-              <input
-                type="checkbox"
-                name="checkbox1"
-                id="checkbox1"
-                v-model="isPublicChecked"
-              />
-              <span><font-awesome-icon :icon="ckPublicIcon" /></span>
-              Public
-            </label>
-            <label for="checkbox2">
-              <input
-                type="checkbox"
-                name="checkbox2"
-                id="checkbox2"
-                v-model="isPrivateChecked"
-              />
-              <span><font-awesome-icon :icon="ckPrivateIcon" /></span>
-              Private
-            </label>
+            <div class="create-board-checkbox">
+              <label for="checkbox1">
+                <input type="checkbox" name="checkbox1" id="checkbox1" v-model="isPublicChecked" />
+                <span><font-awesome-icon :icon="ckPublicIcon" /></span>
+                Public
+              </label>
+              <label for="checkbox2">
+                <input type="checkbox" name="checkbox2" id="checkbox2" v-model="isPrivateChecked" />
+                <span><font-awesome-icon :icon="ckPrivateIcon" /></span>
+                Private
+              </label>
+            </div>
           </div>
         </form>
 
+        <!-- 檔案預覽 -->
         <div class="create-board-Select">
           <div class="create-board-img">
-            <p>File Preview</p>
+            <img v-if="previewStatus" :src="previewImage" alt="">
+            <p v-else>File Preview</p>
           </div>
           <div class="create-board-file">
             <label type="button" for="fileInput"> Select File </label>
-            <input type="file" name="fileInput" id="fileInput" />
+            <input type="file" name="fileInput" id="fileInput" ref="file" @change="selectFile" />
           </div>
         </div>
       </div>
+      <!-- 檔案預覽 -->
 
       <div class="create-board-decide">
         <button class="create-board-cancel" @click="handleSendCreateStatus(false)">Cancel</button>
@@ -118,177 +128,5 @@ watch(isPrivateChecked, (newValue) => {
 </template>
 
 <style scoped lang="scss">
-.create-board-mask {
-  position: fixed;
-  left: 0px;
-  top: 0px;
-  width: 100vw;
-  height: 100vh;
-  background-color: rgba(0, 0, 0, 0.65);
-  z-index: 2;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.create-board {
-  width: 700px;
-  height: 360px;
-  border: 8px solid #dedfe4;
-  border-radius: 21px;
-  background-color: #fafafa;
-  padding: 1.5rem 2rem 4px 1.2rem;
-  position: relative;
-
-  > p {
-    font-size: 22px;
-    font-weight: bold;
-    color: #5a5858;
-  }
-
-  .create-board-line {
-    border-top: 3px solid #b9b5b5;
-    border-radius: 10px;
-    margin: 4px 2rem 12px 0;
-  }
-
-  .create-board-form {
-    display: flex;
-    justify-content: space-between;
-
-    p {
-      font-size: 18px;
-      font-weight: bold;
-      color: #506d74;
-      letter-spacing: 0.8px;
-      margin: 10px 0 2px;
-    }
-
-    input {
-      outline: none;
-    }
-    .create-board-title {
-      input {
-        width: 380px;
-        height: 25px;
-        font-size: 14px;
-        border: 2px solid #4e96a7;
-        border-radius: 4px;
-      }
-    }
-
-    .create-board-description {
-      textarea {
-        resize: none;
-        outline: none;
-        width: 380px;
-        color: #868686;
-        font-size: 14px;
-        background-color: #f8faff;
-        border: 2px solid #bbbbbb;
-        border-radius: 4px;
-      }
-    }
-
-    .create-board-pwd {
-      display: inline-block;
-      input {
-        width: 190px;
-        height: 25px;
-        font-size: 14px;
-        border: 2px solid #4e96a7;
-        border-radius: 4px;
-        margin: 2px 12px 0 0;
-      }
-    }
-
-    .create-board-checkbox {
-      display: inline-block;
-      font-size: 15px;
-      color: #1e3050;
-
-      label {
-        margin-right: 8px;
-        font-weight: bold;
-      }
-
-      input[type="checkbox"] {
-        display: none;
-      }
-    }
-
-    .create-board-Select {
-      margin-top: 1rem;
-
-      .create-board-img {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        width: 185px;
-        height: 175px;
-        background-color: #f8faff;
-        border: 2px solid #bbbbbb;
-
-        p {
-          font-size: 16px;
-          font-weight: bold;
-          color: #c6cbcc;
-        }
-      }
-
-      .create-board-file {
-        display: flex;
-        justify-content: center;
-        label {
-          display: inline-block;
-          margin-top: 12px;
-          padding: 6px 14px;
-          font-size: 16px;
-          font-weight: bold;
-          color: #ffffff;
-          background-color: #2dbbf9;
-          border: none;
-          border-radius: 2px;
-        }
-
-        input {
-          display: none;
-        }
-      }
-    }
-  }
-  .create-board-decide {
-    text-align: center;
-
-    button {
-        font-size: 14px;
-        font-weight: bold;
-        padding: 6px 14px;
-        margin: 0 1rem;
-        cursor: pointer;
-    }
-
-    .create-board-cancel {
-      background: none;
-      border: 2px solid #b0b3c5;
-      border-radius: 4px;
-    }
-
-    .create-board-confirm {
-      background: #004de4;
-      border: none;
-      border-radius: 4px;
-      color: #FFFFFF;
-    }
-  }
-
-  >span {
-        position: absolute;
-        top: 10px;
-        right: 16px;
-        font-size: 22px;
-        color: #767676;
-        cursor: pointer;
-    }
-}
+@import "../../assets/styles/layout/board/createBoard";
 </style>

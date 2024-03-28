@@ -1,0 +1,204 @@
+@import "./variableBoard";
+.board-container {
+  display: flex;
+
+  .board-sidebar {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 70px);
+
+    .board-sidebar-search {
+      padding: 2.5rem 2rem 1rem 2rem;
+      border-bottom: 5px solid $primary-board-white-80;
+
+      p {
+        font-size: 16px;
+        font-weight: bold;
+        color: $primary-board-gray-100;
+      }
+    }
+
+    .board-sidebar-input {
+      display: flex;
+      align-items: center;
+      width: 200px;
+      height: 35px;
+      background-color: #f6f6f6;
+      border: 2px solid #858585;
+      border-radius: 18px;
+      margin: 5px 0 0 -5px;
+
+      input {
+        background: none;
+        outline: none;
+        border: none;
+        font-size: 18px;
+        color: $primary-board-gray-80;
+        width: 80%;
+        margin-left: 10px;
+      }
+
+      span {
+        font-size: 20px;
+        color: rgb(139, 139, 139);
+        margin-top: 1px;
+      }
+    }
+
+    // Room mode
+    .board-sidebar-room-mode {
+      padding: 1.5rem 0 0 0.8rem;
+
+      > p {
+        font-size: 16px;
+        font-weight: bold;
+        color: $primary-board-gray-100;
+        margin-left: 1.3rem;
+      }
+
+      .board-sidebar-tab {
+        display: flex;
+        align-items: center;
+        position: relative;
+        height: 40px;
+        width: 230px;
+        color: $primary-board-gray-100;
+        font-size: 20px;
+        background-color: $primary-board-white-80;
+        margin-top: 9px;
+        padding-left: 1rem;
+        transition: all .2s;
+        cursor: pointer;
+
+        div {
+          width: 30px;
+        }
+
+        span {
+          margin-left: 6px;
+          font-weight: bold;
+        }
+
+        &:hover {
+          background-color: #f0f0f0;
+        }
+      }
+
+      .board-sidebar-status {
+        background-color: #e9f2ff;
+        transition: all .2s;
+        p {
+          position: absolute;
+          width: 5px;
+          height: 17px;
+          background-color: #84b6ff;
+          left: 0;
+          transition: all .2s;
+        }
+
+        &:hover {
+          background-color: #dce8fb;
+        }
+      }
+    }
+  }
+
+  .board-main {
+    padding: 0 0 0 2rem;
+    border-left: 5px solid $primary-board-white-80;
+    border-right: 5px solid $primary-board-white-80;
+
+    > pre {
+      font-size: 32px;
+      font-weight: bolder;
+      color: $primary-board-gray-100;
+      margin: 3.8rem 0 3.5rem 0.5rem;
+      user-select: none;
+    }
+
+    .board-main-content {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 35px 24px;
+      width: 1520px;
+
+      > div {
+        height: 180px;
+        width: 350px;
+        background-color: $primary-board-white-80;
+        border-radius: 8px;
+      }
+
+      .board-main-room {
+        position: relative;
+        display: flex;
+        justify-content: space-between;
+        flex-direction: column;
+        padding: 8px 1rem 8px;
+        transition: all .2s;
+        cursor: pointer;
+
+        &:hover {
+          background-color: #e5e4e4;
+        }
+
+        .board-main-room-status {
+          font-size: 16px;
+          font-weight: bold;
+          color: #0aa234;
+          position: absolute;
+          top: 8px;
+          right: 8px;
+        }
+
+        .board-main-room-number {
+          display: flex;
+          align-items: center;
+
+          span {
+            font-size: 32px;
+            color: #626f86;
+          }
+
+          p {
+            font-size: 18px;
+            font-weight: bold;
+            color: $primary-board-blue-100;
+            margin-left: 10px;
+          }
+        }
+
+        .board-main-room-description {
+          font-size: 18px;
+          font-weight: bold;
+          color: #373737;
+        }
+
+        .board-main-room-date {
+          font-size: 14px;
+          font-weight: bold;
+          color: $primary-board-gray-80;
+          margin: 6px 0;
+        }
+      }
+    }
+
+    .board-main-room-page {
+      display: flex;
+      justify-content: center;
+      margin-top: 1rem;
+      user-select: none;
+
+      ul {
+        display: flex;
+        list-style: none;
+      }
+
+      > span {
+        font-size: 20px;
+        color: $primary-board-gray-100;
+        cursor: pointer;
+      }
+    }
+  }
+}

@@ -45,8 +45,6 @@ const handleSendFileInfo = (fileInfo) => {
 const previewImage = ref(null);
 
 const handleSelectedFile = (fileData) => {
-  const reader = new FileReader();
-
   const { fileList, fileName, fileSize, totalFileSize, fileStatus } = fileData;
   uploadFile.value = fileList;
   uploadFileName.value = fileName;
