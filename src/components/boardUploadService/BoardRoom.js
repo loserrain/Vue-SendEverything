@@ -16,12 +16,20 @@ class BoardUploadService {
     });
   }
 
-  getRoomList() {
-    return http.get("/roomList");
+  getAllRooms() {
+    return http.get("/getAllRooms");
   }
 
-  loginRoom(password, roomCode) {
-    return http.post("/AccessRoom", { password, roomCode });
+  accessRoom(password, roomCode) {
+    return http.post("/accessRoom", { password, roomCode });
+  }
+
+  verifyCookie() {
+    return http.get("/verifyCookie");
+  }
+
+  showRoomContent(roomCode) {
+    return http.post("/showRoomContent", { roomCode });
   }
 }
 

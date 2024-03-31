@@ -1,8 +1,9 @@
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
 import CreateBoard from "./CreateBoard.vue";
 import UploadBoard from "./UploadBoard.vue";
 import DeleteBoard from "./DeleteBoard.vue";
+import BoardUploadService from "../boardUploadService/BoardRoom.js";
 
 const createStatus = ref(false);
 function handleSendCreateStatus(newStatus) {
@@ -54,7 +55,17 @@ function selectAllRooms() {
   }
 }
 
+const roomCode = "FE7GGAD3";
+const roomData = ref(undefined);
+const roomDataStatus = ref(true);
 
+onMounted(() => {
+  BoardUploadService.showRoomContent(roomCode).then((response) => {
+    roomData.value = response.data;
+    roomDataStatus.value = false;
+    console.log(roomData.value);
+  });
+});
 </script>
 
 <template>
@@ -62,7 +73,7 @@ function selectAllRooms() {
     <CreateBoard @send-create-status="handleSendCreateStatus"></CreateBoard>
   </div>
   <div v-if="uploadStatus">
-    <UploadBoard @send-upload-status="handleSendUploadStatus"></UploadBoard>
+    <UploadBoard @send-upload-status="handleSendUploadStatus" :roomCode="roomCode"></UploadBoard>
   </div>
   <div v-if="deleteStatus">
     <DeleteBoard @send-delete-status="handleSendDeleteStatus"></DeleteBoard>
@@ -110,18 +121,34 @@ function selectAllRooms() {
     <div class="room-board-content">
       <pre>佈告欄 / 房間</pre>
 
-      <div class="room-board-data">
+      <div class="room-board-data" v-if="roomDataStatus">
         <div class="room-board-data-img">
           <img src="../../assets/image/main.png" alt="" />
         </div>
         <div class="room-board-data-text">
-          <h1>系統分析與設計</h1>
+          <h1>asd</h1>
           <h2>
-            這是一個可以一對多傳送檔案的房間，此功能名為One for
-            all(暫定)，建立房間的房主可在此進行房間的簡述，使參加者了解房間傳送檔案的目的，使參加者了解房間傳送檔案的目的
+            asd
           </h2>
           <div class="room-board-data-date">
-            <p>Created: 2024年3月7日 下午 08:39</p>
+            <p>asd</p>
+            <p>20 people</p>
+          </div>
+          <p>{{ $route.params.roomId }}</p>
+        </div>
+      </div>
+
+      <div class="room-board-data" v-else>
+        <div class="room-board-data-img">
+          <img :src="'data:image/png;base64,' + roomData.image" alt="" />
+        </div>
+        <div class="room-board-data-text">
+          <h1>{{ roomData.title }}</h1>
+          <h2>
+            {{ roomData.description }}
+          </h2>
+          <div class="room-board-data-date">
+            <p>{{ roomData.createTime }}</p>
             <p>20 people</p>
           </div>
           <p>{{ $route.params.roomId }}</p>

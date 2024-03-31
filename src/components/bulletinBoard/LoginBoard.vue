@@ -1,9 +1,11 @@
 <script setup>
 import { ref, computed } from "vue";
 import BoardUploadService from "../boardUploadService/BoardRoom.js";
+import { useRouter } from "vue-router";
 
 const emits = defineEmits(["sendLoginStatus"]);
 const props = defineProps(["roomCode"]);
+const router = useRouter();
 
 function handleSendLoginStatus(newStatus) {
   emits("sendLoginStatus", newStatus);
@@ -25,13 +27,17 @@ const inputType = computed(() => {
 const elIcon = computed(() => {
   return flag.value ? ["far", "eye"] : ["far", "eye-slash"];
 });
+console.log(props.roomCode);
+const roomCode = "FE7GGAD3";
 
 function handleLoginData() {
-  BoardUploadService.loginRoom(pwd.value, props.roomCode)
+  BoardUploadService.accessRoom(pwd.value, roomCode)
     .then((response) => {
+      router.push(`/BulletinBoard/roomboard/FE7GGAD3`);
       console.log(response);
     })
     .catch((error) => {
+      console.log("ASDASDASD")
       console.log(error);
     });
 }

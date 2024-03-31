@@ -3,6 +3,7 @@ import { ref, watchEffect } from "vue";
 import UploadService from "../../services/uploadFilesService";
 
 const emits = defineEmits(["sendUploadStatus"]);
+const props = defineProps(["roomCode"]);
 
 function handleSendUploadStatus(newStatus) {
   emits("sendUploadStatus", newStatus);
@@ -202,6 +203,7 @@ async function uploadChunkThreads(file) {
         const fileId = workerMultiple.value[i].fileId;
         const chunkId = workerMultiple.value[i].chunkId;
         const size = file[i].size;
+        console.log("size", size);
         outputFileName.value = workerMultiple.value[i].fileName;
 
         const formData = new FormData();
@@ -212,8 +214,10 @@ async function uploadChunkThreads(file) {
         formData.append("chunkId", chunkId);
         formData.append("size", size);
         formData.append("outputFileName", outputFileName.value);
+        formData.append("description", textInput.value[i]);
+        formData.append("roomCode", props.roomCode);
 
-        UploadService.uploadChunk(formData).then(() => {
+        UploadService.uploadRoomFileChunk(formData).then(() => {
           // 計算當前分片數量
           currentChunkIndex.value++;
           // 利用上傳分片數與總分片數計算進度條
@@ -226,7 +230,7 @@ async function uploadChunkThreads(file) {
             progressNumber++;
             currentChunkIndex.value = 0;
 
-            UploadService.completeFileUpload(
+            UploadService.completeUploadRoomFile(
               fileId,
               outputFileName.value,
               chunkId

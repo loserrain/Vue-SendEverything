@@ -4,9 +4,11 @@ import { ref, onMounted } from "vue";
 import CreateBoard from "./CreateBoard.vue";
 import LoginBoard from "./LoginBoard.vue";
 import BoardUploadService from "../boardUploadService/BoardRoom.js";
+import axios from "axios";
 
 const createStatus = ref(false);
 const loginStatus = ref(false);
+
 
 function handleSendCreateStatus(newStatus) {
   createStatus.value = newStatus;
@@ -23,13 +25,19 @@ const handleTabClick = (tab) => {
 }
 
 const roomTestNumber = 12;
-const roomCode = ref("6N3YVKE7");
+const roomData = ref([]);
+const roomCode = ref([]);
+// roomData.value[i].createTime = new Date(roomData.value[i].createTime).toLocaleString();
 
-// onMounted(() => {
-//   BoardUploadService.getRoomList().then((response) => {
-//     console.log(response);
-//   })
-// });
+onMounted(() => {
+  BoardUploadService.getAllRooms().then((response) => {
+    roomData.value = response.data;
+    for(let i=0; i<roomData.value.length; i++){
+      roomCode.value.push(roomData.value[i].roomCode);
+    }
+    console.log(roomCode.value);
+  })
+});
 </script>
 
 <template>
@@ -90,16 +98,16 @@ const roomCode = ref("6N3YVKE7");
     <div class="board-main">
       <pre>佈告欄 / 加入與設定</pre>
       <div class="board-main-content">
-        <div class="board-main-room" v-for="Number in roomTestNumber" @click="handleLoginStatus(true)">
-          <p class="board-main-room-status">Public</p>
+        <div class="board-main-room" v-for="(Data, index) in roomData" :key="index" @click="handleLoginStatus(true)">
+          <p class="board-main-room-status">{{ Data.roomType }}</p>
           <div class="board-main-room-number">
             <span><font-awesome-icon icon="house-user" /></span>
-            <p>{{ roomCode }}</p>
+            <p>{{ Data.roomCode }}</p>
           </div>
           <p class="board-main-room-description">
-            這是一個使用者參與過的房間，此為示例，供開發者參考用，過多文字將會縮短........
+            {{ Data.description }}
           </p>
-          <p class="board-main-room-date">Creation date: 2024/03/04.</p>
+          <p class="board-main-room-date">{{ Data.createTime }}</p>
         </div>
       </div>
 

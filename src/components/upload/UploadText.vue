@@ -69,6 +69,7 @@ function downloadFile() {
       document.body.removeChild(a);
       URL.revokeObjectURL(downloadUrl);
       progressStatus.value = true;
+      loadedSize.value = 0;
     })
     .catch((error) => {
       console.error("下載過程中發生錯誤:", error);

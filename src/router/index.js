@@ -10,7 +10,7 @@ import WorkBoard from "../components/workBoard/WorkBoard.vue";
 import WorkRoomBoard from "../components/workBoard/WorkRoomBoard.vue";
 import BulletinLogin from "../components/bulletinBoard/LoginBoard.vue";
 import WorkLogin from "../components/workBoard/WorkLoginBoard.vue";
-import axios from "axios";
+import BoardUploadService from "../components/boardUploadService/BoardRoom.js";
 
 const Profile = () => import("@/components/Profile.vue");
 const FilesCard = () => import("../views/FilesCard.vue");
@@ -93,8 +93,8 @@ const router = createRouter({
 
 router.beforeEach(async (to) => {
   if (to.meta.requiresAuth) {
-    // const response = await axios.get("/api/auth/verifyCookie");
-    const response = { status: 200 };
+    console.log("asdasdasdasd")
+    const response = await BoardUploadService.verifyCookie();
     if (response.status !== 200 && to.name !== "BulletinLogin") {
       return { name: "BulletinLogin" };
     }

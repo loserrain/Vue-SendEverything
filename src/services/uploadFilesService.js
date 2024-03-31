@@ -47,6 +47,26 @@ class UploadFilesService {
       }
     });
   }
+  uploadRoomFileChunk(file) {
+    return http.post("/uploadRoomFileChunk", file, {
+      headers: {
+        "content-Type": "multipart/form-data"
+      }
+    });
+  }
+
+  completeUploadRoomFile(fileId, outputFileName, totalFileId) {
+    const formData = new FormData();
+    formData.append("fileId", fileId);
+    formData.append("outputFileName", outputFileName);
+    formData.append("totalFileId", totalFileId)
+  
+    return http.post("/completeUploadRoomFile", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data"
+      }
+    });
+  }
 }
 
 export default new UploadFilesService();
