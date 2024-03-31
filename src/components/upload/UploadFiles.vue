@@ -296,12 +296,12 @@ async function uploadChunkThreads(file) {
         formData.append("fileId", fileId);
         formData.append("chunkId", chunkId);
         formData.append("size", size);
+        formData.append("outputFileName", outputFileName.value)
 
         // 檔案列表為複數時，修改壓縮檔的檔名
         if (fileList.value.length >= 2) {
           outputFileName.value = fileId;
         }
-        // formData.append("outputFileName", outputFileName.value)
 
         // 調用上傳函數
         UploadService.uploadChunk(formData).then(() => {
@@ -322,7 +322,7 @@ async function uploadChunkThreads(file) {
             )
               .then((response) => {
                 console.log("File upload completed", response.data);
-                // emits('sendFileInfo', response.data);
+                emits('sendFileInfo', response.data);
               })
               .catch((error) => {
                 console.error("Error completing file upload", error);

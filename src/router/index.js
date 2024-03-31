@@ -1,80 +1,104 @@
-import { createRouter, createWebHistory } from 'vue-router'
-import Home from '@/components/Home.vue'
-import Login from '@/components/Login.vue'
-import Register from '@/components/Register.vue'
-import UploadFileViews from '../views/Upload.vue'
-import CheckGoogle from '../components/CheckGoogle.vue';
-import BulletinBoard from '../components/bulletinBoard/BulletinBoard.vue';
-import RoomBoard from '../components/bulletinBoard/RoomBoard.vue'
-import WorkBoard from '../components/workBoard/WorkBoard.vue'
-import WorkRoomBoard from '../components/workBoard/WorkRoomBoard.vue'
+import { createRouter, createWebHistory } from "vue-router";
+import Home from "@/components/Home.vue";
+import Login from "@/components/Login.vue";
+import Register from "@/components/Register.vue";
+import UploadFileViews from "../views/Upload.vue";
+import CheckGoogle from "../components/CheckGoogle.vue";
+import BulletinBoard from "../components/bulletinBoard/BulletinBoard.vue";
+import RoomBoard from "../components/bulletinBoard/RoomBoard.vue";
+import WorkBoard from "../components/workBoard/WorkBoard.vue";
+import WorkRoomBoard from "../components/workBoard/WorkRoomBoard.vue";
+import BulletinLogin from "../components/bulletinBoard/LoginBoard.vue";
+import WorkLogin from "../components/workBoard/WorkLoginBoard.vue";
+import axios from "axios";
 
-const Profile = () => import('@/components/Profile.vue')
-const FilesCard = () => import('../views/FilesCard.vue')
+const Profile = () => import("@/components/Profile.vue");
+const FilesCard = () => import("../views/FilesCard.vue");
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
-      path: '/',
-      name: 'home',
+      path: "/",
+      name: "home",
       component: Home,
     },
     {
-      path: '/home',
+      path: "/home",
       component: Home,
     },
     {
-      path: '/login',
-      name: 'login',
-      component: Login
+      path: "/login",
+      name: "login",
+      component: Login,
     },
     {
-      path: '/register',
-      name: 'register',
-      component: Register
+      path: "/register",
+      name: "register",
+      component: Register,
     },
     {
-      path: '/profile',
-      name: 'profile',
+      path: "/profile",
+      name: "profile",
       component: Profile,
     },
     {
-      path: '/uploadfile',
-      name: 'uploadfile',
-      component: UploadFileViews
+      path: "/uploadfile",
+      name: "uploadfile",
+      component: UploadFileViews,
     },
     {
-      path: '/checkGoogle',
-      name: 'checkGoogle',
-      component: CheckGoogle
+      path: "/checkGoogle",
+      name: "checkGoogle",
+      component: CheckGoogle,
     },
     {
-      path: '/filesCard',
-      name: 'fileCsard',
-      component: FilesCard
+      path: "/filesCard",
+      name: "fileCsard",
+      component: FilesCard,
     },
     {
-      path: '/BulletinBoard',
-      name: 'BulletinBoard',
-      component: BulletinBoard
+      path: "/BulletinBoard",
+      name: "BulletinBoard",
+      component: BulletinBoard,
     },
     {
-      path: '/BulletinBoard/roomboard/:roomId',
-      name: 'RoomBoard',
-      component: RoomBoard
+      path: "/BulletinBoard/roomboard/:roomId",
+      name: "RoomBoard",
+      component: RoomBoard,
+      meta: { requiresAuth: true },
     },
     {
-      path: '/WorkBoard',
-      name: 'WorkBoard',
-      component: WorkBoard
+      path: "/WorkBoard",
+      name: "WorkBoard",
+      component: WorkBoard,
     },
     {
-      path: '/WorkBoard/WorkRoomBoard',
-      name: 'WorkRoomBoard',
-      component: WorkRoomBoard
-    }
-  ]
-})
+      path: "/WorkBoard/WorkRoomBoard",
+      name: "WorkRoomBoard",
+      component: WorkRoomBoard,
+    },
+    {
+      path: "/BulletinBoard/BulletinLogin",
+      name: "BulletinLogin",
+      component: BulletinLogin,
+    },
+    {
+      path: "/WorkBoard/WorkLogin",
+      name: "WorkLogin",
+      component: WorkLogin,
+    },
+  ],
+});
 
-export default router
+router.beforeEach(async (to) => {
+  if (to.meta.requiresAuth) {
+    // const response = await axios.get("/api/auth/verifyCookie");
+    const response = { status: 200 };
+    if (response.status !== 200 && to.name !== "BulletinLogin") {
+      return { name: "BulletinLogin" };
+    }
+  }
+});
+
+export default router;

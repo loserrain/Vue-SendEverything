@@ -21,11 +21,14 @@ const activeTab = ref('all');
 const handleTabClick = (tab) => {
   activeTab.value = tab;
 }
+
+const roomCode = ref("6N3YVKE7");
+
 </script>
 
 <template>
   <div v-if="loginStatus">
-    <WorkLoginBoard @send-login-status="handleLoginStatus"></WorkLoginBoard>
+    <WorkLoginBoard @send-login-status="handleLoginStatus" :roomCode="roomCode"></WorkLoginBoard>
   </div>
   <div v-if="createStatus">
     <WorkCreateBoard @send-create-status="handleSendCreateStatus"></WorkCreateBoard>

@@ -11,9 +11,6 @@ function handleSendUploadStatus(newStatus) {
 const fileCount = 2;
 const textInput = ref([]);
 
-watchEffect(() => {
-  console.log('Uploading data to Spring:', textInput.value[1])
-});
 // --------------------------------------------------------------------
 
 const progress = ref([]);
@@ -204,6 +201,7 @@ async function uploadChunkThreads(file) {
         const totalChunks = workerMultiple.value[i].totalChunks;
         const fileId = workerMultiple.value[i].fileId;
         const chunkId = workerMultiple.value[i].chunkId;
+        const size = file[i].size;
         outputFileName.value = workerMultiple.value[i].fileName;
 
         const formData = new FormData();
@@ -212,6 +210,7 @@ async function uploadChunkThreads(file) {
         formData.append("totalChunks", totalChunks);
         formData.append("fileId", fileId);
         formData.append("chunkId", chunkId);
+        formData.append("size", size);
         formData.append("outputFileName", outputFileName.value);
 
         UploadService.uploadChunk(formData).then(() => {

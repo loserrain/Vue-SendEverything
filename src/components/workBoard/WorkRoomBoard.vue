@@ -59,7 +59,7 @@ const roomTestNumber = 8;
         <div class="room-board-sidebar-tab-user">
           <p></p>
           <div><font-awesome-icon :icon="['far', 'user']" /></div>
-          <span>User 1</span>
+          <span>User 1(Owner)</span>
         </div>
         <div class="room-board-sidebar-tab" @click="handleSendUploadStatus(true)">
           <div><font-awesome-icon icon="arrow-up-from-bracket" /></div>

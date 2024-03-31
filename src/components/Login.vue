@@ -50,6 +50,7 @@ function register() {
 }
 
 function handleLogin(user) {
+  console.log("user", user);
   loading.value = true;
   authStore
     .login(user)
@@ -142,6 +143,7 @@ function handleLogin(user) {
               <Field id="password" name="password" type="password" class="form-control" placeholder=" " />
               <ErrorMessage name="password" class="error-feedback" />
             </div>
+            
 
             <div class="card-button-field">
               <button class="card-button" :disabled="loading">
@@ -156,14 +158,7 @@ function handleLogin(user) {
                 <span>or</span>
               </div>
             </div>
-
-            <!-- <div class="">
-              <div v-if="message" class="login-alert" role="alert">
-                {{ message }}
-              </div>
-            </div> -->
           </Form>
-
           <button
             class="card-button auth-button"
             :disabled="loading"

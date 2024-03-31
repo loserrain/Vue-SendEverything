@@ -1,24 +1,18 @@
 <script setup>
-import { ref, watchEffect, computed, watch } from "vue";
+import { ref, computed, watch } from "vue";
+import { useRouter } from "vue-router";
+import BoardUploadService from "../boardUploadService/BoardRoom.js";
+import { Form, Field, ErrorMessage } from "vee-validate";
+import * as yup from "yup";
 
 const emits = defineEmits(["sendCreateStatus"]);
-
-const inputTitle = ref("");
-const inputDescription = ref("");
-const inputPwd = ref("");
+const router = useRouter();
 
 function handleSendCreateStatus(newStatus) {
   emits("sendCreateStatus", newStatus);
-  inputTitle.value = "";
-  inputDescription.value = "";
-  inputPwd.value = "";
 }
 
-function handleCreate(room) {
-  console.log("Room Data: ", room);
-}
-
-const isPublicChecked = ref(false);
+const isPublicChecked = ref(true);
 const isPrivateChecked = ref(false);
 
 const ckPublicIcon = computed(() => {
@@ -32,12 +26,16 @@ const ckPrivateIcon = computed(() => {
 watch(isPublicChecked, (newValue) => {
   if (newValue) {
     isPrivateChecked.value = false;
+  } else {
+    isPrivateChecked.value = true;
   }
 });
 
 watch(isPrivateChecked, (newValue) => {
   if (newValue) {
     isPublicChecked.value = false;
+  } else {
+    isPublicChecked.value = true;
   }
 });
 
@@ -46,21 +44,53 @@ const file = ref(undefined);
 const previewImage = ref(null);
 const previewStatus = ref(false);
 function selectFile() {
-  console.log(file.value.files[0]);
   handlePreviewImg(file.value.files);
 }
 function handlePreviewImg(file) {
   const reader = new FileReader();
   const selectFileSize = file[0].size / 1024 / 1024;
-  if (selectFileSize < 20) {
-    reader.readAsDataURL(file[0]);
-  }
-  reader.onload = () => {
-    previewImage.value = reader.result;
-  };
-  previewStatus.value = true;
-}
+  const isImage = /^image\//.test(file[0].type);
 
+  if (selectFileSize < 20 && isImage) {
+    reader.readAsDataURL(file[0]);
+    reader.onload = () => {
+      previewImage.value = reader.result;
+    };
+    previewStatus.value = true;
+  } else {
+    file.value = "";
+    previewStatus.value = false;
+  }
+}
+// Create Room
+
+const schema = yup.object().shape({
+  description: yup.string().required("Username is required!"),
+  pwd: yup.string().required("Password is required!"),
+  title: yup.string().required("Password is required!"),
+});
+
+const roomNumber = ref("123");
+
+function handleCreate(room) {
+  const roomType = isPublicChecked.value ? "PUBLIC" : "PRIVATE";
+  const roomData = {
+    title: room.title,
+    description: room.description,
+    pwd: room.pwd,
+    roomType: roomType,
+    file: file.value.files[0],
+  };
+  BoardUploadService.uploadMessageWithImage(roomData, file.value.files[0])
+    .then((response) => {
+      roomNumber.value = response.data.roomCode;
+      router.push(`/BulletinBoard/roomboard/${roomNumber.value}`);
+    })
+    .catch((error) => {
+      // router.push(`/BulletinBoard/roomboard/${roomNumber.value}`);
+      console.log("Error: ", error);
+    });
+}
 </script>
 
 <template>
@@ -68,61 +98,97 @@ function handlePreviewImg(file) {
     <div class="create-board" @click.stop>
       <p>ROOM SETUP</p>
       <div class="create-board-line"></div>
-      <div class="create-board-form">
-        <form @submit="handleCreate">
-          <div class="create-board-title">
-            <p>Title</p>
-            <label for="title"></label>
-            <input type="text" name="title" id="title" v-model="inputTitle" />
-          </div>
-
-          <div class="create-board-description">
-            <p>Room description</p>
-            <label for="description"></label>
-            <textarea name="description" id="description" cols="41" rows="3" v-model="inputDescription"></textarea>
-          </div>
-
-          <p>Password setting</p>
-          <div class="create-board-pwd-flex">
-            <div class="create-board-pwd">
-              <label for="pwd"></label>
-              <input type="password" name="pwd" id="pwd" v-model="inputPwd" />
+      <Form @submit="handleCreate" :validation-schema="schema">
+        <div class="create-board-form">
+          <div>
+            <div class="create-board-title">
+              <p>Title</p>
+              <label for="title"></label>
+              <Field type="text" name="title" id="title" />
+              <ErrorMessage name="title" class="error-feedback" />
             </div>
 
-            <div class="create-board-checkbox">
-              <label for="checkbox1">
-                <input type="checkbox" name="checkbox1" id="checkbox1" v-model="isPublicChecked" />
-                <span><font-awesome-icon :icon="ckPublicIcon" /></span>
-                Public
-              </label>
-              <label for="checkbox2">
-                <input type="checkbox" name="checkbox2" id="checkbox2" v-model="isPrivateChecked" />
-                <span><font-awesome-icon :icon="ckPrivateIcon" /></span>
-                Private
-              </label>
+            <div class="create-board-description">
+              <p>Room description</p>
+              <label for="description"></label>
+              <Field
+                as="textarea"
+                name="description"
+                id="description"
+                cols="41"
+                rows="3"
+              ></Field>
+              <ErrorMessage name="description" class="error-feedback" />
+            </div>
+
+            <p>Password setting</p>
+            <div class="create-board-pwd-flex">
+              <div class="create-board-pwd">
+                <label for="pwd"></label>
+                <Field type="password" name="pwd" id="pwd" />
+                <ErrorMessage name="pwd" class="error-feedback" />
+              </div>
+
+              <div class="create-board-checkbox">
+                <label for="public">
+                  <Field
+                    type="checkbox"
+                    name="public"
+                    id="public"
+                    :checked="isPublicChecked"
+                    @input="isPublicChecked = !isPublicChecked"
+                  />
+                  <span><font-awesome-icon :icon="ckPublicIcon" /></span>
+                  Public
+                </label>
+                <label for="private">
+                  <Field
+                    type="checkbox"
+                    name="private"
+                    id="private"
+                    :checked="isPrivateChecked"
+                    @input="isPrivateChecked = !isPrivateChecked"
+                  />
+                  <span><font-awesome-icon :icon="ckPrivateIcon" /></span>
+                  Private
+                </label>
+              </div>
             </div>
           </div>
-        </form>
-
-        <!-- 檔案預覽 -->
-        <div class="create-board-Select">
-          <div class="create-board-img">
-            <img v-if="previewStatus" :src="previewImage" alt="">
-            <p v-else>File Preview</p>
-          </div>
-          <div class="create-board-file">
-            <label type="button" for="fileInput"> Select File </label>
-            <input type="file" name="fileInput" id="fileInput" ref="file" @change="selectFile" />
+          <!-- 檔案預覽 -->
+          <div class="create-board-Select">
+            <div class="create-board-img">
+              <img v-if="previewStatus" :src="previewImage" alt="" />
+              <p v-else>Picture Preview</p>
+            </div>
+            <div class="create-board-file">
+              <label type="button" for="fileInput"> Select Picture </label>
+              <input
+                type="file"
+                name="fileInput"
+                id="fileInput"
+                ref="file"
+                @change="selectFile"
+              />
+            </div>
           </div>
         </div>
-      </div>
+
+        <div class="create-board-decide">
+          <button
+            class="create-board-cancel"
+            @click="handleSendCreateStatus(false)"
+          >
+            Cancel
+          </button>
+          <button class="create-board-confirm">Confirm</button>
+        </div>
+      </Form>
       <!-- 檔案預覽 -->
 
-      <div class="create-board-decide">
-        <button class="create-board-cancel" @click="handleSendCreateStatus(false)">Cancel</button>
-        <button class="create-board-confirm">Confirm</button>
-      </div>
-      <span @click="handleSendCreateStatus(false)"><font-awesome-icon icon="xmark" /></span>
+      <span @click="handleSendCreateStatus(false)"
+        ><font-awesome-icon icon="xmark"
+      /></span>
     </div>
   </div>
 </template>

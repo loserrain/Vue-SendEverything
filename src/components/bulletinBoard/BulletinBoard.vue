@@ -1,8 +1,10 @@
 <script setup>
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
 
 import CreateBoard from "./CreateBoard.vue";
 import LoginBoard from "./LoginBoard.vue";
+import BoardUploadService from "../boardUploadService/BoardRoom.js";
+
 const createStatus = ref(false);
 const loginStatus = ref(false);
 
@@ -21,11 +23,18 @@ const handleTabClick = (tab) => {
 }
 
 const roomTestNumber = 12;
+const roomCode = ref("6N3YVKE7");
+
+// onMounted(() => {
+//   BoardUploadService.getRoomList().then((response) => {
+//     console.log(response);
+//   })
+// });
 </script>
 
 <template>
   <div v-if="loginStatus">
-    <LoginBoard @send-login-status="handleLoginStatus"></LoginBoard>
+    <LoginBoard @send-login-status="handleLoginStatus" :roomCode="roomCode"></LoginBoard>
   </div>
   <div v-if="createStatus">
     <CreateBoard @send-create-status="handleSendCreateStatus"></CreateBoard>
@@ -85,7 +94,7 @@ const roomTestNumber = 12;
           <p class="board-main-room-status">Public</p>
           <div class="board-main-room-number">
             <span><font-awesome-icon icon="house-user" /></span>
-            <p>XBF4CR</p>
+            <p>{{ roomCode }}</p>
           </div>
           <p class="board-main-room-description">
             這是一個使用者參與過的房間，此為示例，供開發者參考用，過多文字將會縮短........

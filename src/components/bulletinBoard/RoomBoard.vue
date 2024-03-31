@@ -53,6 +53,8 @@ function selectAllRooms() {
     roomChecked.value[i] = !allChecked;
   }
 }
+
+
 </script>
 
 <template>
@@ -86,7 +88,7 @@ function selectAllRooms() {
         >
           <p></p>
           <div><font-awesome-icon :icon="['far', 'circle-down']" /></div>
-          <span>Download File{{ $route.params.roomId }}</span>
+          <span>Download File</span>
         </div>
         <div
           class="room-board-sidebar-tab"
@@ -122,7 +124,7 @@ function selectAllRooms() {
             <p>Created: 2024年3月7日 下午 08:39</p>
             <p>20 people</p>
           </div>
-          <p>XBF4CR</p>
+          <p>{{ $route.params.roomId }}</p>
         </div>
       </div>
 
