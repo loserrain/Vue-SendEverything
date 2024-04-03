@@ -63,7 +63,7 @@ const router = createRouter({
       component: BulletinBoard,
     },
     {
-      path: "/BulletinBoard/roomboard/:roomId",
+      path: "/BulletinBoard/roomboard/:roomCode",
       name: "RoomBoard",
       component: RoomBoard,
       meta: { requiresAuth: true },
@@ -93,8 +93,8 @@ const router = createRouter({
 
 router.beforeEach(async (to) => {
   if (to.meta.requiresAuth) {
-    console.log("asdasdasdasd")
-    const response = await BoardUploadService.verifyCookie();
+    const roomCode = to.params.roomCode;
+    const response = await BoardUploadService.verifyCookie(roomCode);
     if (response.status !== 200 && to.name !== "BulletinLogin") {
       return { name: "BulletinLogin" };
     }

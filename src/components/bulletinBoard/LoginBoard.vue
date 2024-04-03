@@ -28,23 +28,23 @@ const elIcon = computed(() => {
   return flag.value ? ["far", "eye"] : ["far", "eye-slash"];
 });
 console.log(props.roomCode);
-const roomCode = "FE7GGAD3";
+// const roomCode = "FE7GGAD3";
 
 function handleLoginData() {
-  BoardUploadService.accessRoom(pwd.value, roomCode)
+  BoardUploadService.accessRoom(pwd.value, props.roomCode)
     .then((response) => {
-      router.push(`/BulletinBoard/roomboard/FE7GGAD3`);
+      router.push(`/BulletinBoard/roomboard/${props.roomCode}`);
       console.log(response);
     })
     .catch((error) => {
-      console.log("ASDASDASD")
+      console.log("ASDASDASD");
       console.log(error);
     });
 }
 </script>
 
 <template>
-  <div class="login-board-mask" @click="handleSendLoginStatus(false)">
+  <div class="login-board-mask">
     <div class="login-board" @click.stop>
       <h1>Enter Your Password.</h1>
       <div class="login-board-title">

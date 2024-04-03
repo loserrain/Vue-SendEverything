@@ -72,6 +72,17 @@ const schema = yup.object().shape({
 
 const roomNumber = ref("123");
 
+function handleLoginData(password, roomCode) {
+  BoardUploadService.accessRoom(password, roomCode)
+    .then((response) => {
+      router.push(`/BulletinBoard/roomboard/${roomCode}`);
+      console.log(response);
+    })
+    .catch((error) => {
+      console.log(error);
+    });
+}
+
 function handleCreate(room) {
   const roomType = isPublicChecked.value ? "PUBLIC" : "PRIVATE";
   const roomData = {
@@ -84,17 +95,18 @@ function handleCreate(room) {
   BoardUploadService.uploadMessageWithImage(roomData, file.value.files[0])
     .then((response) => {
       roomNumber.value = response.data.roomCode;
-      router.push(`/BulletinBoard/roomboard/${roomNumber.value}`);
+      handleLoginData(room.pwd, roomNumber.value);
     })
     .catch((error) => {
-      // router.push(`/BulletinBoard/roomboard/${roomNumber.value}`);
       console.log("Error: ", error);
     });
 }
+
+
 </script>
 
 <template>
-  <div class="create-board-mask" @click="handleSendCreateStatus(false)">
+  <div class="create-board-mask">
     <div class="create-board" @click.stop>
       <p>ROOM SETUP</p>
       <div class="create-board-line"></div>

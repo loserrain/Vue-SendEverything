@@ -3,7 +3,10 @@ import { ref, computed, onMounted } from "vue";
 import CreateBoard from "./CreateBoard.vue";
 import UploadBoard from "./UploadBoard.vue";
 import DeleteBoard from "./DeleteBoard.vue";
+import { useRouter } from "vue-router";
 import BoardUploadService from "../boardUploadService/BoardRoom.js";
+
+const router = useRouter();
 
 const createStatus = ref(false);
 function handleSendCreateStatus(newStatus) {
@@ -20,14 +23,18 @@ function handleSendDeleteStatus(newStatus) {
   deleteStatus.value = newStatus;
 }
 
-const roomTestNumber = 8;
-
 // check檔案下載
 const roomChecked = ref([]);
 
-for (let i = 0; i < roomTestNumber; i++) {
-  roomChecked.value.push(false);
-}
+const roomDownloadCode = computed(() => {
+  const downloadCodes = [];
+  roomChecked.value.forEach((checked, index) => {
+    if (checked) {
+      downloadCodes.push(roomData.value.dbRoomFiles[index].verificationCode);
+    }
+  });
+  return downloadCodes;
+});
 
 function handleRoomCheckboxToggle(index) {
   roomChecked.value[index] = !roomChecked.value[index];
@@ -55,17 +62,143 @@ function selectAllRooms() {
   }
 }
 
-const roomCode = "FE7GGAD3";
+function handleRoomData(length) {
+  roomData.value.roomResponse.createTime = new Date(
+    roomData.value.roomResponse.createTime
+  ).toLocaleString();
+
+  for (let i = 0; i < length; i++) {
+    roomData.value.dbRoomFiles[i].timestamp = new Date(
+      roomData.value.dbRoomFiles[i].timestamp
+    ).toLocaleString();
+    // console.log(roomData.value.dbRoomFiles[i].fileSize);
+    let formattedSize = formatFileSize(roomData.value.dbRoomFiles[i].fileSize);
+    roomDataFileSize.value.push(
+      `${formattedSize.sizeValue}  ${formattedSize.sizeUnit}`
+    );
+  }
+}
+
+function formatFileSize(fileSize) {
+  const KB = 1024;
+  const MB = KB * 1024;
+  const GB = MB * 1024;
+
+  let sizeUnit;
+  let sizeValue;
+
+  if (fileSize < KB) {
+    sizeValue = fileSize;
+    sizeUnit = "B";
+  } else if (fileSize < MB) {
+    sizeValue = (fileSize / KB).toFixed(0);
+    sizeUnit = "KB";
+  } else if (fileSize < GB) {
+    sizeValue = (fileSize / MB).toFixed(2);
+    sizeUnit = "MB";
+  } else {
+    sizeValue = (fileSize / GB).toFixed(2);
+    sizeUnit = "GB";
+  }
+
+  return { sizeValue, sizeUnit };
+}
+
+const roomCode = router.currentRoute.value.params.roomCode;
 const roomData = ref(undefined);
 const roomDataStatus = ref(true);
+const roomDataFileLength = ref(undefined);
+const roomDataFileSize = ref([]);
 
 onMounted(() => {
   BoardUploadService.showRoomContent(roomCode).then((response) => {
     roomData.value = response.data;
+    roomDataFileLength.value = roomData.value.dbRoomFiles.length;
+    handleRoomData(roomDataFileLength.value);
     roomDataStatus.value = false;
-    console.log(roomData.value);
+    for (let i = 0; i < roomData.value.dbRoomFiles.length; i++) {
+      roomChecked.value.push(false);
+    }
   });
 });
+
+const totalSize = ref(0);
+const reader = ref(null);
+const chunks = ref([]);
+const loadedSize = ref(0);
+const filename = ref("example.txt");
+
+function handleDownloadFile() {
+  for(let i = 0; i < roomDownloadCode.value.length; i++) {
+    console.log(roomDownloadCode.value[i])
+    setTimeout(() => {
+      downloadFile(roomDownloadCode.value[i]);
+    }, 300 * (i + 1));
+  }
+}
+
+function readStream(response) {
+  totalSize.value = response.headers.get("Content-Length") || "未知大小";
+  reader.value = response.body.getReader();
+  console.log(totalSize.value);
+
+  const read = () => {
+    return reader.value.read().then(({ done, value }) => {
+      if (done) {
+        return new Blob(chunks.value);
+      }
+      loadedSize.value += value.length;
+      // progress.value = ((loadedSize.value / totalSize.value) * 100).toFixed(0);
+      chunks.value.push(value);
+      return read();
+    });
+  };
+  console.log(chunks.value)
+  return read();
+}
+
+function downloadFile(code) {
+  // uploadStatus.value = true;
+  const url = `http://localhost:8080/api/auth/downloadRoomFileByCode/${code}`;
+  // const url = `http://localhost:8080/api/auth/downloadFileByCode/363996`;
+  fetch(url)
+    .then((response) => {
+      console.log(response.headers.get("Content-Disposition"))
+      // uploadStatus.value = false;
+      code = "";
+      // progressStatus.value = false;
+      const contentDisposition = response.headers.get("Content-Disposition");
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(
+          /filename\*?=['"]?(?:UTF-8'')?([^'";]+)['"]?/i
+        );
+        if (filenameMatch && filenameMatch[1]) {
+          filename.value = decodeURIComponent(filenameMatch[1]);
+        }
+      }
+
+      return readStream(response);
+    })
+    .then((blob) => {
+      const downloadUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = downloadUrl;
+      a.download = filename.value;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(downloadUrl);
+      // progressStatus.value = true;
+      loadedSize.value = 0;
+      chunks.value = [];
+    })
+    .catch((error) => {
+      console.error("下載過程中發生錯誤:", error);
+      chunks.value = [];
+      // uploadStatus.value = false;
+    });
+}
+
 </script>
 
 <template>
@@ -73,11 +206,17 @@ onMounted(() => {
     <CreateBoard @send-create-status="handleSendCreateStatus"></CreateBoard>
   </div>
   <div v-if="uploadStatus">
-    <UploadBoard @send-upload-status="handleSendUploadStatus" :roomCode="roomCode"></UploadBoard>
+    <UploadBoard
+      @send-upload-status="handleSendUploadStatus"
+      :roomCode="roomCode"
+    ></UploadBoard>
   </div>
   <div v-if="deleteStatus">
     <DeleteBoard @send-delete-status="handleSendDeleteStatus"></DeleteBoard>
   </div>
+
+  <a class="downloadLink" ref="downloadLink"></a>
+
   <div class="room-board-container">
     <div class="room-board-sidebar">
       <div class="room-board-sidebar-search">
@@ -122,36 +261,42 @@ onMounted(() => {
       <pre>佈告欄 / 房間</pre>
 
       <div class="room-board-data" v-if="roomDataStatus">
+        <p class="room-board-data-line"></p>
         <div class="room-board-data-img">
           <img src="../../assets/image/main.png" alt="" />
         </div>
         <div class="room-board-data-text">
-          <h1>asd</h1>
+          <h1>系統分析與設計</h1>
           <h2>
-            asd
+            這是一個可以一對多傳送檔案的房間，此功能名為One for
+            all(暫定)，建立房間的房主可在此進行房間的簡述，使參加者了解房間傳送檔案的目的，使參加者了解房間傳送檔案的目的
           </h2>
           <div class="room-board-data-date">
-            <p>asd</p>
+            <p>Created: 2024年3月7日 下午 08:39</p>
             <p>20 people</p>
           </div>
-          <p>{{ $route.params.roomId }}</p>
+          <p>{{ $route.params.roomCode }}</p>
         </div>
       </div>
 
       <div class="room-board-data" v-else>
+        <p class="room-board-data-line"></p>
         <div class="room-board-data-img">
-          <img :src="'data:image/png;base64,' + roomData.image" alt="" />
+          <img
+            :src="'data:image/png;base64,' + roomData.roomResponse.image"
+            alt=""
+          />
         </div>
         <div class="room-board-data-text">
-          <h1>{{ roomData.title }}</h1>
+          <h1>{{ roomData.roomResponse.title }}</h1>
           <h2>
-            {{ roomData.description }}
+            {{ roomData.roomResponse.description }}
           </h2>
           <div class="room-board-data-date">
-            <p>{{ roomData.createTime }}</p>
+            <p>{{ roomData.roomResponse.createTime }}</p>
             <p>20 people</p>
           </div>
-          <p>{{ $route.params.roomId }}</p>
+          <p>{{ $route.params.roomCode }}</p>
         </div>
       </div>
 
@@ -162,7 +307,7 @@ onMounted(() => {
             檔案
           </p>
           <div v-if="sidebarStatus">
-            <button>下載</button>
+            <button @click="handleDownloadFile()">下載</button>
             <button
               class="room-board-delete"
               @click="handleSendDeleteStatus(true)"
@@ -177,7 +322,7 @@ onMounted(() => {
         <div class="room-board-file">
           <div
             class="room-board-main-room"
-            v-for="(room, index) in roomTestNumber"
+            v-for="(roomFile, index) in roomDataFileLength"
             :key="index"
           >
             <p class="room-board-main-room-check" v-if="sidebarStatus">
@@ -194,6 +339,19 @@ onMounted(() => {
             <div class="room-board-main-room-number">
               <span><font-awesome-icon :icon="['far', 'file']" /></span>
               <div>
+                <p>{{ roomData.dbRoomFiles[index].fileName }}</p>
+                <p>{{ roomDataFileSize[index] }}</p>
+              </div>
+            </div>
+            <p class="room-board-main-room-description">
+              {{ roomData.dbRoomFiles[index].description }}
+            </p>
+            <p class="room-board-main-room-date">
+              {{ roomData.dbRoomFiles[index].timestamp }}
+            </p>
+            <!-- <div class="room-board-main-room-number">
+              <span><font-awesome-icon :icon="['far', 'file']" /></span>
+              <div>
                 <p>Universal-System-Web.mp4</p>
                 <p>40.9MB</p>
               </div>
@@ -201,7 +359,7 @@ onMounted(() => {
             <p class="room-board-main-room-description">
               這是房間擁有者上傳的檔案，此位置的文字為檔案簡述，供開發者參考用，過多文字將會縮短........
             </p>
-            <p class="room-board-main-room-date">Creation date: 2024/03/04.</p>
+            <p class="room-board-main-room-date">Creation date: 2024/03/04.</p> -->
           </div>
         </div>
       </div>
@@ -211,6 +369,10 @@ onMounted(() => {
 
 <style scoped lang="scss">
 @import "../../assets/styles/layout/board/roomBoard";
+
+.downloadLink {
+  display: none;
+}
 
 .room-board-main-room-check {
   position: absolute;
@@ -224,9 +386,8 @@ onMounted(() => {
   font-size: 22px;
   padding-top: 2px;
   color: #767676;
-  transition: all .2s;
+  transition: all 0.2s;
   cursor: pointer;
-
 
   &:hover {
     background-color: rgba(114, 114, 118, 0.174);

@@ -44,7 +44,7 @@ function formatFileSize(fileSize) {
     sizeValue = fileSize;
     sizeUnit = "B";
   } else if (fileSize < MB) {
-    sizeValue = (fileSize / KB).toFixed(2);
+    sizeValue = (fileSize / KB).toFixed(0);
     sizeUnit = "KB";
   } else if (fileSize < GB) {
     sizeValue = (fileSize / MB).toFixed(2);
@@ -105,12 +105,13 @@ function handleFileSelectAndDrop(file) {
   }
   for (let i = 0; i < file.length; i++) {
     fileList.value.push(file[i]);
+    // console.log(file[i].size)
     let formattedSize = formatFileSize(file[i].size);
     selectFileSize.value.push(
       `${formattedSize.sizeValue}  ${formattedSize.sizeUnit}`
     );
+    // console.log(selectFileSize.value)
     progress.value.push(0);
-    textInput.value.push("");
   }
   fileUploadStatus.value = false;
 }
@@ -123,6 +124,7 @@ const totalChunks = ref(0);
 const currentChunkIndex = ref(0);
 const totalThreads = navigator.hardwareConcurrency || 2;
 const workerResult = ref([]);
+const sendTextInput = ref([]);
 
 async function uploadChunks() {
   if (!selectedFiles.value || selectedFiles.value.length === 0) return;
@@ -131,13 +133,23 @@ async function uploadChunks() {
   currentFile.value = selectedFiles.value[0];
   totalChunks.value = Math.ceil(currentFile.value.size / chunkSize);
   currentChunkIndex.value = 0;
+  console.log("fileLise.value", fileList.value)
 
   workerResult.value = []; // 清空workerResult
+  sendTextInput.value = []; // 清空sendTextInput
 
+  // 根據每個檔案的切片大小，將檔案描述文字加入sendTextInput
+  for(let i = 0; i < fileList.value.length; i++) {
+    let fileListSizeCal = Math.ceil(fileList.value[i].size / chunkSize);
+    for(let j=0; j < fileListSizeCal; j++) {
+      sendTextInput.value.push(textInput.value[i]);
+    }
+  }
   uploadChunkThreads(fileList.value);
 }
 
 const workerMultiple = ref([]);
+
 
 // 分片上傳
 async function uploadChunkThreads(file) {
@@ -196,16 +208,20 @@ async function uploadChunkThreads(file) {
     let progressNumber = 0;
 
     const interval = setInterval(() => {
+      // 11
       if (i < workerMultiple.value.length) {
         const fileChunk = workerMultiple.value[i].fileChunk;
         const chunkNumber = workerMultiple.value[i].chunkNumber + 1;
         const totalChunks = workerMultiple.value[i].totalChunks;
         const fileId = workerMultiple.value[i].fileId;
         const chunkId = workerMultiple.value[i].chunkId;
-        const size = file[i].size;
-        console.log("size", size);
+        const size = file[progressNumber].size;
         outputFileName.value = workerMultiple.value[i].fileName;
+        if(sendTextInput.value[i] === undefined) {
+          sendTextInput.value[i] = "";
+        }
 
+        // console.log(textInput.value[progressNumber])
         const formData = new FormData();
         formData.append("fileChunk", fileChunk);
         formData.append("chunkNumber", chunkNumber);
@@ -214,8 +230,9 @@ async function uploadChunkThreads(file) {
         formData.append("chunkId", chunkId);
         formData.append("size", size);
         formData.append("outputFileName", outputFileName.value);
-        formData.append("description", textInput.value[i]);
+        formData.append("description", sendTextInput.value[i]);
         formData.append("roomCode", props.roomCode);
+        console.log("sendTextInput.value[i]", sendTextInput.value[i])
 
         UploadService.uploadRoomFileChunk(formData).then(() => {
           // 計算當前分片數量
@@ -228,6 +245,7 @@ async function uploadChunkThreads(file) {
           // 若分片數量與總分片數量相同，通知後端合併
           if (currentChunkIndex.value === totalChunks) {
             progressNumber++;
+            // console.log("progressNumber", progressNumber)
             currentChunkIndex.value = 0;
 
             UploadService.completeUploadRoomFile(
@@ -236,7 +254,7 @@ async function uploadChunkThreads(file) {
               chunkId
             )
               .then((response) => {
-                console.log("File upload completed", response.data);
+                // console.log("File upload completed", response.data);
               })
               .catch((error) => {
                 console.error("Error completing file upload", error);
@@ -249,6 +267,7 @@ async function uploadChunkThreads(file) {
         clearInterval(interval);
         fileListUploadStatus.value = true;
         workerMultiple.value = [];
+        // sendTextInput.value = [];
       }
     }, 200);
   } catch {
@@ -258,7 +277,7 @@ async function uploadChunkThreads(file) {
 </script>
 
 <template>
-  <div class="upload-board-mask" @click="handleSendUploadStatus(false)">
+  <div class="upload-board-mask">
     <div class="upload-board-page" @click.stop>
       <div class="upload-board-page-title">
         <h2>

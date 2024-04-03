@@ -24,8 +24,8 @@ class BoardUploadService {
     return http.post("/accessRoom", { password, roomCode });
   }
 
-  verifyCookie() {
-    return http.get("/verifyCookie");
+  verifyCookie(roomCode) {
+    return http.post("/verifyCookie", { roomCode });
   }
 
   showRoomContent(roomCode) {

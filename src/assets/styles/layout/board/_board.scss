@@ -67,7 +67,7 @@
         background-color: $primary-board-white-80;
         margin-top: 9px;
         padding-left: 1rem;
-        transition: all .2s;
+        transition: all 0.2s;
         cursor: pointer;
 
         div {
@@ -86,14 +86,14 @@
 
       .board-sidebar-status {
         background-color: #e9f2ff;
-        transition: all .2s;
+        transition: all 0.2s;
         p {
           position: absolute;
           width: 5px;
           height: 17px;
           background-color: #84b6ff;
           left: 0;
-          transition: all .2s;
+          transition: all 0.2s;
         }
 
         &:hover {
@@ -122,20 +122,18 @@
       gap: 35px 24px;
       width: 1520px;
 
-      > div {
-        height: 180px;
-        width: 350px;
-        background-color: $primary-board-white-80;
-        border-radius: 8px;
-      }
-
       .board-main-room {
         position: relative;
+        height: 180px;
+        width: 350px;
         display: flex;
         justify-content: space-between;
         flex-direction: column;
+        flex-wrap: wrap;
+        background-color: $primary-board-white-80;
+        border-radius: 8px;
         padding: 8px 1rem 8px;
-        transition: all .2s;
+        transition: all 0.2s;
         cursor: pointer;
 
         &:hover {
@@ -143,35 +141,51 @@
         }
 
         .board-main-room-status {
-          font-size: 16px;
+          font-size: 20px;
           font-weight: bold;
-          color: #0aa234;
+          color: #414141;
           position: absolute;
           top: 8px;
-          right: 8px;
+          right: 12px;
+        }
+
+        .board-main-room-type-red {
+          color: #d82929;
         }
 
         .board-main-room-number {
-          display: flex;
-          align-items: center;
-
           span {
-            font-size: 32px;
-            color: #626f86;
+            display: block;
+            font-size: 12px;
+            font-weight: bold;
+            color: $primary-board-gray-80;
           }
 
           p {
-            font-size: 18px;
+            width: 280px;
+            font-size: 20px;
             font-weight: bold;
-            color: $primary-board-blue-100;
-            margin-left: 10px;
+            color: #414141;
+            display: -webkit-box;
+            -webkit-box-orient: vertical;
+            -webkit-line-clamp: 1;
+            word-break: break-all;
+            overflow: hidden;
           }
         }
 
         .board-main-room-description {
           font-size: 18px;
           font-weight: bold;
-          color: #373737;
+          color: $primary-board-gray-80;
+          line-height: 1.33;
+          height: 45%;
+          margin-top: 4px;
+          display: -webkit-box;
+          -webkit-box-orient: vertical;
+          -webkit-line-clamp: 3;
+          word-break: break-all;
+          overflow: hidden;
         }
 
         .board-main-room-date {

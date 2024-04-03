@@ -67,7 +67,7 @@
         background-color: $primary-board-white-80;
         margin-top: 9px;
         padding-left: 1rem;
-        transition: all .2s;
+        transition: all 0.2s;
         cursor: pointer;
 
         &:hover {
@@ -117,23 +117,36 @@
     .room-board-data {
       display: flex;
       justify-content: space-evenly;
-      // align-items: center;
+      width: 1500px;
       padding-bottom: 2rem;
-      border-bottom: 5px solid $primary-board-white-80;
+      position: relative;
+
+      .room-board-data-line {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: calc(100vw - 264px);
+        border-bottom: 5px solid $primary-board-white-80;
+      }
+
       .room-board-data-img {
         border: 3px solid #d9d9d9;
         border-radius: 12px;
+        text-align: center;
         width: 200px;
         height: 210px;
+        margin: 0 8rem 0 8rem;
+        padding: 8px;
 
         img {
           width: 100%;
+          object-fit: cover;
           height: 100%;
         }
       }
 
       .room-board-data-text {
-        width: 60%;
+        width: 1050px;
         position: relative;
 
         h1 {
@@ -145,8 +158,15 @@
         h2 {
           font-size: 22px;
           font-weight: bold;
-          color: $primary-board-blue-100;
-          margin: 2rem 0;
+          color: #373737;
+          margin: 14px 0;
+          line-height: 1.33;
+          height: 120px;
+          display: -webkit-box;
+          -webkit-box-orient: vertical;
+          -webkit-line-clamp: 4;
+          word-break: break-all;
+          overflow: hidden;
         }
 
         .room-board-data-date {
@@ -154,9 +174,9 @@
           align-items: end;
 
           p {
-            font-size: 18px;
+            font-size: 16px;
             font-weight: bold;
-            color: $primary-board-blue-100;
+            color: #8B8B8B;
             margin-right: 1.5rem;
           }
         }
@@ -195,11 +215,11 @@
             background-color: #808080;
             border: none;
             border-radius: 4px;
-            transition: all .2s;
+            transition: all 0.2s;
             cursor: pointer;
 
             &:hover {
-              opacity: .7;
+              opacity: 0.7;
             }
           }
 
@@ -251,12 +271,18 @@
                 font-weight: bold;
                 color: $primary-board-blue-100;
                 margin-bottom: 4px;
+                width: 260px;
               }
 
               p {
                 font-size: 12px;
                 color: $primary-board-gray-80;
                 user-select: none;
+                display: -webkit-box;
+                -webkit-box-orient: vertical;
+                -webkit-line-clamp: 1;
+                word-break: break-all;
+                overflow: hidden;
               }
             }
           }
@@ -265,6 +291,13 @@
             font-size: 16px;
             font-weight: bold;
             color: #373737;
+            line-height: 1.33;
+            height: 80px;
+            display: -webkit-box;
+            -webkit-box-orient: vertical;
+            -webkit-line-clamp: 4;
+            word-break: break-all;
+            overflow: hidden;
           }
 
           .room-board-main-room-date {

@@ -8,7 +8,7 @@ function handleSendDeleteStatus(newStatus) {
 </script>
 
 <template>
-    <div class="delete-board-mask" @click="handleSendDeleteStatus(false)">
+    <div class="delete-board-mask">
         <div class="delete-board" @click.stop>
             <p><font-awesome-icon icon="trash-can" /></p>
             <h2>Delete File</h2>

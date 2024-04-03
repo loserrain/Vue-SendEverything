@@ -36,7 +36,8 @@ import {
   faSignInAlt,
   faXmark,
   faGear,
-  faWrench
+  faWrench,
+  faUnlock
 } from "@fortawesome/free-solid-svg-icons";
 
 library.add(
@@ -72,7 +73,8 @@ library.add(
     faFile,
     faUser,
     faWrench,
-    faCircleDown
+    faCircleDown,
+    faUnlock
   );
 
   export { FontAwesomeIcon };

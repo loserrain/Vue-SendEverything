@@ -23,7 +23,7 @@ const filename = ref("example.txt");
 function readStream(response) {
   totalSize.value = response.headers.get("Content-Length") || "未知大小";
   reader.value = response.body.getReader();
-  console.log(totalSize.value);
+  console.log(chunks.value);
 
   const read = () => {
     return reader.value.read().then(({ done, value }) => {
@@ -70,10 +70,12 @@ function downloadFile() {
       URL.revokeObjectURL(downloadUrl);
       progressStatus.value = true;
       loadedSize.value = 0;
+      chunks.value = [];
     })
     .catch((error) => {
       console.error("下載過程中發生錯誤:", error);
       uploadStatus.value = false;
+      chunks.value = [];
     });
 }
 </script>
