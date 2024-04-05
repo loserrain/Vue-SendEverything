@@ -61,7 +61,7 @@ function setSelectedTab(tab) {
           </RouterLink>
           <RouterLink to="/login" class="nav-link">
             <li class="nav-item">
-              <font-awesome-icon icon="sign-in-alt" /> Login
+              <font-awesome-icon icon="sign-in-alt" /> Sign in
             </li>
           </RouterLink>
         </div>
@@ -70,10 +70,20 @@ function setSelectedTab(tab) {
       <div v-if="currentUser">
         <!-- <RouterLink to="/profile" class="nav-link"> -->
         <li class="nav-user">
-          <font-awesome-icon icon="user" />
+          <font-awesome-icon :icon="['far', 'user']" />
           {{ currentUser.username }}
         </li>
         <!-- </RouterLink> -->
+        <RouterLink to="/BulletinBoard" class="nav-link">
+            <li class="nav-item">
+              <font-awesome-icon icon="circle-arrow-up" /> 佈告欄
+            </li>
+          </RouterLink>
+          <RouterLink to="/WorkBoard" class="nav-link">
+            <li class="nav-item">
+              <font-awesome-icon icon="circle-arrow-up" /> 作業版
+            </li>
+          </RouterLink>
         <RouterLink
           to="/uploadfile"
           class="nav-link"
@@ -85,7 +95,7 @@ function setSelectedTab(tab) {
         </RouterLink>
         <li class="nav-item" @click.prevent="logOut">
           <a class="nav-link">
-            <font-awesome-icon icon="sign-out-alt" /> LogOut
+            <font-awesome-icon icon="sign-in-alt" /> Sign out
           </a>
         </li>
       </div>

@@ -51,6 +51,11 @@ class UploadFilesService {
     return http.post("/uploadRoomFileChunk", file, {
       headers: {
         "content-Type": "multipart/form-data"
+      },
+      onUploadProgress: (progressEvent) => {
+        const { loaded, total } = progressEvent;
+        const uploadProgress = Number(((loaded / total) * 100).toFixed(2));
+        console.log(uploadProgress);
       }
     });
   }

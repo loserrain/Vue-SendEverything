@@ -1,7 +1,6 @@
 <script setup>
-import { ref, watchEffect, computed } from "vue";
+import { ref, watchEffect } from "vue";
 import UploadService from "../../services/uploadFilesService";
-import axios from "axios";
 
 const emits = defineEmits(["sendUploadStatus"]);
 const props = defineProps(["roomCode"]);
@@ -171,6 +170,7 @@ async function uploadChunks() {
 const workerMultiple = ref([]);
 
 // 分片上傳
+// 遞迴上傳分片
 async function uploadChunkThreads(file) {
   try {
     for (let j = 0; j < file.length; j++) {
@@ -223,81 +223,52 @@ async function uploadChunkThreads(file) {
       workerResult.value = [];
     }
 
-    let i = 0;
     const chunksInfoProgress = calculateFileChunks(file, chunkSize);
-    let progressNumber = 0;
-
-    const interval = setInterval(() => {
-      if (i < workerMultiple.value.length) {
-        const { fileChunk, totalChunks, fileId, chunkId } =
-          workerMultiple.value[i];
-        const chunkNumber = workerMultiple.value[i].chunkNumber + 1;
-        const fileSize = fileListSize.value[i];
-        outputFileName.value = workerMultiple.value[i].fileName;
-        if (sendTextInput.value[i] === undefined) {
-          sendTextInput.value[i] = "";
-        }
-
-        const formData = new FormData();
-        formData.append("fileChunk", fileChunk);
-        formData.append("chunkNumber", chunkNumber);
-        formData.append("totalChunks", totalChunks);
-        formData.append("fileId", fileId);
-        formData.append("chunkId", chunkId);
-        formData.append("size", fileSize);
-        formData.append("outputFileName", outputFileName.value);
-        formData.append("description", sendTextInput.value[i]);
-        formData.append("roomCode", props.roomCode);
-
-        handleFileUpload(formData).then(async () => {
-          // 計算當前分片數量
-          currentChunkIndex.value++;
-          // 利用上傳分片數與總分片數計算進度條
-          progress.value[chunksInfoProgress[progressNumber].progress] =
-            Math.ceil((100 * formData.get("chunkNumber")) / totalChunks);
-
-          // 每當上傳一次分片，進度條+1
-          progressNumber++;
-
-          // 若分片數量與總分片數量相同，通知後端合併
-          if (currentChunkIndex.value === totalChunks) {
-            currentChunkIndex.value = 0;
-            const completeUploadStatus = UploadService.completeUploadRoomFile(
-              fileId,
-              outputFileName.value,
-              chunkId
-            )
-              .then((response) => {
-                console.log("File upload completed");
-              })
-              .catch((error) => {
-                console.error("Error completing file upload", error);
-              });
-
-            await completeUploadStatus;
-            // UploadService.completeUploadRoomFile(
-            //   fileId,
-            //   outputFileName.value,
-            //   chunkId
-            // )
-            //   .then((response) => {
-            //     console.log("File upload completed");
-            //   })
-            //   .catch((error) => {
-            //     console.error("Error completing file upload", error);
-            //   });
-          }
-        });
-
-        i++;
-      } else {
-        clearInterval(interval);
-        fileListUploadStatus.value = true;
-        workerMultiple.value = [];
-      }
-    }, 100);
-  } catch {
+    await uoloadChunksRecurively(0, chunksInfoProgress);
+  } catch (error) {
     console.error("Error in uploadChunkThreads: ", error);
+  }
+
+  async function uoloadChunksRecurively(index, chunksInfoProgress) {
+    if (index >= workerMultiple.value.length) {
+      fileListUploadStatus.value = true;
+      workerMultiple.value = [];
+      return;
+    }
+
+    const { fileChunk, totalChunks, fileId, chunkId } =
+      workerMultiple.value[index];
+    const chunkNumber = workerMultiple.value[index].chunkNumber + 1;
+    const fileSize = fileListSize.value[index];
+    outputFileName.value = workerMultiple.value[index].fileName;
+    const progressIndex = chunksInfoProgress[index].progress;
+    const description = sendTextInput.value[index] || "";
+
+    const formData = new FormData();
+    formData.append("fileChunk", fileChunk);
+    formData.append("chunkNumber", chunkNumber);
+    formData.append("totalChunks", totalChunks);
+    formData.append("fileId", fileId);
+    formData.append("chunkId", chunkId);
+    formData.append("size", fileSize);
+    formData.append("outputFileName", outputFileName.value);
+    formData.append("description", description);
+    formData.append("roomCode", props.roomCode);
+
+    await UploadService.uploadRoomFileChunk(formData);
+    currentChunkIndex.value++;
+    progress.value[progressIndex] = Math.ceil(
+      (100 * currentChunkIndex.value) / totalChunks
+    );
+    if (currentChunkIndex.value === totalChunks) {
+      currentChunkIndex.value = 0;
+      await UploadService.completeUploadRoomFile(
+        fileId,
+        outputFileName.value,
+        chunkId
+      );
+    }
+    await uoloadChunksRecurively(index + 1, chunksInfoProgress);
   }
 }
 </script>

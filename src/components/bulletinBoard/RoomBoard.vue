@@ -71,7 +71,6 @@ function handleRoomData(length) {
     roomData.value.dbRoomFiles[i].timestamp = new Date(
       roomData.value.dbRoomFiles[i].timestamp
     ).toLocaleString();
-    // console.log(roomData.value.dbRoomFiles[i].fileSize);
     let formattedSize = formatFileSize(roomData.value.dbRoomFiles[i].fileSize);
     roomDataFileSize.value.push(
       `${formattedSize.sizeValue}  ${formattedSize.sizeUnit}`
@@ -160,7 +159,6 @@ function readStream(response) {
 function downloadFile(code) {
   // uploadStatus.value = true;
   const url = `http://localhost:8080/api/auth/downloadRoomFileByCode/${code}`;
-  // const url = `http://localhost:8080/api/auth/downloadFileByCode/363996`;
   fetch(url)
     .then((response) => {
       console.log(response.headers.get("Content-Disposition"))
@@ -349,17 +347,6 @@ function downloadFile(code) {
             <p class="room-board-main-room-date">
               {{ roomData.dbRoomFiles[index].timestamp }}
             </p>
-            <!-- <div class="room-board-main-room-number">
-              <span><font-awesome-icon :icon="['far', 'file']" /></span>
-              <div>
-                <p>Universal-System-Web.mp4</p>
-                <p>40.9MB</p>
-              </div>
-            </div>
-            <p class="room-board-main-room-description">
-              這是房間擁有者上傳的檔案，此位置的文字為檔案簡述，供開發者參考用，過多文字將會縮短........
-            </p>
-            <p class="room-board-main-room-date">Creation date: 2024/03/04.</p> -->
           </div>
         </div>
       </div>

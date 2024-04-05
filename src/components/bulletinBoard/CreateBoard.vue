@@ -65,9 +65,9 @@ function handlePreviewImg(file) {
 // Create Room
 
 const schema = yup.object().shape({
-  description: yup.string().required("Username is required!"),
+  description: yup.string().required("Description is required!"),
   pwd: yup.string().required("Password is required!"),
-  title: yup.string().required("Password is required!"),
+  title: yup.string().required("Title is required!"),
 });
 
 const roomNumber = ref("123");
@@ -101,8 +101,6 @@ function handleCreate(room) {
       console.log("Error: ", error);
     });
 }
-
-
 </script>
 
 <template>
@@ -113,15 +111,15 @@ function handleCreate(room) {
       <Form @submit="handleCreate" :validation-schema="schema">
         <div class="create-board-form">
           <div>
+            <p>Title</p>
             <div class="create-board-title">
-              <p>Title</p>
               <label for="title"></label>
               <Field type="text" name="title" id="title" />
               <ErrorMessage name="title" class="error-feedback" />
             </div>
 
+            <p>Room description</p>
             <div class="create-board-description">
-              <p>Room description</p>
               <label for="description"></label>
               <Field
                 as="textarea"
@@ -207,4 +205,13 @@ function handleCreate(room) {
 
 <style scoped lang="scss">
 @import "../../assets/styles/layout/board/createBoard";
+
+.error-feedback {
+  position: absolute;
+  top:-1.4rem;
+  left: 13rem;
+  width: 200px;
+  font-weight: bold;
+  color: red;
+}
 </style>

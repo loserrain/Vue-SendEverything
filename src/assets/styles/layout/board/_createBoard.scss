@@ -53,6 +53,7 @@
       outline: none;
     }
     .create-board-title {
+      position: relative;
       input {
         width: 380px;
         height: 36px;
@@ -63,6 +64,7 @@
     }
 
     .create-board-description {
+      position: relative;
       textarea {
         resize: none;
         outline: none;
@@ -81,6 +83,7 @@
     }
 
     .create-board-pwd {
+      position: relative;
       input {
         width: 190px;
         height: 25px;

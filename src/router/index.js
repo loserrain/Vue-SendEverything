@@ -94,9 +94,12 @@ const router = createRouter({
 router.beforeEach(async (to) => {
   if (to.meta.requiresAuth) {
     const roomCode = to.params.roomCode;
-    const response = await BoardUploadService.verifyCookie(roomCode);
-    if (response.status !== 200 && to.name !== "BulletinLogin") {
-      return { name: "BulletinLogin" };
+    try {
+      await BoardUploadService.verifyCookie(roomCode);
+    } catch (error) {
+      if (error.response.status !== 200 && to.name !== "BulletinLogin") {
+        return { name: "BulletinLogin" };
+      }
     }
   }
 });

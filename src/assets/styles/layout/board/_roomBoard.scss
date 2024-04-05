@@ -152,6 +152,7 @@
         h1 {
           font-size: 36px;
           font-weight: bold;
+          line-height: 1.1;
           color: $primary-board-blue-100;
         }
 
@@ -240,6 +241,7 @@
         gap: 35px 24px;
         width: 1520px;
         margin-left: 2rem;
+        margin-bottom: 35px;
 
         > div {
           height: 180px;
