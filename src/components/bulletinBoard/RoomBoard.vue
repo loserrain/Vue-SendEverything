@@ -7,6 +7,7 @@ import { useRouter } from "vue-router";
 import BoardUploadService from "../boardUploadService/BoardRoom.js";
 
 const router = useRouter();
+const roomLoadingCode = 8;
 
 const createStatus = ref(false);
 function handleSendCreateStatus(newStatus) {
@@ -128,8 +129,8 @@ const loadedSize = ref(0);
 const filename = ref("example.txt");
 
 function handleDownloadFile() {
-  for(let i = 0; i < roomDownloadCode.value.length; i++) {
-    console.log(roomDownloadCode.value[i])
+  for (let i = 0; i < roomDownloadCode.value.length; i++) {
+    console.log(roomDownloadCode.value[i]);
     setTimeout(() => {
       downloadFile(roomDownloadCode.value[i]);
     }, 300 * (i + 1));
@@ -152,7 +153,7 @@ function readStream(response) {
       return read();
     });
   };
-  console.log(chunks.value)
+  console.log(chunks.value);
   return read();
 }
 
@@ -161,7 +162,7 @@ function downloadFile(code) {
   const url = `http://localhost:8080/api/auth/downloadRoomFileByCode/${code}`;
   fetch(url)
     .then((response) => {
-      console.log(response.headers.get("Content-Disposition"))
+      console.log(response.headers.get("Content-Disposition"));
       // uploadStatus.value = false;
       code = "";
       // progressStatus.value = false;
@@ -196,7 +197,6 @@ function downloadFile(code) {
       // uploadStatus.value = false;
     });
 }
-
 </script>
 
 <template>
@@ -260,18 +260,16 @@ function downloadFile(code) {
 
       <div class="room-board-data" v-if="roomDataStatus">
         <p class="room-board-data-line"></p>
-        <div class="room-board-data-img">
-          <img src="../../assets/image/main.png" alt="" />
-        </div>
-        <div class="room-board-data-text">
-          <h1>系統分析與設計</h1>
-          <h2>
-            這是一個可以一對多傳送檔案的房間，此功能名為One for
-            all(暫定)，建立房間的房主可在此進行房間的簡述，使參加者了解房間傳送檔案的目的，使參加者了解房間傳送檔案的目的
-          </h2>
-          <div class="room-board-data-date">
-            <p>Created: 2024年3月7日 下午 08:39</p>
-            <p>20 people</p>
+        <div class="room-board-loading-img"></div>
+        <div class="room-board-data-text room-board-loading-text">
+          <h1><i class="flash-across"></i></h1>
+          <div class="room-board-data-description">
+            <h2><i class="flash-across"></i></h2>
+            <h2 class="loading-text600"><i class="flash-across"></i></h2>
+            <h2 class="loading-text800"><i class="flash-across"></i></h2>
+          </div>
+          <div class="room-board-data-date room-board-loading-date">
+            <p><i class="flash-across"></i></p>
           </div>
           <p>{{ $route.params.roomCode }}</p>
         </div>
@@ -287,11 +285,11 @@ function downloadFile(code) {
         </div>
         <div class="room-board-data-text">
           <h1>{{ roomData.roomResponse.title }}</h1>
-          <h2>
-            {{ roomData.roomResponse.description }}
-          </h2>
+          <div class="room-board-data-description">
+            <h2>{{ roomData.roomResponse.description }}</h2>
+          </div>
           <div class="room-board-data-date">
-            <p>{{ roomData.roomResponse.createTime }}</p>
+            <p>Created: {{ roomData.roomResponse.createTime }}</p>
             <p>20 people</p>
           </div>
           <p>{{ $route.params.roomCode }}</p>
@@ -317,7 +315,32 @@ function downloadFile(code) {
           </div>
         </div>
 
-        <div class="room-board-file">
+        <div class="room-board-file" v-if="roomDataStatus">
+          <div
+            class="room-board-main-room"
+            v-for="(roomFile, index) in roomLoadingCode"
+            :key="index"
+          >
+            <div class="room-board-main-room-number">
+              <span><font-awesome-icon :icon="['far', 'file']" /></span>
+              <div class="room-board-main-loading-text">
+                <p><i class="flash-across"></i></p>
+                <p><i class="flash-across"></i></p>
+              </div>
+            </div>
+            <div class="room-board-main-room-description room-board-main-loading-description">
+              <p><i class="flash-across"></i></p>
+              <p class="loading-text-210"><i class="flash-across"></i></p>
+              <p class="loading-text-260"><i class="flash-across"></i></p>
+              <!-- <p></p> -->
+            </div>
+            <p class="room-board-main-room-date room-board-main-loading-date"><i class="flash-across"></i></p>
+          </div>
+        </div>
+
+        <!--  -->
+
+        <div class="room-board-file" v-else>
           <div
             class="room-board-main-room"
             v-for="(roomFile, index) in roomDataFileLength"
@@ -341,9 +364,11 @@ function downloadFile(code) {
                 <p>{{ roomDataFileSize[index] }}</p>
               </div>
             </div>
-            <p class="room-board-main-room-description">
-              {{ roomData.dbRoomFiles[index].description }}
-            </p>
+            <div class="room-board-main-room-description">
+              <p>
+                {{ roomData.dbRoomFiles[index].description }}
+              </p>
+            </div>
             <p class="room-board-main-room-date">
               {{ roomData.dbRoomFiles[index].timestamp }}
             </p>

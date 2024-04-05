@@ -154,20 +154,27 @@
           font-weight: bold;
           line-height: 1.1;
           color: $primary-board-blue-100;
-        }
-
-        h2 {
-          font-size: 22px;
-          font-weight: bold;
-          color: #373737;
-          margin: 14px 0;
-          line-height: 1.33;
-          height: 120px;
           display: -webkit-box;
           -webkit-box-orient: vertical;
-          -webkit-line-clamp: 4;
+          -webkit-line-clamp: 1;
           word-break: break-all;
           overflow: hidden;
+        }
+
+        .room-board-data-description {
+          margin: 14px 0;
+          height: 120px;
+          h2 {
+            font-size: 22px;
+            font-weight: bold;
+            color: #373737;
+            line-height: 1.33;
+            display: -webkit-box;
+            -webkit-box-orient: vertical;
+            -webkit-line-clamp: 4;
+            word-break: break-all;
+            overflow: hidden;
+          }
         }
 
         .room-board-data-date {
@@ -177,7 +184,7 @@
           p {
             font-size: 16px;
             font-weight: bold;
-            color: #8B8B8B;
+            color: #8b8b8b;
             margin-right: 1.5rem;
           }
         }
@@ -255,7 +262,7 @@
           display: flex;
           justify-content: space-between;
           flex-direction: column;
-          padding: 16px 1rem 8px;
+          padding: 14px 1rem 8px;
 
           .room-board-main-room-number {
             display: flex;
@@ -290,16 +297,18 @@
           }
 
           .room-board-main-room-description {
-            font-size: 16px;
-            font-weight: bold;
-            color: #373737;
-            line-height: 1.33;
+            p {
+              font-size: 16px;
+              font-weight: bold;
+              color: #373737;
+              line-height: 1.33;
+              display: -webkit-box;
+              -webkit-box-orient: vertical;
+              -webkit-line-clamp: 4;
+              word-break: break-all;
+              overflow: hidden;
+            }
             height: 80px;
-            display: -webkit-box;
-            -webkit-box-orient: vertical;
-            -webkit-line-clamp: 4;
-            word-break: break-all;
-            overflow: hidden;
           }
 
           .room-board-main-room-date {
@@ -312,4 +321,109 @@
       }
     }
   }
+}
+
+.room-board-loading-date {
+  p {
+    position: relative;
+    background-color: $primary-board-gray-20;
+    height: 21.6px;
+    border-radius: 3px;
+    width: 300px;
+    overflow: hidden;
+  }
+}
+
+.room-board-loading-img {
+  width: 200px;
+  height: 210px;
+  border: 3px solid #d9d9d9;
+  border-radius: 12px;
+  background-color: #fffdfd;
+  margin: 0 8rem 0 8rem;
+}
+
+.room-board-loading-text {
+  h1 {
+    position: relative;
+    background-color: $primary-board-gray-20;
+    border-radius: 3px;
+    height: 39.6px;
+    width: 400px;
+  }
+  h2 {
+    position: relative;
+    background-color: $primary-board-gray-20;
+    height: 25px;
+    border-radius: 3px;
+    width: 700px;
+    margin-top: 1rem;
+  }
+  .loading-text600 {
+    width: 600px;
+  }
+  .loading-text800 {
+    width: 800px;
+  }
+}
+
+.room-board-main-loading-text {
+  p:first-child {
+    height: 18.4px;
+  }
+
+  p {
+    position: relative;
+    background-color: $primary-board-gray-20;
+    height: 13.6px;
+    width: 80px;
+  }
+}
+
+.room-board-main-loading-description {
+  p {
+    position: relative;
+    background-color: $primary-board-gray-20;
+    height: 21.3px;
+    width: 310px;
+    margin-bottom: 8px;
+  }
+  .loading-text-210 {
+    width: 210px;
+  }
+  .loading-text-260 {
+    width: 260px;
+  }
+}
+
+.room-board-main-loading-date {
+  position: relative;
+  background-color: $primary-board-gray-20;
+  height: 16.8px;
+  width: 180px;
+}
+
+@keyframes changeImg {
+  from {
+    left: -50%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+.flash-across {
+  position: absolute;
+  animation: changeImg 2.5s ease 0s;
+  top: 0;
+  width: 30%;
+  height: 100%;
+  content: "";
+  background: linear-gradient(
+    to right,
+    rgba(255, 255, 255, 0) 0,
+    rgba(255, 255, 255, 0.4) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  transform: skewX(-45deg);
+  animation-iteration-count: infinite;
 }

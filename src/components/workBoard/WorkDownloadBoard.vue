@@ -11,6 +11,16 @@ const fileSizeList = 20;
 // check檔案下載
 const roomChecked = ref([]);
 
+const roomDownloadCode = computed(() => {
+  const downloadCodes = [];
+  roomChecked.value.forEach((checked, index) => {
+    if (checked) {
+      downloadCodes.push(roomData.value.dbRoomFiles[index].verificationCode);
+    }
+  });
+  return downloadCodes;
+});
+
 for (let i = 0; i < fileSizeList; i++) {
     roomChecked.value.push(false);
 }
@@ -38,9 +48,87 @@ function togglefileEditStatus() {
     roomChecked.value[i] = false;
   }
 }
+
+// download
+const totalSize = ref(0);
+const reader = ref(null);
+const chunks = ref([]);
+const loadedSize = ref(0);
+const filename = ref("example.txt");
+
+function handleDownloadFile() {
+  for (let i = 0; i < roomDownloadCode.value.length; i++) {
+    console.log(roomDownloadCode.value[i]);
+    setTimeout(() => {
+      downloadFile(roomDownloadCode.value[i]);
+    }, 300 * (i + 1));
+  }
+}
+
+function readStream(response) {
+  totalSize.value = response.headers.get("Content-Length") || "未知大小";
+  reader.value = response.body.getReader();
+  console.log(totalSize.value);
+
+  const read = () => {
+    return reader.value.read().then(({ done, value }) => {
+      if (done) {
+        return new Blob(chunks.value);
+      }
+      loadedSize.value += value.length;
+      // progress.value = ((loadedSize.value / totalSize.value) * 100).toFixed(0);
+      chunks.value.push(value);
+      return read();
+    });
+  };
+  console.log(chunks.value);
+  return read();
+}
+
+function downloadFile(code) {
+  // uploadStatus.value = true;
+  const url = `http://localhost:8080/api/auth/downloadRoomFileByCode/${code}`;
+  fetch(url)
+    .then((response) => {
+      console.log(response.headers.get("Content-Disposition"));
+      // uploadStatus.value = false;
+      code = "";
+      // progressStatus.value = false;
+      const contentDisposition = response.headers.get("Content-Disposition");
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(
+          /filename\*?=['"]?(?:UTF-8'')?([^'";]+)['"]?/i
+        );
+        if (filenameMatch && filenameMatch[1]) {
+          filename.value = decodeURIComponent(filenameMatch[1]);
+        }
+      }
+
+      return readStream(response);
+    })
+    .then((blob) => {
+      const downloadUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = downloadUrl;
+      a.download = filename.value;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(downloadUrl);
+      // progressStatus.value = true;
+      loadedSize.value = 0;
+      chunks.value = [];
+    })
+    .catch((error) => {
+      console.error("下載過程中發生錯誤:", error);
+      chunks.value = [];
+      // uploadStatus.value = false;
+    });
+}
 </script>
 
 <template>
+      <a class="downloadLink" ref="downloadLink"></a>
     <div class="download-board-mask" @click="handleSendDownloadStatus(false)">
         <div class="download-board-user-list" @click.stop>
             <h2>Uploaded by : 11161101</h2>
@@ -71,7 +159,7 @@ function togglefileEditStatus() {
                     </p>
                     <div class="download-board-file-detail" @click="handleRoomCheckboxToggle(index)">
                         <p class="download-board-file-name">Universal-Design-System-Web.mp4</p>
-                        <p class="download-board-file-date">2024‎年‎3‎月‎7‎日 下午 08:39</p>
+                        <p class="download-board-file-date">2024/4/5 上午12:34:42</p>
                         <p class="download-board-file-ID">11161101</p>
                         <p class="download-board-file-size">40.9MB</p>
                     </div>
@@ -79,7 +167,7 @@ function togglefileEditStatus() {
             </div>
 
             <div class="download-board-decide" v-show="fileEditStatus">
-                <button class="download-board-download">Download</button>
+                <button class="download-board-download" @click="handleDownloadFile()">Download</button>
                 <button class="download-board-cancel" @click="togglefileEditStatus()">Cancel</button>
             </div>
 
@@ -89,6 +177,9 @@ function togglefileEditStatus() {
 </template>
 
 <style scoped lang="scss">
+.downloadLink {
+  display: none;
+}
 .download-board-mask {
     position: fixed;
     left: 0px;

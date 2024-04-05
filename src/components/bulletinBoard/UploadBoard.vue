@@ -1,7 +1,6 @@
 <script setup>
-import { ref, watchEffect, computed } from "vue";
+import { ref, watchEffect } from "vue";
 import UploadService from "../../services/uploadFilesService";
-import axios from "axios";
 
 const emits = defineEmits(["sendUploadStatus"]);
 const props = defineProps(["roomCode"]);
@@ -94,14 +93,18 @@ function selectFile() {
   handleFileSelectAndDrop(file.value.files);
 }
 
+function initialUpload() {
+  fileList.value = [];
+  progress.value = [];
+  selectFileSize.value = [];
+  fileUploadStatus.value = false;
+  fileListUploadStatus.value = false;
+}
+
 function handleFileSelectAndDrop(file) {
   // 上傳狀態判別，若為true，則清空檔案列表與進度條
   if (fileListUploadStatus.value) {
-    fileListUploadStatus.value = false;
-    fileList.value = [];
-    progress.value = [];
-    selectFileSize.value = [];
-    fileUploadStatus.value = false;
+    initialUpload();
   }
   for (let i = 0; i < file.length; i++) {
     fileList.value.push(file[i]);
@@ -109,22 +112,23 @@ function handleFileSelectAndDrop(file) {
     selectFileSize.value.push(
       `${formattedSize.sizeValue}  ${formattedSize.sizeUnit}`
     );
-    progress.value.push(0);
+    progress.value[i] = 0;
   }
   fileUploadStatus.value = false;
 }
 
-const currentFile = ref(undefined);
-
 // 增加檔案分割的資料
-const chunkSize = 10 * 1024 * 1024; // 5MB
-const totalChunks = ref(0);
+const chunkSize = 10 * 1024 * 1024; // 10MB
 const currentChunkIndex = ref(0);
 const totalThreads = navigator.hardwareConcurrency || 2;
 const workerResult = ref([]);
 const sendTextInput = ref([]);
 const fileListSize = ref([]);
+const confirmOpened = ref(false);
+const workerMultiple = ref([]);
+const chunksFileInfo = ref([]);
 
+// 計算檔案分割資料，如檔案分為十片時，則會有十筆這個檔案描述、進度條與檔案大小的資料
 function calculateFileChunks(fileList, chunkSize) {
   const chunksInfo = [];
   let progressFileNumber = 0;
@@ -132,7 +136,6 @@ function calculateFileChunks(fileList, chunkSize) {
   fileList.forEach((file) => {
     const fileSize = file.size;
     const totalChunks = Math.ceil(fileSize / chunkSize);
-    // console.log("progressFileNumber", progressFileNumber);
     for (let i = 0; i < totalChunks; i++) {
       chunksInfo.push({
         textInput: textInput.value[fileList.indexOf(file)],
@@ -143,36 +146,54 @@ function calculateFileChunks(fileList, chunkSize) {
     progressFileNumber++;
   });
 
+  handleFileChunkData(chunksInfo);
+  
   return chunksInfo;
 }
 
-async function uploadChunks() {
-  if (!selectedFiles.value || selectedFiles.value.length === 0) return;
-
-  // 取得當前選擇檔案
-  currentFile.value = selectedFiles.value[0];
-  totalChunks.value = Math.ceil(currentFile.value.size / chunkSize);
-  currentChunkIndex.value = 0;
-  console.log("fileLise.value", fileList.value);
-
-  workerResult.value = []; // 清空workerResult
-  sendTextInput.value = []; // 清空sendTextInput
-  fileListSize.value = []; // 清空fileListSize
-
-  const chunksInfo = calculateFileChunks(fileList.value, chunkSize);
-
+// 處理檔案分割與檔案數量不對等時的資料
+function handleFileChunkData(chunksInfo) {
   chunksInfo.forEach((chunkInfo) => {
     sendTextInput.value.push(chunkInfo.textInput);
     fileListSize.value.push(chunkInfo.fileSize);
   });
+}
+
+// 初始化檔案資料，如檔案描述、檔案大小與
+function initialFileData(file) {
+  sendTextInput.value = []; // 清空sendTextInput
+  fileListSize.value = []; // 清空fileListSize
+  chunksFileInfo.value = []; // 清空chunksFileInfo
+  for (let i = 0; i < file.length; i++) {
+    progress.value[i] = 0;
+  }
+}
+
+async function uploadChunks() {
+  if (
+    !selectedFiles.value ||
+    selectedFiles.value.length === 0 ||
+    confirmOpened.value
+  )
+    return;
+
+  // 確保用戶重複點擊後的問題
+  confirmOpened.value = true;
+
+  // 初始化檔案資料與進度條
+  initialFileData(fileList.value);
+
+  // 利用分片計算檔案描述、檔案大小與進度條
+  chunksFileInfo.value = calculateFileChunks(fileList.value, chunkSize);
+
+  // 開始上傳檔案
   await uploadChunkThreads(fileList.value);
 }
 
-const workerMultiple = ref([]);
-
-// 分片上傳
+// 遞迴上傳分片
 async function uploadChunkThreads(file) {
   try {
+    // 分片處理上傳的檔案 (多執行緒) ------------------------------------------------------------------------------------
     for (let j = 0; j < file.length; j++) {
       const chunkCount = Math.ceil(file[j].size / chunkSize); // 檔案總分片次數
       const workerChunkCount = Math.ceil(chunkCount / totalThreads); // 每個worker分配到的分片數量
@@ -222,82 +243,54 @@ async function uploadChunkThreads(file) {
       console.log("workerMultiple", workerMultiple.value);
       workerResult.value = [];
     }
+    // 分片處理上傳的檔案 (多執行緒) ------------------------------------------------------------------------------------
 
-    let i = 0;
-    const chunksInfoProgress = calculateFileChunks(file, chunkSize);
-    let progressNumber = 0;
-
-    const interval = setInterval(() => {
-      if (i < workerMultiple.value.length) {
-        const { fileChunk, totalChunks, fileId, chunkId } =
-          workerMultiple.value[i];
-        const chunkNumber = workerMultiple.value[i].chunkNumber + 1;
-        const fileSize = fileListSize.value[i];
-        outputFileName.value = workerMultiple.value[i].fileName;
-        if (sendTextInput.value[i] === undefined) {
-          sendTextInput.value[i] = "";
-        }
-
-        const formData = new FormData();
-        formData.append("fileChunk", fileChunk);
-        formData.append("chunkNumber", chunkNumber);
-        formData.append("totalChunks", totalChunks);
-        formData.append("fileId", fileId);
-        formData.append("chunkId", chunkId);
-        formData.append("size", fileSize);
-        formData.append("outputFileName", outputFileName.value);
-        formData.append("description", sendTextInput.value[i]);
-        formData.append("roomCode", props.roomCode);
-
-        handleFileUpload(formData).then(async () => {
-          // 計算當前分片數量
-          currentChunkIndex.value++;
-          // 利用上傳分片數與總分片數計算進度條
-          progress.value[chunksInfoProgress[progressNumber].progress] =
-            Math.ceil((100 * formData.get("chunkNumber")) / totalChunks);
-
-          // 每當上傳一次分片，進度條+1
-          progressNumber++;
-
-          // 若分片數量與總分片數量相同，通知後端合併
-          if (currentChunkIndex.value === totalChunks) {
-            currentChunkIndex.value = 0;
-            const completeUploadStatus = UploadService.completeUploadRoomFile(
-              fileId,
-              outputFileName.value,
-              chunkId
-            )
-              .then((response) => {
-                console.log("File upload completed");
-              })
-              .catch((error) => {
-                console.error("Error completing file upload", error);
-              });
-
-            await completeUploadStatus;
-            // UploadService.completeUploadRoomFile(
-            //   fileId,
-            //   outputFileName.value,
-            //   chunkId
-            // )
-            //   .then((response) => {
-            //     console.log("File upload completed");
-            //   })
-            //   .catch((error) => {
-            //     console.error("Error completing file upload", error);
-            //   });
-          }
-        });
-
-        i++;
-      } else {
-        clearInterval(interval);
-        fileListUploadStatus.value = true;
-        workerMultiple.value = [];
-      }
-    }, 100);
-  } catch {
+    await uoloadChunksRecurively(0);
+    confirmOpened.value = false;
+  } catch (error) {
     console.error("Error in uploadChunkThreads: ", error);
+  }
+
+  async function uoloadChunksRecurively(index) {
+    if (index >= workerMultiple.value.length) {
+      fileListUploadStatus.value = true;
+      workerMultiple.value = [];
+      return;
+    }
+
+    const { fileChunk, totalChunks, fileId, chunkId } =
+      workerMultiple.value[index];
+    const chunkNumber = workerMultiple.value[index].chunkNumber + 1;
+    const fileSize = fileListSize.value[index];
+    outputFileName.value = workerMultiple.value[index].fileName;
+    const progressIndex = chunksFileInfo.value[index].progress;
+    const description = sendTextInput.value[index] || "";
+
+    const formData = new FormData();
+    formData.append("fileChunk", fileChunk);
+    formData.append("chunkNumber", chunkNumber);
+    formData.append("totalChunks", totalChunks);
+    formData.append("fileId", fileId);
+    formData.append("chunkId", chunkId);
+    formData.append("size", fileSize);
+    formData.append("outputFileName", outputFileName.value);
+    formData.append("description", description);
+    formData.append("roomCode", props.roomCode);
+
+    await UploadService.uploadRoomFileChunk(formData);
+    currentChunkIndex.value++;
+    progress.value[progressIndex] = Math.ceil(
+      (100 * currentChunkIndex.value) / totalChunks
+    );
+    if (currentChunkIndex.value === totalChunks) {
+      currentChunkIndex.value = 0;
+      await UploadService.completeUploadRoomFile(
+        fileId,
+        outputFileName.value,
+        chunkId
+      );
+    }
+    await uoloadChunksRecurively(index + 1);
   }
 }
 </script>

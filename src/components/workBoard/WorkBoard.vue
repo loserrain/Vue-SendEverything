@@ -1,8 +1,11 @@
 <script setup>
-import { ref } from "vue";
-
+import { ref, onMounted, computed } from "vue";
 import WorkCreateBoard from "./WorkCreateBoard.vue";
 import WorkLoginBoard from "./WorkLoginBoard.vue";
+import BoardUploadService from "../boardUploadService/BoardRoom.js";
+import { useRouter } from "vue-router";
+
+const router = useRouter();
 const createStatus = ref(false);
 const loginStatus = ref(false);
 
@@ -16,19 +19,107 @@ function handleLoginStatus(newStatus) {
 
 const roomTestNumber = 12;
 
-const activeTab = ref('all');
+const RoomType = {
+  ALL: "ALL",
+  PUBLIC: "JOINED",
+  PRIVATE: "CREATED",
+};
+
+const activeTab = ref(RoomType.ALL);
 
 const handleTabClick = (tab) => {
   activeTab.value = tab;
 }
+// 篩選房間類型
+const filteredRoomData = computed(() => {
+  if (activeTab.value === RoomType.ALL) {
+    return roomData.value;
+  } else {
+    return roomData.value.filter((room) => room.roomType === activeTab.value);
+  }
+});
 
-const roomCode = ref("6N3YVKE7");
+// 房間類型鎖定
+const roomTypeLock = computed(() => {
+  return filteredRoomData.value.map((room) => {
+    return room.roomType === "PRIVATE" ? "lock" : "unlock";
+  });
+});
+
+// 房間類型狀態
+const roomTypeStatus = computed(() => {
+  return filteredRoomData.value.map((room) => {
+    return room.roomType === "PRIVATE";
+  });
+});
+
+// 透過搜尋字串篩選房間
+const searchWordFilter = ref("");
+
+const filteredSearchRoomData = computed(() => {
+  const searchWord = searchWordFilter.value.toLowerCase().trim();
+  if (!searchWord) return filteredRoomData.value;
+  return filteredRoomData.value.filter((room) => {
+    return room.title.toLowerCase().includes(searchWord);
+    // ||
+    // room.roomCode.toLowerCase().includes(searchWord) ||
+    // room.description.toLowerCase().includes(searchWord);
+  });
+});
+
+// 透過綁定@input事件，當輸入框有輸入時，觸發filterRooms函式
+function filterRooms() {
+  searchWordFilter.value = evebn.target.value;
+}
+
+// 房間資料
+const roomData = ref([]);
+// 房間代碼
+const roomCode = ref([]);
+// 房間代碼編號
+const roomCodeNumber = ref(0);
+
+// 透過房間代碼編號，將房間代碼傳送至LoginBoard元件
+async function sendRoomNumber(roomNumber) {
+  roomCodeNumber.value = roomNumber;
+  const sendVerifyRoomCode = roomCode.value[roomNumber];
+  try {
+    const response = await BoardUploadService.verifyCookie(sendVerifyRoomCode);
+    if (response.status === 200) {
+      router.push({
+        name: "RoomBoard",
+        params: { roomCode: sendVerifyRoomCode },
+      });
+    }
+  } catch (error) {
+    console.error(error);
+    handleLoginStatus(true);
+  }
+}
+
+// 處理房間資料
+function processRoomData(Data) {
+  for (let i = 0; i < Data.length; i++) {
+    roomCode.value.push(roomData.value[i].roomCode);
+    roomData.value[i].createTime = new Date(
+      roomData.value[i].createTime
+    ).toLocaleString();
+  }
+}
+
+// 獲取所有房間資料
+onMounted(() => {
+  BoardUploadService.getAllRooms().then((response) => {
+    roomData.value = response.data;
+    processRoomData(roomData.value);
+  });
+});
 
 </script>
 
 <template>
   <div v-if="loginStatus">
-    <WorkLoginBoard @send-login-status="handleLoginStatus" :roomCode="roomCode"></WorkLoginBoard>
+    <WorkLoginBoard @send-login-status="handleLoginStatus" :roomCode="roomCode[roomCodeNumber]"></WorkLoginBoard>
   </div>
   <div v-if="createStatus">
     <WorkCreateBoard @send-create-status="handleSendCreateStatus"></WorkCreateBoard>
@@ -36,12 +127,17 @@ const roomCode = ref("6N3YVKE7");
   <div class="board-container">
 
 <!--  -->
-    <div class="board-sidebar">
+<div class="board-sidebar">
       <div class="board-sidebar-search">
-        <p>Room Search</p>
+        <p>Search Title</p>
         <div class="board-sidebar-input">
           <label for="search"></label>
-          <input type="text" id="search" />
+          <input
+            type="text"
+            id="search"
+            v-model="searchWordFilter"
+            @input="filterRooms"
+          />
           <span>
             <font-awesome-icon icon="fa-solid fa-magnifying-glass" />
           </span>
@@ -49,17 +145,47 @@ const roomCode = ref("6N3YVKE7");
       </div>
       <div class="board-sidebar-room-mode">
         <p>Room Mode</p>
-        <div class="board-sidebar-tab" :class="[{'board-sidebar-status': activeTab === 'all'}]" @click="handleTabClick('all')">
+        <div
+          class="board-sidebar-tab"
+          :class="[{ 'board-sidebar-status': activeTab === 'ALL' }]"
+          @click="handleTabClick('ALL')"
+        >
           <p></p>
           <div><font-awesome-icon icon="globe" /></div>
           <span>All Room</span>
         </div>
-        <div class="board-sidebar-tab" :class="[{'board-sidebar-status': activeTab === 'joined'}]" @click="handleTabClick('joined')">
+        <div
+          class="board-sidebar-tab"
+          :class="[{ 'board-sidebar-status': activeTab === 'PUBLIC' }]"
+          @click="handleTabClick('PUBLIC')"
+        >
+          <p></p>
+          <div><font-awesome-icon icon="unlock" /></div>
+          <span>Public</span>
+        </div>
+        <div
+          class="board-sidebar-tab"
+          :class="[{ 'board-sidebar-status': activeTab === 'PRIVATE' }]"
+          @click="handleTabClick('PRIVATE')"
+        >
+          <p></p>
+          <div><font-awesome-icon icon="lock" /></div>
+          <span>Private</span>
+        </div>
+        <div
+          class="board-sidebar-tab"
+          :class="[{ 'board-sidebar-status': activeTab === 'Joined' }]"
+          @click="handleTabClick('Joined')"
+        >
           <p></p>
           <div><font-awesome-icon icon="lock-open" /></div>
           <span>Joined</span>
         </div>
-        <div class="board-sidebar-tab" :class="[{'board-sidebar-status': activeTab === 'created'}]" @click="handleTabClick('created')">
+        <div
+          class="board-sidebar-tab"
+          :class="[{ 'board-sidebar-status': activeTab === 'CREATED' }]"
+          @click="handleTabClick('CREATED')"
+        >
           <p></p>
           <div><font-awesome-icon icon="clock-rotate-left" /></div>
           <span>Created</span>
@@ -79,15 +205,26 @@ const roomCode = ref("6N3YVKE7");
     <div class="board-main">
       <pre>作業版 / 加入與設定</pre>
       <div class="board-main-content">
-        <div class="board-main-room" v-for="Number in roomTestNumber" @click="handleLoginStatus(true)">
+        <div
+          class="board-main-room"
+          v-for="(Data, index) in filteredSearchRoomData"
+          :key="index"
+          @click="sendRoomNumber(index)"
+        >
+        <p
+            class="board-main-room-status"
+            :class="roomTypeStatus[index] ? 'board-main-room-type-red' : ''"
+          >
+            <font-awesome-icon :icon="roomTypeLock[index]" />
+          </p>
           <div class="board-main-room-number">
-            <span><font-awesome-icon icon="house-user" /></span>
-            <p>XBF4CR</p>
+            <p>{{ Data.title }}</p>
+            <span>{{ Data.roomCode }}</span>
           </div>
           <p class="board-main-room-description">
-            這是一個使用者參與過的房間，此為示例，供開發者參考用，過多文字將會縮短........
+            {{ Data.description }}
           </p>
-          <p class="board-main-room-date">Creation date: 2024/03/04.</p>
+          <p class="board-main-room-date">{{ Data.createTime }}</p>
         </div>
       </div>
 

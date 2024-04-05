@@ -174,6 +174,15 @@ onMounted(() => {
         </div>
         <div
           class="board-sidebar-tab"
+          :class="[{ 'board-sidebar-status': activeTab === 'Joined' }]"
+          @click="handleTabClick('Joined')"
+        >
+          <p></p>
+          <div><font-awesome-icon icon="lock-open" /></div>
+          <span>Joined</span>
+        </div>
+        <div
+          class="board-sidebar-tab"
           :class="[{ 'board-sidebar-status': activeTab === 'CREATED' }]"
           @click="handleTabClick('CREATED')"
         >

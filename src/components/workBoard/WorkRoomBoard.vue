@@ -1,9 +1,14 @@
 <script setup>
-import { ref, computed } from 'vue';
-import WorkCreateBoard from './WorkCreateBoard.vue';
-import WorkUploadBoard from './WorkUploadBoard.vue';
-import WorkDownloadBoard from './WorkDownloadBoard.vue';
-import WorkDeleteBoard from './WorkDeleteBoard.vue'
+import { ref, computed, onMounted } from "vue";
+import WorkCreateBoard from "./WorkCreateBoard.vue";
+import WorkUploadBoard from "./WorkUploadBoard.vue";
+import WorkDownloadBoard from "./WorkDownloadBoard.vue";
+import WorkDeleteBoard from "./WorkDeleteBoard.vue";
+import { useRouter } from "vue-router";
+import BoardUploadService from "../boardUploadService/BoardRoom.js";
+
+const router = useRouter();
+const roomLoadingCode = 8;
 
 const createStatus = ref(false);
 function handleSendCreateStatus(newStatus) {
@@ -12,7 +17,7 @@ function handleSendCreateStatus(newStatus) {
 
 const uploadStatus = ref(false);
 function handleSendUploadStatus(newStatus) {
-  uploadStatus.value = newStatus
+  uploadStatus.value = newStatus;
 }
 
 const downloadStatus = ref(false);
@@ -25,22 +30,88 @@ function handleSendDeleteStatus(newStatus) {
   deleteStatus.value = newStatus;
 }
 
-const roomTestNumber = 8;
+function handleRoomData(length) {
+  roomData.value.roomResponse.createTime = new Date(
+    roomData.value.roomResponse.createTime
+  ).toLocaleString();
 
+  for (let i = 0; i < length; i++) {
+    roomData.value.dbRoomFiles[i].timestamp = new Date(
+      roomData.value.dbRoomFiles[i].timestamp
+    ).toLocaleString();
+    let formattedSize = formatFileSize(roomData.value.dbRoomFiles[i].fileSize);
+    roomDataFileSize.value.push(
+      `${formattedSize.sizeValue}  ${formattedSize.sizeUnit}`
+    );
+  }
+}
+
+function formatFileSize(fileSize) {
+  const KB = 1024;
+  const MB = KB * 1024;
+  const GB = MB * 1024;
+
+  let sizeUnit;
+  let sizeValue;
+
+  if (fileSize < KB) {
+    sizeValue = fileSize;
+    sizeUnit = "B";
+  } else if (fileSize < MB) {
+    sizeValue = (fileSize / KB).toFixed(0);
+    sizeUnit = "KB";
+  } else if (fileSize < GB) {
+    sizeValue = (fileSize / MB).toFixed(2);
+    sizeUnit = "MB";
+  } else {
+    sizeValue = (fileSize / GB).toFixed(2);
+    sizeUnit = "GB";
+  }
+
+  return { sizeValue, sizeUnit };
+}
+
+// const roomCode = router.currentRoute.value.params.roomCode;
+const roomCode = "AENQNR9D";
+const roomData = ref(undefined);
+const roomDataStatus = ref(true);
+const roomDataFileLength = ref(undefined);
+const roomDataFileSize = ref([]);
+
+onMounted(() => {
+  BoardUploadService.showRoomContent(roomCode).then((response) => {
+    roomData.value = response.data;
+    roomDataFileLength.value = roomData.value.dbRoomFiles.length;
+    handleRoomData(roomDataFileLength.value);
+    roomDataStatus.value = false;
+    for (let i = 0; i < roomData.value.dbRoomFiles.length; i++) {
+      roomChecked.value.push(false);
+    }
+  });
+});
 </script>
 
 <template>
   <div v-if="createStatus">
-    <WorkCreateBoard @send-create-status="handleSendCreateStatus"></WorkCreateBoard>
+    <WorkCreateBoard
+      @send-create-status="handleSendCreateStatus"
+    ></WorkCreateBoard>
   </div>
   <div v-if="uploadStatus">
-    <WorkUploadBoard @send-upload-status="handleSendUploadStatus"></WorkUploadBoard>
+    <WorkUploadBoard
+      @send-upload-status="handleSendUploadStatus"
+      :roomCode="roomCode"
+    ></WorkUploadBoard>
   </div>
   <div v-if="downloadStatus">
-    <WorkDownloadBoard @send-download-status="handleSendDownloadStatus"></WorkDownloadBoard>
+    <WorkDownloadBoard
+      @send-download-status="handleSendDownloadStatus"
+    ></WorkDownloadBoard>
   </div>
   <div v-if="deleteStatus">
-    <WorkDeleteBoard @send-delete-status="handleSendDeleteStatus"></WorkDeleteBoard>
+    <WorkDeleteBoard
+      @send-delete-status="handleSendDeleteStatus"
+    ></WorkDeleteBoard>
   </div>
   <div class="room-board-container">
     <div class="room-board-sidebar">
@@ -61,15 +132,24 @@ const roomTestNumber = 8;
           <div><font-awesome-icon :icon="['far', 'user']" /></div>
           <span>User 1(Owner)</span>
         </div>
-        <div class="room-board-sidebar-tab" @click="handleSendUploadStatus(true)">
+        <div
+          class="room-board-sidebar-tab"
+          @click="handleSendUploadStatus(true)"
+        >
           <div><font-awesome-icon icon="arrow-up-from-bracket" /></div>
           <span>Upload File</span>
         </div>
-        <div class="room-board-sidebar-tab" @click="handleSendDownloadStatus(true)">
+        <div
+          class="room-board-sidebar-tab"
+          @click="handleSendDownloadStatus(true)"
+        >
           <div><font-awesome-icon icon="users" /></div>
           <span>User List</span>
         </div>
-        <div class="room-board-sidebar-tab" @click="handleSendCreateStatus(true)">
+        <div
+          class="room-board-sidebar-tab"
+          @click="handleSendCreateStatus(true)"
+        >
           <div><font-awesome-icon icon="gear" /></div>
           <span>Room Setup</span>
         </div>
@@ -79,18 +159,41 @@ const roomTestNumber = 8;
     <div class="room-board-content">
       <pre>作業版 / 房間</pre>
 
-      <div class="room-board-data">
+      <div class="room-board-data" v-if="roomDataStatus">
+        <p class="room-board-data-line"></p>
+        <div class="room-board-loading-img"></div>
+        <div class="room-board-data-text room-board-loading-text">
+          <h1><i class="flash-across"></i></h1>
+          <div class="room-board-data-description">
+            <h2><i class="flash-across"></i></h2>
+            <h2 class="loading-text600"><i class="flash-across"></i></h2>
+            <h2 class="loading-text800"><i class="flash-across"></i></h2>
+          </div>
+          <div class="room-board-data-date room-board-loading-date">
+            <p><i class="flash-across"></i></p>
+          </div>
+          <p>{{ $route.params.roomCode }}</p>
+        </div>
+      </div>
+
+      <div class="room-board-data" v-else>
+        <p class="room-board-data-line"></p>
         <div class="room-board-data-img">
-          <img src="../../assets/image/main.png" alt="">
+          <img
+            :src="'data:image/png;base64,' + roomData.roomResponse.image"
+            alt=""
+          />
         </div>
         <div class="room-board-data-text">
-          <h1>系統分析與設計</h1>
-          <h2>這是一個可以一對多傳送檔案的房間，此功能名為One for all(暫定)，建立房間的房主可在此進行房間的簡述，使參加者了解房間傳送檔案的目的，使參加者了解房間傳送檔案的目的</h2>
+          <h1>{{ roomData.roomResponse.title }}</h1>
+          <div class="room-board-data-description">
+            <h2>{{ roomData.roomResponse.description }}</h2>
+          </div>
           <div class="room-board-data-date">
-            <p>Created: 2024年3月7日 下午 08:39</p>
+            <p>Created: {{ roomData.roomResponse.createTime }}</p>
             <p>20 people</p>
           </div>
-          <p>XBF4CR</p>
+          <p>{{ $route.params.roomCode }}</p>
         </div>
       </div>
 
@@ -102,10 +205,56 @@ const roomTestNumber = 8;
           </p>
         </div>
 
-        <div class="room-board-file">
+        <!-- loading -->
+        <div class="room-board-file" v-if="roomDataStatus">
+          <div
+            class="room-board-main-room"
+            v-for="(roomFile, index) in roomLoadingCode"
+            :key="index"
+          >
+            <div
+              class="room-board-main-trash"
+              @click="handleSendDeleteStatus(true)"
+            >
+              <font-awesome-icon icon="trash-can" />
+            </div>
+            <div class="room-board-main-room-user">
+              <div><font-awesome-icon :icon="['far', 'user']" /></div>
+              <span>User 1</span>
+            </div>
+            <div class="room-board-main-room-number">
+              <span><font-awesome-icon :icon="['far', 'file']" /></span>
+              <div class="room-board-main-loading-text">
+                <p><i class="flash-across"></i></p>
+                <p><i class="flash-across"></i></p>
+              </div>
+            </div>
+            <div
+              class="room-work-board-main-room-description room-board-main-loading-description"
+            >
+              <p><i class="flash-across"></i></p>
+              <p class="loading-text-210"><i class="flash-across"></i></p>
+            </div>
+            <p class="room-board-main-room-date room-board-main-loading-date">
+              <i class="flash-across"></i>
+            </p>
+          </div>
+        </div>
+        <!-- loading -->
 
-          <div class="room-board-main-room" v-for="(room, index) in roomTestNumber" :key="index">
-            <div @click="handleSendDeleteStatus(true)"><font-awesome-icon icon="trash-can" /></div>
+        <!-- RoomData -->
+        <div class="room-board-file" v-else>
+          <div
+            class="room-board-main-room"
+            v-for="(roomFile, index) in roomDataFileLength"
+            :key="index"
+          >
+            <div
+              class="room-board-main-trash"
+              @click="handleSendDeleteStatus(true)"
+            >
+              <font-awesome-icon icon="trash-can" />
+            </div>
             <div class="room-board-main-room-user">
               <div><font-awesome-icon :icon="['far', 'user']" /></div>
               <span>User 1</span>
@@ -113,17 +262,21 @@ const roomTestNumber = 8;
             <div class="room-board-main-room-number">
               <span><font-awesome-icon :icon="['far', 'file']" /></span>
               <div>
-                <p>Universal-System-Web.mp4</p>
-                <p>40.9MB</p>
+                <p>{{ roomData.dbRoomFiles[index].fileName }}</p>
+                <p>{{ roomDataFileSize[index] }}</p>
               </div>
             </div>
-            <p class="room-board-main-room-description">
-              這是房間擁有者上傳的檔案，此位置的文字為檔案簡述...
+            <div class="room-work-board-main-room-description">
+              <p>
+                {{ roomData.dbRoomFiles[index].description }}
+              </p>
+            </div>
+            <p class="room-board-main-room-date">
+              {{ roomData.dbRoomFiles[index].timestamp }}
             </p>
-            <p class="room-board-main-room-date">Creation date: 2024/03/04.</p>
           </div>
-
         </div>
+        <!-- RoomData -->
       </div>
     </div>
   </div>
@@ -133,8 +286,7 @@ const roomTestNumber = 8;
 @import "../../assets/styles/layout/board/roomBoard";
 
 .room-board-main-room {
-
-  >div:first-child {
+  .room-board-main-trash {
     position: absolute;
     top: 10px;
     right: 16px;
@@ -146,6 +298,7 @@ const roomTestNumber = 8;
   .room-board-main-room-user {
     display: flex;
     color: #615f5f;
+    margin-top: -2px;
     user-select: none;
 
     span {
@@ -163,7 +316,7 @@ const roomTestNumber = 8;
   width: 230px;
   color: #615f5f;
   font-size: 20px;
-  background-color: #FFFFE9;
+  background-color: #ffffe9;
   border-radius: 18px;
   margin-top: 9px;
   padding-left: 1rem;
@@ -177,5 +330,24 @@ const roomTestNumber = 8;
     margin-left: 6px;
     font-weight: bold;
   }
+}
+
+.room-work-board-main-room-description {
+  height: 70px;
+  p {
+    font-size: 16px;
+    font-weight: bold;
+    color: #373737;
+    line-height: 1.33;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    word-break: break-all;
+    overflow: hidden;
+  }
+}
+
+.room-board-main-loading-description {
+  margin-top: 10px;
 }
 </style>
