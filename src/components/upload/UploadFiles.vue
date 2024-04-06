@@ -125,6 +125,7 @@ const createZipFile = async () => {
     name: file.name,
     content: file,
   }));
+  console.log("filesData", filesData);
 
   const worker = new Worker(
     new URL("../../uploadService/zipWorker.js", import.meta.url),
@@ -296,13 +297,13 @@ async function uploadChunkThreads(file) {
         formData.append("fileId", fileId);
         formData.append("chunkId", chunkId);
         formData.append("size", size);
-        formData.append("outputFileName", outputFileName.value)
 
         // 檔案列表為複數時，修改壓縮檔的檔名
         if (fileList.value.length >= 2) {
           outputFileName.value = fileId;
         }
-
+        formData.append("outputFileName", outputFileName.value)
+        
         // 調用上傳函數
         UploadService.uploadChunk(formData).then(() => {
           // 計算當前分片數量
@@ -403,8 +404,10 @@ async function uploadChunks() {
   if (fileList.value.length >= 2) {
     await createZipFile();
     uploadChunkThreads(zipFileBlob.value);
+    console.log("zipFileBlob", zipFileBlob.value)
   } else {
     uploadChunkThreads(currentFile.value);
+    console.log("currentFile", currentFile.value)
   }
 }
 

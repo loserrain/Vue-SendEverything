@@ -94,11 +94,27 @@
   }
 
   .upload-board-fileTitle {
-    h2 {
-      font-size: 20px;
-      font-weight: bold;
-      color: $primary-board-blue-100;
-      margin-bottom: 1rem;
+    .upload-board-zip {
+      display: flex;
+      justify-content: space-between;
+
+      div {
+        margin-top: 5px;
+        input {
+          display: none;
+        }
+        p {
+          display: inline-block;
+          margin-left: 4px;
+        }
+      }
+
+      h2 {
+        font-size: 20px;
+        font-weight: bold;
+        color: $primary-board-blue-100;
+        margin-bottom: 1rem;
+      }
     }
 
     .upload-board-fileList {

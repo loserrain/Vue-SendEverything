@@ -68,6 +68,14 @@ function handleRoomData(length) {
     roomData.value.roomResponse.createTime
   ).toLocaleString();
 
+  // 對 roomData.dbRoomFiles 根據 timestamp 進行排序
+  roomData.value.dbRoomFiles.sort((a, b) => {
+    // 將時間戳字串轉換為 Date 物件進行比較
+    const dateA = new Date(a.timestamp);
+    const dateB = new Date(b.timestamp);
+    return dateB - dateA;
+  });
+// 2 3 5 4
   for (let i = 0; i < length; i++) {
     roomData.value.dbRoomFiles[i].timestamp = new Date(
       roomData.value.dbRoomFiles[i].timestamp
@@ -113,6 +121,7 @@ const roomDataFileSize = ref([]);
 onMounted(() => {
   BoardUploadService.showRoomContent(roomCode).then((response) => {
     roomData.value = response.data;
+    console.log(roomData.value);
     roomDataFileLength.value = roomData.value.dbRoomFiles.length;
     handleRoomData(roomDataFileLength.value);
     roomDataStatus.value = false;

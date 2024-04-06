@@ -3,9 +3,9 @@ import { boardCalculateChunkId } from "./boardCalculateChunkId.js";
 onmessage = async (e) => {
   try {
     const proms = [];
-    const { file, chunkSize, startIndex, endIndex } = e.data;
+    const { file, chunkSize, startIndex, endIndex, zipFileName, zipFileStatus } = e.data;
     for (let i = startIndex; i < endIndex; i++) {
-      proms.push(boardCalculateChunkId(file, i, chunkSize));
+      proms.push(boardCalculateChunkId(file, i, chunkSize, zipFileName, zipFileStatus ));
     }
     const chunks = await Promise.all(proms);
     postMessage(chunks);
