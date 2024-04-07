@@ -203,7 +203,9 @@ onMounted(() => {
     <!--  -->
 
     <div class="board-main">
-      <pre>作業版 / 加入與設定</pre>
+      <div class="board-main-title">
+        <p>作業版 / 加入與設定</p>
+      </div>
       <div class="board-main-content">
         <div
           class="board-main-room"

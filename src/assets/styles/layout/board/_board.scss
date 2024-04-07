@@ -108,12 +108,37 @@
     border-left: 5px solid $primary-board-white-80;
     border-right: 5px solid $primary-board-white-80;
 
-    > pre {
-      font-size: 32px;
-      font-weight: bolder;
-      color: $primary-board-gray-100;
-      margin: 3.8rem 0 3.5rem 0.5rem;
-      user-select: none;
+    .board-main-title {
+      position: relative;
+
+      
+      .board-main-page {
+        position: absolute;
+        top: 10px;
+        right: 50px;
+        display: flex;
+        gap: 10px;
+        
+        .board-main-page-now {
+          color: #615f5f;
+        }
+        
+        p {
+          font-size: 28px;
+          font-weight: bold;
+          color: #afafaf;
+          user-select: none;
+          cursor: pointer;
+        }
+      }
+
+      > p {
+        font-size: 32px;
+        font-weight: bolder;
+        color: $primary-board-gray-100;
+        margin: 3.8rem 0 3.5rem 0.5rem;
+        user-select: none;
+      }
     }
 
     .board-main-content {

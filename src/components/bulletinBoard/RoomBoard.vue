@@ -75,7 +75,7 @@ function handleRoomData(length) {
     const dateB = new Date(b.timestamp);
     return dateB - dateA;
   });
-// 2 3 5 4
+
   for (let i = 0; i < length; i++) {
     roomData.value.dbRoomFiles[i].timestamp = new Date(
       roomData.value.dbRoomFiles[i].timestamp
@@ -117,18 +117,37 @@ const roomData = ref(undefined);
 const roomDataStatus = ref(true);
 const roomDataFileLength = ref(undefined);
 const roomDataFileSize = ref([]);
+const roomDataFileStatus = ref(false);
+const roomDataNumber = computed(() => {
+  if(roomDataFileLength.value < 8 ) {
+    return roomDataFileLength.value;
+  } else {
+    return 8;
+  }
+})
+const roomDataPage = ref(1);
+const roomDataPageLength = ref([]);
+const roomActiveTab = ref(1);
 
 onMounted(() => {
-  BoardUploadService.showRoomContent(roomCode).then((response) => {
-    roomData.value = response.data;
-    console.log(roomData.value);
-    roomDataFileLength.value = roomData.value.dbRoomFiles.length;
-    handleRoomData(roomDataFileLength.value);
-    roomDataStatus.value = false;
-    for (let i = 0; i < roomData.value.dbRoomFiles.length; i++) {
-      roomChecked.value.push(false);
-    }
-  });
+  setTimeout(() => {
+    BoardUploadService.showRoomContent(roomCode).then((response) => {
+      roomDataStatus.value = false;
+      roomData.value = response.data;
+
+      // 判斷是否有檔案
+      if(roomData.value.dbRoomFiles.length > 0) {
+        roomDataFileStatus.value = true;
+      }
+
+      roomDataFileLength.value = roomData.value.dbRoomFiles.length;
+      handleRoomData(roomDataFileLength.value);
+      updataPageNumber();
+      for (let i = 0; i < roomData.value.dbRoomFiles.length; i++) {
+        roomChecked.value.push(false);
+      }
+    });
+  }, 1000)
 });
 
 const totalSize = ref(0);
@@ -205,6 +224,25 @@ function downloadFile(code) {
       chunks.value = [];
       // uploadStatus.value = false;
     });
+}
+
+function updataPageNumber() {
+  roomDataPage.value = Math.ceil(roomDataFileLength.value / roomDataNumber.value, 0);
+  for (let i = 0; i < roomDataNumber.value; i++) {
+    roomDataPageLength.value.push(i);
+  }
+}
+
+function clickPageNumber(page) {
+  const startIndex = (page - 1) * roomDataNumber.value;
+  let endIndex = page * roomDataNumber.value - 1;
+  endIndex = Math.min(endIndex, roomDataFileLength.value - 1);
+
+  roomDataPageLength.value = [];
+  for (let i = startIndex; i <= endIndex; i++) {
+    roomDataPageLength.value.push(i);
+  }
+  roomActiveTab.value = page;
 }
 </script>
 
@@ -307,6 +345,16 @@ function downloadFile(code) {
 
       <div class="room-board-fileList">
         <div class="room-board-fileTitle">
+          <div class="room-board-pageNumber" v-if="roomDataFileStatus">
+            <p>Page -</p>
+            <p
+              v-for="page in roomDataPage"
+              @click="clickPageNumber(page)"
+              :class="[{ 'room-board-pageNumber-now': roomActiveTab === page }]"
+            >
+              {{ page }}
+            </p>
+          </div>
           <p>
             <span><font-awesome-icon :icon="['far', 'folder-open']" /></span>
             檔案
@@ -337,50 +385,56 @@ function downloadFile(code) {
                 <p><i class="flash-across"></i></p>
               </div>
             </div>
-            <div class="room-board-main-room-description room-board-main-loading-description">
+            <div
+              class="room-board-main-room-description room-board-main-loading-description"
+            >
               <p><i class="flash-across"></i></p>
               <p class="loading-text-210"><i class="flash-across"></i></p>
               <p class="loading-text-260"><i class="flash-across"></i></p>
               <!-- <p></p> -->
             </div>
-            <p class="room-board-main-room-date room-board-main-loading-date"><i class="flash-across"></i></p>
+            <p class="room-board-main-room-date room-board-main-loading-date">
+              <i class="flash-across"></i>
+            </p>
           </div>
         </div>
 
         <!--  -->
 
-        <div class="room-board-file" v-else>
-          <div
-            class="room-board-main-room"
-            v-for="(roomFile, index) in roomDataFileLength"
-            :key="index"
-          >
-            <p class="room-board-main-room-check" v-if="sidebarStatus">
-              <label :for="'checkbox' + index">
-                <input
-                  type="checkbox"
-                  :id="'checkbox' + index"
-                  :checked="roomChecked[index]"
-                  @change="handleRoomCheckboxToggle(index)"
-                />
-                <span><font-awesome-icon :icon="ckRoomIcon[index]" /></span>
-              </label>
-            </p>
-            <div class="room-board-main-room-number">
-              <span><font-awesome-icon :icon="['far', 'file']" /></span>
-              <div>
-                <p>{{ roomData.dbRoomFiles[index].fileName }}</p>
-                <p>{{ roomDataFileSize[index] }}</p>
+        <div v-else>
+          <div class="room-board-file" v-if="roomDataFileStatus">
+            <div
+              class="room-board-main-room"
+              v-for="(roomFile, index) in roomDataPageLength"
+              :key="index"
+            >
+              <p class="room-board-main-room-check" v-if="sidebarStatus">
+                <label :for="'checkbox' + roomFile">
+                  <input
+                    type="checkbox"
+                    :id="'checkbox' + roomFile"
+                    :checked="roomChecked[roomFile]"
+                    @change="handleRoomCheckboxToggle(roomFile)"
+                  />
+                  <span><font-awesome-icon :icon="ckRoomIcon[roomFile]" /></span>
+                </label>
+              </p>
+              <div class="room-board-main-room-number">
+                <span><font-awesome-icon :icon="['far', 'file']" /></span>
+                <div>
+                  <p>{{ roomData.dbRoomFiles[roomFile].fileName }}</p>
+                  <p>{{ roomDataFileSize[roomFile] }}</p>
+                </div>
               </div>
-            </div>
-            <div class="room-board-main-room-description">
-              <p>
-                {{ roomData.dbRoomFiles[index].description }}
+              <div class="room-board-main-room-description">
+                <p>
+                  {{ roomData.dbRoomFiles[roomFile].description }}
+                </p>
+              </div>
+              <p class="room-board-main-room-date">
+                {{ roomData.dbRoomFiles[roomFile].timestamp }}
               </p>
             </div>
-            <p class="room-board-main-room-date">
-              {{ roomData.dbRoomFiles[index].timestamp }}
-            </p>
           </div>
         </div>
       </div>

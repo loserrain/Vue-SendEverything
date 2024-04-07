@@ -40,7 +40,7 @@ function setSelectedTab(tab) {
     <div class="navbar-nav">
       <div>
         <div class="navbar-login" v-if="!currentUser">
-          <RouterLink to="/BulletinBoard" class="nav-link">
+          <RouterLink :to="{ path: '/BulletinBoard', query: { page: 1 } }" class="nav-link">
             <li class="nav-item">
               <font-awesome-icon icon="circle-arrow-up" /> 佈告欄
             </li>
