@@ -30,9 +30,8 @@ const elIcon = computed(() => {
 
 function handleLoginData() {
   BoardUploadService.accessRoom(pwd.value, props.roomCode)
-    .then((response) => {
+    .then(() => {
       router.push(`/workBoard/WorkRoomBoard/${props.roomCode}`);
-      console.log(response);
     })
     .catch((error) => {
       console.log(error);

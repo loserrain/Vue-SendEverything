@@ -155,7 +155,7 @@ const boardType = ref("ASSIGNMENT_BOARD");
 onMounted(() => {
   BoardUploadService.getAllRooms(boardType.value).then((response) => {
     roomData.value = response.data;
-    console.log(response.data);
+    // console.log(response.data);
     roomData.value.sort((a, b) => {
       const dateA = new Date(a.createTime);
       const dateB = new Date(b.createTime);

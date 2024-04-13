@@ -77,6 +77,7 @@ const router = createRouter({
       path: "/WorkBoard/WorkRoomBoard/:roomCode",
       name: "WorkRoomBoard",
       component: WorkRoomBoard,
+      meta: { requiresAuth: true },
     },
     {
       path: "/BulletinBoard/BulletinLogin",

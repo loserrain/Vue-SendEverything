@@ -14,15 +14,15 @@ self.onmessage = async (event) => {
     `http://localhost:8080/api/auth/downloadFileByCode/${code}`
   );
 
-  const contentDisposition = response.headers.get("Content-Disposition");
-  if (contentDisposition) {
-    const filenameMatch = contentDisposition.match(
-      /filename\*?=['"]?(?:UTF-8'')?([^'";]+)['"]?/i
-    );
-    if (filenameMatch && filenameMatch[1]) {
-      filename = decodeURIComponent(filenameMatch[1]);
-    }
-  }
+  // const contentDisposition = response.headers.get("Content-Disposition");
+  // if (contentDisposition) {
+  //   const filenameMatch = contentDisposition.match(
+  //     /filename\*?=['"]?(?:UTF-8'')?([^'";]+)['"]?/i
+  //   );
+  //   if (filenameMatch && filenameMatch[1]) {
+  //     filename = decodeURIComponent(filenameMatch[1]);
+  //   }
+  // }
 
   const totalSize = parseInt(response.headers.get("Content-Length") || "0", 10);
   let loadSize = 0;
@@ -42,7 +42,7 @@ self.onmessage = async (event) => {
       controller.close();
     },
   });
-  port2.postMessage({ stream, filename }, [stream]);
+  port2.postMessage({ stream }, [stream]);
 };
 
 self.addEventListener("fetch", (event) => {

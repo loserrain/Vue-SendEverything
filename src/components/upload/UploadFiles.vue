@@ -322,7 +322,7 @@ async function uploadChunkThreads(file) {
               chunkId
             )
               .then((response) => {
-                console.log("File upload completed", response.data);
+                // console.log("File upload completed", response.data);
                 emits('sendFileInfo', response.data);
               })
               .catch((error) => {
@@ -387,7 +387,7 @@ async function uploadChunks() {
   };
 
   fileReceive.value.push(fileInfo);
-  console.log(fileInfo);
+  // console.log(fileInfo);
 
   workerResult.value = []; // 清空workerResult
 
@@ -404,10 +404,10 @@ async function uploadChunks() {
   if (fileList.value.length >= 2) {
     await createZipFile();
     uploadChunkThreads(zipFileBlob.value);
-    console.log("zipFileBlob", zipFileBlob.value)
+    // console.log("zipFileBlob", zipFileBlob.value)
   } else {
     uploadChunkThreads(currentFile.value);
-    console.log("currentFile", currentFile.value)
+    // console.log("currentFile", currentFile.value)
   }
 }
 

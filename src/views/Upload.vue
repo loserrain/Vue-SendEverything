@@ -39,7 +39,7 @@ const handleSendFileInfo = (fileInfo) => {
 
   // 當取得驗證碼時，更改檔案列表狀態
   // uploadFileStatus.value = false;
-  console.log(verificationCode.value);
+  // console.log(verificationCode.value);
 };
 
 const previewImage = ref(null);
@@ -51,13 +51,13 @@ const handleSelectedFile = (fileData) => {
   uploadFileSize.value = fileSize;
   uploadFileTotalSize.value = totalFileSize;
   uploadFileStatus.value = fileStatus; // 檔案列表狀態
-  console.log("fileList:", uploadFile.value);
+  // console.log("fileList:", uploadFile.value);
 
 };
 
 const handleUploadStatus = (fileStatus) => {
   uploadFileStatus.value = fileStatus;
-  console.log("uploadFileStatus.value", uploadFileStatus.value);
+  // console.log("uploadFileStatus.value", uploadFileStatus.value);
 };
 
 const FileClickPreview = (index) => {
@@ -81,18 +81,18 @@ function changdImgStatus(newStatus) {
 // 放大圖片預覽區域
 
 // 複製驗證碼
-// const copyVerificationCode = () => {
-//   const blob = new Blob([verificationCode.value], { type: "text/plain" });
-//   const clipboardItem = new ClipboardItem({ "text/plain": blob });
-//   navigator.clipboard.write([clipboardItem]).then(
-//     () => {
-//       console.log("Verification code copied!");
-//     },
-//     (err) => {
-//       console.error("Unable to copy verification code", err);
-//     }
-//   );
-// };
+const copyVerificationCode = () => {
+  const blob = new Blob([verificationCode.value], { type: "text/plain" });
+  const clipboardItem = new ClipboardItem({ "text/plain": blob });
+  navigator.clipboard.write([clipboardItem]).then(
+    () => {
+      console.log("Verification code copied!");
+    },
+    (err) => {
+      console.error("Unable to copy verification code", err);
+    }
+  );
+};
 </script>
 
 <template>
@@ -172,16 +172,16 @@ function changdImgStatus(newStatus) {
               <span>0</span>
             </div>
 
-            <!-- <div class="upload-key-box" @click="copyVerificationCode" v-else>
-              <span v-for="code in uploadData.downloadCode">
-                {{ code }}
-              </span>
-            </div> -->
-            <div class="upload-key-box" v-else>
+            <div class="upload-key-box" @click="copyVerificationCode" v-else>
               <span v-for="code in uploadData.downloadCode">
                 {{ code }}
               </span>
             </div>
+            <!-- <div class="upload-key-box" v-else>
+              <span v-for="code in uploadData.downloadCode">
+                {{ code }}
+              </span>
+            </div> -->
 
             <div>
               <p>Verification code</p>

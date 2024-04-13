@@ -112,12 +112,15 @@ onMounted(() => {
         roomData.value = response.data;
         roomDataIsOwner.value = roomData.value.isRoomOwner;
 
-        // 判斷是否為房間擁有者
-        if(!roomDataIsOwner.value) {
-          // 非房間擁有者只能看到自己上傳的檔案
+        // 判斷是否為房間擁有者與是否有登入
+        if(roomDataIsOwner.value && currentUser.value) {
+          roomData.value.dbRoomFiles = roomData.value.dbRoomFiles;
+        } else if (currentUser.value && !roomDataIsOwner.value) {
           roomData.value.dbRoomFiles = roomData.value.dbRoomFiles.filter(
             (roomFile) => roomFile.uploaderName === currentUser.value.username
           );
+        } else {
+          roomData.value.dbRoomFiles = [];
         }
 
         // 判斷是否有檔案，若非房間擁有者且無檔案則不顯示檔案列表

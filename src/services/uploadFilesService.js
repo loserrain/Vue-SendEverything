@@ -68,6 +68,10 @@ class UploadFilesService {
     });
   }
 
+  getFileNameByCode(code) {
+    return http.get(`/getFileNameByCode/${code}`);
+  }
+
 }
 
 export default new UploadFilesService();

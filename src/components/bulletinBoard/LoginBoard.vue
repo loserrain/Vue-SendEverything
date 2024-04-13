@@ -28,16 +28,13 @@ const elIcon = computed(() => {
   return flag.value ? ["far", "eye"] : ["far", "eye-slash"];
 });
 console.log(props.roomCode);
-// const roomCode = "FE7GGAD3";
 
 function handleLoginData() {
   BoardUploadService.accessRoom(pwd.value, props.roomCode)
-    .then((response) => {
+    .then(() => {
       router.push(`/BulletinBoard/roomboard/${props.roomCode}`);
-      console.log(response);
     })
     .catch((error) => {
-      console.log("ASDASDASD");
       console.log(error);
     });
 }

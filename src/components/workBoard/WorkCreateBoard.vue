@@ -44,6 +44,7 @@ const file = ref(undefined);
 const previewImage = ref(null);
 const previewStatus = ref(false);
 function selectFile() {
+  previewImageStatue.value = false;
   handlePreviewImg(file.value.files);
 }
 function handlePreviewImg(file) {
@@ -62,11 +63,35 @@ function handlePreviewImg(file) {
     previewStatus.value = false;
   }
 }
+
+const fileBlob = ref(undefined);
+const previewImageStatue = ref(false);
+function handlePreviewClick(index) {
+  // 構建點擊的圖片路徑
+  const imagePath = `src/assets/image/createRoomIMG/Default_picture${
+    index + 1
+  }.jpg`;
+  const reader = new FileReader();
+  fetch(imagePath)
+    .then((response) => response.blob()) // 將文件轉換為 Blob 對象
+    .then((blob) => {
+      previewImageStatue.value = true;
+      fileBlob.value = blob;
+      // 當文件讀取成功時，設置 FileReader 的讀取操作
+      reader.readAsDataURL(blob);
+      reader.onload = () => {
+        previewImage.value = reader.result;
+      };
+      previewStatus.value = true;
+    })
+    .catch((error) => {
+      console.error("Error fetching local image:", error);
+    });
+}
 // Create Room
 
 const schema = yup.object().shape({
   description: yup.string().required("Description is required!"),
-  pwd: yup.string().required("Password is required!"),
   title: yup.string().required("Title is required!"),
 });
 
@@ -76,26 +101,29 @@ function handleLoginData(password, roomCode) {
   BoardUploadService.accessRoom(password, roomCode)
     .then((response) => {
       router.push(`/workBoard/WorkRoomBoard/${roomCode}`);
-      console.log(response);
+      // console.log(response);
     })
     .catch((error) => {
       console.log(error);
     });
 }
-// 
+//
 const boardType = ref("ASSIGNMENT_BOARD");
 
 function handleCreate(room) {
   const roomType = isPublicChecked.value ? "PUBLIC" : "PRIVATE";
+  if(previewImageStatue.value !== true) {
+    fileBlob.value = file.value.files[0];
+  }
   const roomData = {
     title: room.title,
     description: room.description,
     pwd: room.pwd,
     roomType: roomType,
-    file: file.value.files[0],
+    file: fileBlob.value,
     boardType: boardType.value,
   };
-  BoardUploadService.uploadMessageWithImage(roomData, file.value.files[0])
+  BoardUploadService.uploadMessageWithImage(roomData, fileBlob.value)
     .then((response) => {
       roomNumber.value = response.data.roomCode;
       handleLoginData(room.pwd, roomNumber.value);
@@ -104,6 +132,12 @@ function handleCreate(room) {
       console.log("Error: ", error);
     });
 }
+
+const formData = ref({
+  title: "This is a title.",
+  description: "This is a description.",
+  pwd: ""
+});
 </script>
 
 <template>
@@ -117,7 +151,12 @@ function handleCreate(room) {
             <p>Title</p>
             <div class="create-board-title">
               <label for="title"></label>
-              <Field type="text" name="title" id="title" />
+              <Field
+                type="text"
+                name="title"
+                id="title"
+                v-model="formData.title"
+              />
               <ErrorMessage name="title" class="error-feedback" />
             </div>
 
@@ -130,6 +169,7 @@ function handleCreate(room) {
                 id="description"
                 cols="41"
                 rows="3"
+                v-model="formData.description"
               ></Field>
               <ErrorMessage name="description" class="error-feedback" />
             </div>
@@ -138,7 +178,7 @@ function handleCreate(room) {
             <div class="create-board-pwd-flex">
               <div class="create-board-pwd">
                 <label for="pwd"></label>
-                <Field type="password" name="pwd" id="pwd" />
+                <Field type="password" name="pwd" id="pwd" v-model="formData.pwd" />
                 <ErrorMessage name="pwd" class="error-feedback" />
               </div>
 
@@ -170,6 +210,19 @@ function handleCreate(room) {
           </div>
           <!-- 檔案預覽 -->
           <div class="create-board-Select">
+            <div class="create-boare-default">
+              <img
+                :src="
+                  'src/assets/image/createRoomIMG/Default_picture' +
+                  (index + 1) +
+                  '.jpg'
+                "
+                alt=""
+                v-for="(amount, index) in 5"
+                :key="index"
+                @click="handlePreviewClick(index)"
+              />
+            </div>
             <div class="create-board-img">
               <img v-if="previewStatus" :src="previewImage" alt="" />
               <p v-else>Picture Preview</p>
@@ -211,7 +264,7 @@ function handleCreate(room) {
 
 .error-feedback {
   position: absolute;
-  top:-1.4rem;
+  top: -1.4rem;
   left: 13rem;
   width: 200px;
   font-weight: bold;

@@ -1,6 +1,7 @@
 <script setup>
 import { ref, watchEffect, onMounted } from "vue";
 import API_URL from "../../services/API_URL";
+import UploadService from "../../services/uploadFilesService"
 
 const code = ref("");
 const isComplete = ref(false);
@@ -55,8 +56,8 @@ async function downloadFile() {
 }
 
 async function downloadFileWithNoFileAPI() {
-  // const url = API_URL + "/downloadFileByCode/" + code.value;
-  const url = `http://localhost:8080/api/auth/downloadFileByCode/${code.value}`;
+  const url = API_URL + "/downloadFileByCode/" + code.value;
+  // const url = `http://localhost:8080/api/auth/downloadFileByCode/${code.value}`;
   try {
     const response = await fetch(url);
     if (!response.ok) {
@@ -115,17 +116,23 @@ async function downloadFileWithNoFileAPI() {
     console.error("下载过程中发生错误:", error);
   }
 }
-
+const downloadWithFileAPIName = ref("example.txt");
 async function dowlonadFileWithFileAPI() {
-
-  const { stream, filename } = await getDataStreamFromServiceWorker();
-
-  const fileHandle = await window.showSaveFilePicker({
-    suggestedName: filename,
+  await UploadService.getFileNameByCode(code.value)
+  .then((response) => {
+    downloadWithFileAPIName.value = response.data.fileName;
+  }).catch((error) => {
+    console.log(error);
   });
-
+  
+  const fileHandle = await window.showSaveFilePicker({
+    suggestedName: downloadWithFileAPIName.value,
+  });
+  
   // 创建写入流
   const writableStream = await fileHandle.createWritable();
+  
+  const { stream } = await getDataStreamFromServiceWorker();
 
   if (stream) {
     progressStatus.value = false;

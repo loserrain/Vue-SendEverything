@@ -63,18 +63,6 @@ const filteredRoomData = computed(() => {
   }
 });
 
-// // 篩選房間類型
-// const filteredRoomData = computed(() => {
-//   if (activeTab.value === RoomType.ALL) {
-//     return roomData.value;
-//   } else {
-//     return roomData.value.filter((room) => {
-//       return room.roomType === activeTab.value;
-//     })
-//     // return roomData.value.filter((room) => room.roomType === activeTab.value);
-//   }
-// });
-
 // 房間類型鎖定
 const roomTypeLock = computed(() => {
   return filteredSearchRoomData.value.map((room) => {
@@ -159,7 +147,7 @@ const boardType = ref("BULLETIN_BOARD");
 onMounted(() => {
   BoardUploadService.getAllRooms(boardType.value).then((response) => {
     roomData.value = response.data;
-    console.log(response.data);
+    // console.log(response.data);
     roomData.value.sort((a, b) => {
       const dateA = new Date(a.createTime);
       const dateB = new Date(b.createTime);
