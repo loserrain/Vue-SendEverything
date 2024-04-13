@@ -4,8 +4,15 @@ import WorkCreateBoard from "./WorkCreateBoard.vue";
 import WorkUploadBoard from "./WorkUploadBoard.vue";
 import WorkDownloadBoard from "./WorkDownloadBoard.vue";
 import WorkDeleteBoard from "./WorkDeleteBoard.vue";
+import { useAuthStore } from "../../stores/auth.module";
 import { useRouter } from "vue-router";
 import BoardUploadService from "../boardUploadService/BoardRoom.js";
+
+const authStore = useAuthStore();
+
+const currentUser = computed(() => {
+  return authStore.dataStatus.user;
+});
 
 const router = useRouter();
 const roomLoadingCode = 8;
@@ -34,6 +41,14 @@ function handleRoomData(length) {
   roomData.value.roomResponse.createTime = new Date(
     roomData.value.roomResponse.createTime
   ).toLocaleString();
+
+  // 對 roomData.dbRoomFiles 根據 timestamp 進行排序
+  roomData.value.dbRoomFiles.sort((a, b) => {
+    // 將時間戳字串轉換為 Date 物件進行比較
+    const dateA = new Date(a.timestamp);
+    const dateB = new Date(b.timestamp);
+    return dateB - dateA;
+  });
 
   for (let i = 0; i < length; i++) {
     roomData.value.dbRoomFiles[i].timestamp = new Date(
@@ -71,24 +86,76 @@ function formatFileSize(fileSize) {
   return { sizeValue, sizeUnit };
 }
 
-// const roomCode = router.currentRoute.value.params.roomCode;
-const roomCode = "AENQNR9D";
+const roomCode = router.currentRoute.value.params.roomCode;
 const roomData = ref(undefined);
 const roomDataStatus = ref(true);
 const roomDataFileLength = ref(undefined);
 const roomDataFileSize = ref([]);
+const roomDataFileStatus = ref(false);
+const roomDataNumber = computed(() => {
+  if (roomDataFileLength.value < 8) {
+    return roomDataFileLength.value;
+  } else {
+    return 8;
+  }
+});
+const roomDataPage = ref(1);
+const roomDataPageLength = ref([]);
+const roomActiveTab = ref(1);
+const roomDataIsOwner = ref(false);
 
 onMounted(() => {
-  BoardUploadService.showRoomContent(roomCode).then((response) => {
-    roomData.value = response.data;
-    roomDataFileLength.value = roomData.value.dbRoomFiles.length;
-    handleRoomData(roomDataFileLength.value);
-    roomDataStatus.value = false;
-    for (let i = 0; i < roomData.value.dbRoomFiles.length; i++) {
-      roomChecked.value.push(false);
-    }
-  });
+  setTimeout(() => {
+    BoardUploadService.showRoomContent(roomCode)
+      .then((response) => {
+        roomDataStatus.value = false;
+        roomData.value = response.data;
+        roomDataIsOwner.value = roomData.value.isRoomOwner;
+
+        // 判斷是否為房間擁有者
+        if(!roomDataIsOwner.value) {
+          // 非房間擁有者只能看到自己上傳的檔案
+          roomData.value.dbRoomFiles = roomData.value.dbRoomFiles.filter(
+            (roomFile) => roomFile.uploaderName === currentUser.value.username
+          );
+        }
+
+        // 判斷是否有檔案，若非房間擁有者且無檔案則不顯示檔案列表
+        if (roomData.value.dbRoomFiles.length > 0) {
+          roomDataFileStatus.value = true;
+        }
+
+        roomDataFileLength.value = roomData.value.dbRoomFiles.length;
+        handleRoomData(roomDataFileLength.value);
+        updataPageNumber();
+      })
+      .catch((error) => {
+        console.error(error);
+      });
+  }, 1000);
 });
+
+function updataPageNumber() {
+  roomDataPage.value = Math.ceil(
+    roomDataFileLength.value / roomDataNumber.value,
+    0
+  );
+  for (let i = 0; i < roomDataNumber.value; i++) {
+    roomDataPageLength.value.push(i);
+  }
+}
+
+function clickPageNumber(page) {
+  const startIndex = (page - 1) * roomDataNumber.value;
+  let endIndex = page * roomDataNumber.value - 1;
+  endIndex = Math.min(endIndex, roomDataFileLength.value - 1);
+
+  roomDataPageLength.value = [];
+  for (let i = startIndex; i <= endIndex; i++) {
+    roomDataPageLength.value.push(i);
+  }
+  roomActiveTab.value = page;
+}
 </script>
 
 <template>
@@ -106,6 +173,7 @@ onMounted(() => {
   <div v-if="downloadStatus">
     <WorkDownloadBoard
       @send-download-status="handleSendDownloadStatus"
+      :roomData="roomData.dbRoomFiles"
     ></WorkDownloadBoard>
   </div>
   <div v-if="deleteStatus">
@@ -113,6 +181,7 @@ onMounted(() => {
       @send-delete-status="handleSendDeleteStatus"
     ></WorkDeleteBoard>
   </div>
+
   <div class="room-board-container">
     <div class="room-board-sidebar">
       <div class="room-board-sidebar-search">
@@ -139,19 +208,21 @@ onMounted(() => {
           <div><font-awesome-icon icon="arrow-up-from-bracket" /></div>
           <span>Upload File</span>
         </div>
-        <div
-          class="room-board-sidebar-tab"
-          @click="handleSendDownloadStatus(true)"
-        >
-          <div><font-awesome-icon icon="users" /></div>
-          <span>User List</span>
-        </div>
-        <div
-          class="room-board-sidebar-tab"
-          @click="handleSendCreateStatus(true)"
-        >
-          <div><font-awesome-icon icon="gear" /></div>
-          <span>Room Setup</span>
+        <div v-if="roomDataIsOwner">
+          <div
+            class="room-board-sidebar-tab"
+            @click="handleSendDownloadStatus(true)"
+          >
+            <div><font-awesome-icon icon="users" /></div>
+            <span>User List</span>
+          </div>
+          <div
+            class="room-board-sidebar-tab"
+            @click="handleSendCreateStatus(true)"
+          >
+            <div><font-awesome-icon icon="gear" /></div>
+            <span>Room Setup</span>
+          </div>
         </div>
       </div>
     </div>
@@ -199,6 +270,16 @@ onMounted(() => {
 
       <div class="room-board-fileList">
         <div class="room-board-fileTitle">
+          <div class="room-board-pageNumber" v-if="roomDataFileStatus">
+            <span>Page -</span>
+            <p
+              v-for="page in roomDataPage"
+              @click="clickPageNumber(page)"
+              :class="[{ 'room-board-pageNumber-now': roomActiveTab === page }]"
+            >
+              {{ page }}
+            </p>
+          </div>
           <p>
             <span><font-awesome-icon :icon="['far', 'folder-open']" /></span>
             檔案
@@ -243,37 +324,39 @@ onMounted(() => {
         <!-- loading -->
 
         <!-- RoomData -->
-        <div class="room-board-file" v-else>
-          <div
-            class="room-board-main-room"
-            v-for="(roomFile, index) in roomDataFileLength"
-            :key="index"
-          >
+        <div v-else>
+          <div class="room-board-file" v-if="roomDataFileStatus">
             <div
-              class="room-board-main-trash"
-              @click="handleSendDeleteStatus(true)"
+              class="room-board-main-room"
+              v-for="(roomFile, index) in roomDataPageLength"
+              :key="index"
             >
-              <font-awesome-icon icon="trash-can" />
-            </div>
-            <div class="room-board-main-room-user">
-              <div><font-awesome-icon :icon="['far', 'user']" /></div>
-              <span>User 1</span>
-            </div>
-            <div class="room-board-main-room-number">
-              <span><font-awesome-icon :icon="['far', 'file']" /></span>
-              <div>
-                <p>{{ roomData.dbRoomFiles[index].fileName }}</p>
-                <p>{{ roomDataFileSize[index] }}</p>
+              <div
+                class="room-board-main-trash"
+                @click="handleSendDeleteStatus(true)"
+              >
+                <font-awesome-icon icon="trash-can" />
               </div>
-            </div>
-            <div class="room-work-board-main-room-description">
-              <p>
-                {{ roomData.dbRoomFiles[index].description }}
+              <div class="room-board-main-room-user">
+                <div><font-awesome-icon :icon="['far', 'user']" /></div>
+                <span>{{ roomData.dbRoomFiles[roomFile].uploaderName }}</span>
+              </div>
+              <div class="room-board-main-room-number">
+                <span><font-awesome-icon :icon="['far', 'file']" /></span>
+                <div>
+                  <p>{{ roomData.dbRoomFiles[roomFile].fileName }}</p>
+                  <p>{{ roomDataFileSize[roomFile] }}</p>
+                </div>
+              </div>
+              <div class="room-board-main-room-description">
+                <p>
+                  {{ roomData.dbRoomFiles[roomFile].description }}
+                </p>
+              </div>
+              <p class="room-board-main-room-date">
+                {{ roomData.dbRoomFiles[roomFile].timestamp }}
               </p>
             </div>
-            <p class="room-board-main-room-date">
-              {{ roomData.dbRoomFiles[index].timestamp }}
-            </p>
           </div>
         </div>
         <!-- RoomData -->

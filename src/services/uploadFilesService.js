@@ -67,6 +67,7 @@ class UploadFilesService {
       }
     });
   }
+
 }
 
 export default new UploadFilesService();

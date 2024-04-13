@@ -82,6 +82,8 @@ function handleLoginData(password, roomCode) {
       console.log(error);
     });
 }
+// Create Room
+const boardType = ref("BULLETIN_BOARD");
 
 function handleCreate(room) {
   const roomType = isPublicChecked.value ? "PUBLIC" : "PRIVATE";
@@ -91,6 +93,7 @@ function handleCreate(room) {
     pwd: room.pwd,
     roomType: roomType,
     file: file.value.files[0],
+    boardType: boardType.value,
   };
   BoardUploadService.uploadMessageWithImage(roomData, file.value.files[0])
     .then((response) => {

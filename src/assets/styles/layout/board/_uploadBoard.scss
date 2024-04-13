@@ -98,7 +98,29 @@
       display: flex;
       justify-content: space-between;
 
-      div {
+      .upload-board-input-userId {
+        margin-top: -2px;
+        input {
+          border: solid 1.5px #8692a6;
+          border-radius: 4px;
+          font-size: 14px;
+          height: 28px;
+          width: 150px;
+          background: #f4f7fc;
+          padding-left: 10px;
+
+          &:focus-visible {
+            background-color: #ffffff;
+            outline: none;
+            border: solid 1.5px #0013dd;
+            box-shadow: 0px 1px 8px rgba(0, 0, 0, 0.142);
+            transition: 0.1s;
+          }
+        }
+        
+      }
+
+      .upload-board-zip-button {
         margin-top: 5px;
         input {
           display: none;

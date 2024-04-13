@@ -1,4 +1,4 @@
-import http from "./http-common.js";
+import http from "../../services/http-common.js";
 
 class BoardUploadService {
   uploadMessageWithImage(roomData, imageFile) {
@@ -7,6 +7,7 @@ class BoardUploadService {
     formData.append("roomDescription", roomData.description);
     formData.append("roomPassword", roomData.pwd);
     formData.append("roomType", roomData.roomType);
+    formData.append("boardType", roomData.boardType);
     formData.append("roomImage", imageFile);
 
     return http.post("/createRoom", formData, {
@@ -16,8 +17,8 @@ class BoardUploadService {
     });
   }
 
-  getAllRooms() {
-    return http.get("/getAllRooms");
+  getAllRooms(boardType) {
+    return http.post("/getAllRooms", { boardType });
   }
 
   accessRoom(password, roomCode) {

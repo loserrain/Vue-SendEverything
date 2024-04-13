@@ -40,12 +40,15 @@ function setSelectedTab(tab) {
     <div class="navbar-nav">
       <div>
         <div class="navbar-login" v-if="!currentUser">
-          <RouterLink :to="{ path: '/BulletinBoard', query: { page: 1 } }" class="nav-link">
+          <RouterLink
+            :to="{ path: '/BulletinBoard', query: { page: 1 } }"
+            class="nav-link"
+          >
             <li class="nav-item">
               <font-awesome-icon icon="circle-arrow-up" /> 佈告欄
             </li>
           </RouterLink>
-          <RouterLink to="/WorkBoard" class="nav-link">
+          <RouterLink :to="{ path: '/WorkBoard', query: { page: 1 } }" class="nav-link">
             <li class="nav-item">
               <font-awesome-icon icon="circle-arrow-up" /> 作業版
             </li>
@@ -68,22 +71,23 @@ function setSelectedTab(tab) {
       </div>
 
       <div v-if="currentUser">
-        <!-- <RouterLink to="/profile" class="nav-link"> -->
         <li class="nav-user">
           <font-awesome-icon :icon="['far', 'user']" />
           {{ currentUser.username }}
         </li>
-        <!-- </RouterLink> -->
-        <RouterLink to="/BulletinBoard" class="nav-link">
-            <li class="nav-item">
-              <font-awesome-icon icon="circle-arrow-up" /> 佈告欄
-            </li>
-          </RouterLink>
-          <RouterLink to="/WorkBoard" class="nav-link">
-            <li class="nav-item">
-              <font-awesome-icon icon="circle-arrow-up" /> 作業版
-            </li>
-          </RouterLink>
+        <RouterLink
+          :to="{ path: '/BulletinBoard', query: { page: 1 } }"
+          class="nav-link"
+        >
+          <li class="nav-item">
+            <font-awesome-icon icon="circle-arrow-up" /> 佈告欄
+          </li>
+        </RouterLink>
+        <RouterLink :to="{ path: '/WorkBoard', query: { page: 1 } }" class="nav-link">
+          <li class="nav-item">
+            <font-awesome-icon icon="circle-arrow-up" /> 作業版
+          </li>
+        </RouterLink>
         <RouterLink
           to="/uploadfile"
           class="nav-link"

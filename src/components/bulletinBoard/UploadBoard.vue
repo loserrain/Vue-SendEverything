@@ -1,5 +1,6 @@
 <script setup>
-import { ref, watch, computed } from "vue";
+import { ref, watch, computed, onMounted } from "vue";
+import { useAuthStore } from "../../stores/auth.module";
 import UploadService from "../../services/uploadFilesService";
 
 const emits = defineEmits(["sendUploadStatus"]);
@@ -9,8 +10,23 @@ function handleSendUploadStatus(newStatus) {
   emits("sendUploadStatus", newStatus);
 }
 
+const authStore = useAuthStore();
+
+const currentUser = computed(() => {
+  return authStore.dataStatus.user;
+});
+
+function handleCurrentUserStatus() {
+  if(currentUser.value) {
+    textUserId.value = currentUser.value.username;
+    verifyUserId.value = true;
+  }
+}
+
 const fileCount = 2;
 const textInput = ref([]);
+const textUserId = ref("");
+const verifyUserId = ref(false);
 
 // --------------------------------------------------------------------
 
@@ -107,6 +123,7 @@ function handleFileSelectAndDrop(file) {
   if (fileListUploadStatus.value) {
     initialUpload();
   }
+
   for (let i = 0; i < file.length; i++) {
     fileList.value.push(file[i]);
     let formattedSize = formatFileSize(file[i].size);
@@ -192,10 +209,14 @@ watch(zipFileStatus, (newValue) => {
     zipFileName.value = "SendEverything";
   }
 });
+
+watch(textUserId, (newValue) => {
+  console.log("textUserId", newValue);
+});
 // ---------------------------- zip壓縮 ----------------------------
 
 // 增加檔案分割的資料
-const chunkSize = 10 * 1024 * 1024; // 檔案分片
+const chunkSize = 5 * 1024 * 1024; // 檔案分片
 const currentChunkIndex = ref(0); // 當前分片索引
 const totalThreads = navigator.hardwareConcurrency || 2; // 硬體執行緒數量
 const workerResult = ref([]); // 檔案分片worker的結果
@@ -251,12 +272,30 @@ function initialFileData(file) {
 const uploadingStatus = ref(false);
 
 async function uploadChunks() {
-  if (
+  // 計算已選擇檔案的總大小
+  const totalSize = Array.from(selectedFiles.value).reduce(
+    (acc, curr) => acc + curr.size,
+    0
+  );
+
+  if (!textUserId.value) {
+    // 如果用戶沒有輸入UserID，則顯示警告
+    alert("Please enter User ID before uploading files.");
+    return;
+    // 如果選擇的檔案總大小超過5GB，則顯示警告
+  } else if (totalSize > 5 * 1024 * 1024 * 1024) {
+    alert(
+      "The total size of selected files exceeds 5GB. Please select files with total size less than 5GB."
+    );
+    return;
+    // 如果用戶沒有選擇檔案或已經開始上傳檔案，則不執行上傳
+  } else if (
     !selectedFiles.value ||
     selectedFiles.value.length === 0 ||
     confirmOpened.value
-  )
+  ) {
     return;
+  }
 
   // 開始上傳檔案，禁止壓縮檔案按鈕
   uploadingStatus.value = true;
@@ -377,6 +416,7 @@ async function uploadChunkThreads(file) {
     formData.append("outputFileName", outputFileName.value);
     formData.append("description", description);
     formData.append("roomCode", props.roomCode);
+    formData.append("uploaderName", textUserId.value);
 
     await UploadService.uploadRoomFileChunk(formData);
     // 每上傳一個分片，進度條就會增加1
@@ -399,6 +439,10 @@ async function uploadChunkThreads(file) {
     await uoloadChunksRecurively(index + 1);
   }
 }
+
+onMounted(() => {
+  handleCurrentUserStatus();
+})
 </script>
 
 <template>
@@ -436,14 +480,27 @@ async function uploadChunkThreads(file) {
             />
           </span>
         </h3>
-        <h4>500 MB max file size.</h4>
+        <h4>5 GB max file size.</h4>
       </div>
 
       <div class="upload-board-fileTitle">
         <!-- 新增確認壓縮檔案按鈕 -->
         <div class="upload-board-zip">
           <h2>Uploaded Files</h2>
-          <div>
+
+          <div class="upload-board-input-userId" v-if="!verifyUserId">
+            <label for="userId">
+              <input
+                type="text"
+                name="userId"
+                id="userId"
+                placeholder="User ID"
+                v-model="textUserId"
+              />
+            </label>
+          </div>
+
+          <div class="upload-board-zip-button">
             <label for="zipCheck">
               <input
                 type="checkbox"
@@ -496,7 +553,7 @@ async function uploadChunkThreads(file) {
             </div>
           </div>
           <!-- 取得資料後的樣子 -->
-          <div v-else >
+          <div v-else>
             <!-- 判斷用戶是否點擊壓縮檔案按鈕 -->
             <div v-if="zipFileStatus">
               <div class="upload-board-file">

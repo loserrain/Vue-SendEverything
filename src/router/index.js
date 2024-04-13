@@ -74,7 +74,7 @@ const router = createRouter({
       component: WorkBoard,
     },
     {
-      path: "/WorkBoard/WorkRoomBoard",
+      path: "/WorkBoard/WorkRoomBoard/:roomCode",
       name: "WorkRoomBoard",
       component: WorkRoomBoard,
     },
@@ -98,6 +98,7 @@ router.beforeEach(async (to) => {
       await BoardUploadService.verifyCookie(roomCode);
     } catch (error) {
       if (error.response.status !== 200 && to.name !== "BulletinLogin") {
+        console.log("error", error);
         return { name: "BulletinLogin" };
       }
     }

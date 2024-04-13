@@ -81,28 +81,18 @@ function changdImgStatus(newStatus) {
 // 放大圖片預覽區域
 
 // 複製驗證碼
-const copyVerificationCode = () => {
-  const blob = new Blob([verificationCode.value], { type: "text/plain" });
-  const clipboardItem = new ClipboardItem({ "text/plain": blob });
-  navigator.clipboard.write([clipboardItem]).then(
-    () => {
-      console.log("Verification code copied!");
-    },
-    (err) => {
-      console.error("Unable to copy verification code", err);
-    }
-  );
-};
-
-const transformSlotProps = (props) => {
-  const formattedProps = {};
-
-  Object.entries(props).forEach(([key, value]) => {
-    formattedProps[key] = value < 10 ? `0${value}` : String(value);
-  });
-
-  return formattedProps;
-};
+// const copyVerificationCode = () => {
+//   const blob = new Blob([verificationCode.value], { type: "text/plain" });
+//   const clipboardItem = new ClipboardItem({ "text/plain": blob });
+//   navigator.clipboard.write([clipboardItem]).then(
+//     () => {
+//       console.log("Verification code copied!");
+//     },
+//     (err) => {
+//       console.error("Unable to copy verification code", err);
+//     }
+//   );
+// };
 </script>
 
 <template>
@@ -136,7 +126,6 @@ const transformSlotProps = (props) => {
         <div class="upload-explore-qrcode">
           <div v-if="!uploadData">
             <div class="upload-qrcode-bg" v-if="!uploadFileStatus">
-              <!-- <img src="../assets/image/QRCodeExample.gif" alt="" /> -->
               <p>QR Code</p>
             </div>
             <div class="upload-fileList-block" v-else>
@@ -183,7 +172,12 @@ const transformSlotProps = (props) => {
               <span>0</span>
             </div>
 
-            <div class="upload-key-box" @click="copyVerificationCode" v-else>
+            <!-- <div class="upload-key-box" @click="copyVerificationCode" v-else>
+              <span v-for="code in uploadData.downloadCode">
+                {{ code }}
+              </span>
+            </div> -->
+            <div class="upload-key-box" v-else>
               <span v-for="code in uploadData.downloadCode">
                 {{ code }}
               </span>
@@ -192,13 +186,6 @@ const transformSlotProps = (props) => {
             <div>
               <p>Verification code</p>
             </div>
-            <vue-countdown
-              :time="10 * 60 * 1000"
-              :transform="transformSlotProps"
-              v-slot="{ minutes, seconds }"
-            >
-              {{ minutes }} : {{ seconds }}
-            </vue-countdown>
           </div>
           <Receive />
         </div>

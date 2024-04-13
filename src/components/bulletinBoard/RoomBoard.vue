@@ -5,6 +5,7 @@ import UploadBoard from "./UploadBoard.vue";
 import DeleteBoard from "./DeleteBoard.vue";
 import { useRouter } from "vue-router";
 import BoardUploadService from "../boardUploadService/BoardRoom.js";
+import API_URL from "../../services/API_URL";
 
 const router = useRouter();
 const roomLoadingCode = 8;
@@ -128,16 +129,19 @@ const roomDataNumber = computed(() => {
 const roomDataPage = ref(1);
 const roomDataPageLength = ref([]);
 const roomActiveTab = ref(1);
+const roomDataIsOwner = ref(false);
 
 onMounted(() => {
   setTimeout(() => {
     BoardUploadService.showRoomContent(roomCode).then((response) => {
       roomDataStatus.value = false;
       roomData.value = response.data;
-
+      roomDataIsOwner.value = roomData.value.isRoomOwner;
+      
       // 判斷是否有檔案
       if(roomData.value.dbRoomFiles.length > 0) {
         roomDataFileStatus.value = true;
+        sidebarStatus.value = true;
       }
 
       roomDataFileLength.value = roomData.value.dbRoomFiles.length;
@@ -187,7 +191,8 @@ function readStream(response) {
 
 function downloadFile(code) {
   // uploadStatus.value = true;
-  const url = `http://localhost:8080/api/auth/downloadRoomFileByCode/${code}`;
+  const url = API_URL + "/downloadRoomFileByCode/" + code;
+  // const url = `/api/auth/downloadRoomFileByCode/${code}`;
   fetch(url)
     .then((response) => {
       console.log(response.headers.get("Content-Disposition"));
@@ -285,19 +290,21 @@ function clickPageNumber(page) {
           <div><font-awesome-icon :icon="['far', 'circle-down']" /></div>
           <span>Download File</span>
         </div>
-        <div
-          class="room-board-sidebar-tab"
-          @click="handleSendUploadStatus(true)"
-        >
-          <div><font-awesome-icon icon="arrow-up-from-bracket" /></div>
-          <span>Upload File</span>
-        </div>
-        <div
-          class="room-board-sidebar-tab"
-          @click="handleSendCreateStatus(true)"
-        >
-          <div><font-awesome-icon icon="gear" /></div>
-          <span>Room Setup</span>
+        <div v-if="roomDataIsOwner">
+          <div
+            class="room-board-sidebar-tab"
+            @click="handleSendUploadStatus(true)"
+          >
+            <div><font-awesome-icon icon="arrow-up-from-bracket" /></div>
+            <span>Upload File</span>
+          </div>
+          <div
+            class="room-board-sidebar-tab"
+            @click="handleSendCreateStatus(true)"
+          >
+            <div><font-awesome-icon icon="gear" /></div>
+            <span>Room Setup</span>
+          </div>
         </div>
       </div>
     </div>
@@ -346,7 +353,7 @@ function clickPageNumber(page) {
       <div class="room-board-fileList">
         <div class="room-board-fileTitle">
           <div class="room-board-pageNumber" v-if="roomDataFileStatus">
-            <p>Page -</p>
+            <span>Page -</span>
             <p
               v-for="page in roomDataPage"
               @click="clickPageNumber(page)"

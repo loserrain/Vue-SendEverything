@@ -1,16 +1,27 @@
 <script setup>
-import { ref, onMounted, computed, watch, watchEffect } from "vue";
+import { ref, onMounted, computed, watch } from "vue";
 import CreateBoard from "./CreateBoard.vue";
 import LoginBoard from "./LoginBoard.vue";
 import BoardUploadService from "../boardUploadService/BoardRoom.js";
+import { useAuthStore } from "../../stores/auth.module";
 import { useRouter } from "vue-router";
+
+const authStore = useAuthStore();
+
+const currentUser = computed(() => {
+  return authStore.dataStatus.user;
+});
 
 const router = useRouter();
 const createStatus = ref(false);
 const loginStatus = ref(false);
 
 function handleSendCreateStatus(newStatus) {
-  createStatus.value = newStatus;
+  if (currentUser.value !== null) {
+    createStatus.value = newStatus;
+  } else {
+    return alert("Please login first.");
+  }
 }
 
 function handleLoginStatus(newStatus) {
@@ -21,6 +32,8 @@ const RoomType = {
   ALL: "ALL",
   PUBLIC: "PUBLIC",
   PRIVATE: "PRIVATE",
+  CREATED: "CREATED",
+  JOINED: "JOINED",
 };
 
 const activeTab = ref(RoomType.ALL);
@@ -29,25 +42,49 @@ const handleTabClick = (tab) => {
   activeTab.value = tab;
 };
 
-// 篩選房間類型
+// 篩選房間類型，關鍵資料，一切資料都由這個變數控制
 const filteredRoomData = computed(() => {
   if (activeTab.value === RoomType.ALL) {
     return roomData.value;
+  } else if (activeTab.value === RoomType.PUBLIC) {
+    // 只顯示公共房間
+    return roomData.value.filter((room) => room.roomType === RoomType.PUBLIC);
+  } else if (activeTab.value === RoomType.PRIVATE) {
+    // 只顯示私人房間
+    return roomData.value.filter((room) => room.roomType === RoomType.PRIVATE);
+  } else if (activeTab.value === RoomType.CREATED) {
+    // 只顯示由當前用戶創建的房間
+    return roomData.value.filter((room) => room.isOwner === true);
+  } else if (activeTab.value === RoomType.JOINED) {
+    // 只顯示由當前用戶創建的房間
+    return roomData.value.filter((room) => room.isMember === true);
   } else {
-    return roomData.value.filter((room) => room.roomType === activeTab.value);
+    return []; // 預設返回空數組
   }
 });
 
+// // 篩選房間類型
+// const filteredRoomData = computed(() => {
+//   if (activeTab.value === RoomType.ALL) {
+//     return roomData.value;
+//   } else {
+//     return roomData.value.filter((room) => {
+//       return room.roomType === activeTab.value;
+//     })
+//     // return roomData.value.filter((room) => room.roomType === activeTab.value);
+//   }
+// });
+
 // 房間類型鎖定
 const roomTypeLock = computed(() => {
-  return filteredRoomData.value.map((room) => {
+  return filteredSearchRoomData.value.map((room) => {
     return room.roomType === "PRIVATE" ? "lock" : "unlock";
   });
 });
 
 // 房間類型狀態
 const roomTypeStatus = computed(() => {
-  return filteredRoomData.value.map((room) => {
+  return filteredSearchRoomData.value.map((room) => {
     return room.roomType === "PRIVATE";
   });
 });
@@ -78,13 +115,11 @@ const roomCodeNumber = ref(0);
 
 // 透過房間代碼編號，將房間代碼傳送至LoginBoard元件
 async function sendRoomNumber(roomNumber) {
-  console.log(roomDataPage.value);
   if (roomCurrentPage.value === 1) {
     roomCodeNumber.value = roomNumber;
   } else {
     roomCodeNumber.value = roomNumber + (roomCurrentPage.value - 1) * 12;
   }
-  console.log(roomCodeNumber.value);
   const sendVerifyRoomCode = roomCode.value[roomCodeNumber.value];
   try {
     const response = await BoardUploadService.verifyCookie(sendVerifyRoomCode);
@@ -103,17 +138,9 @@ async function sendRoomNumber(roomNumber) {
 // 處理房間資料
 function processRoomData(Data) {
   roomCode.value = [];
-  filteredRoomData.value.sort((a, b) => {
-    const dateA = new Date(a.createTime);
-    const dateB = new Date(b.createTime);
-    return dateB - dateA;
+  Data.forEach((room) => {
+    roomCode.value.push(room.roomCode);
   });
-  for (let i = 0; i < Data.length; i++) {
-    roomCode.value.push(filteredSearchRoomData.value[i].roomCode);
-    filteredSearchRoomData.value[i].createTime = new Date(
-      filteredSearchRoomData.value[i].createTime
-    ).toLocaleString();
-  }
 }
 
 // 更新頁數
@@ -127,12 +154,24 @@ function updataPageNumber() {
   }
 }
 
+const boardType = ref("BULLETIN_BOARD");
 // 獲取所有房間資料
 onMounted(() => {
-  BoardUploadService.getAllRooms().then((response) => {
+  BoardUploadService.getAllRooms(boardType.value).then((response) => {
     roomData.value = response.data;
+    console.log(response.data);
+    roomData.value.sort((a, b) => {
+      const dateA = new Date(a.createTime);
+      const dateB = new Date(b.createTime);
+      return dateB - dateA;
+    })
+    roomData.value.forEach((room) => {
+      room.createTime = new Date(room.createTime).toLocaleString();
+    });
     updataPageNumber();
-  });
+  }).catch((error) => {
+    console.error(error);
+  })
 });
 
 // 頁數房間號碼
@@ -173,14 +212,14 @@ watch(filteredSearchRoomData, (newFilteredSearchRoomData) => {
     for (let i = 0; i < newFilteredSearchRoomData.length; i++) {
       roomDataPageLength.value.push(i);
     }
-    processRoomData(newFilteredSearchRoomData);
     updataPageNumber();
     clickPageNumber(Number(router.currentRoute.value.query.page));
+    processRoomData(newFilteredSearchRoomData);
   } else {
     roomNumber.value = 12;
-    processRoomData(newFilteredSearchRoomData);
     updataPageNumber();
     clickPageNumber(Number(router.currentRoute.value.query.page));
+    processRoomData(newFilteredSearchRoomData);
   }
 });
 </script>
@@ -239,8 +278,8 @@ watch(filteredSearchRoomData, (newFilteredSearchRoomData) => {
         </div>
         <div
           class="board-sidebar-tab"
-          :class="[{ 'board-sidebar-status': activeTab === 'Joined' }]"
-          @click="handleTabClick('Joined')"
+          :class="[{ 'board-sidebar-status': activeTab === 'JOINED' }]"
+          @click="handleTabClick('JOINED')"
         >
           <p></p>
           <div><font-awesome-icon icon="lock-open" /></div>

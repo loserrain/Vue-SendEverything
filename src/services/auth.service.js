@@ -1,12 +1,12 @@
 import axios from "axios";
+import API_URL from "./API_URL"
 
-const API_URL = "http://localhost:8080/api/auth/";
 axios.defaults.withCredentials = true;
 
 class AuthService {
   async login(user) {
     return axios
-      .post(API_URL + "signin", {
+      .post(API_URL + "/signin", {
         username: user.username,
         password: user.password,
       })
@@ -20,7 +20,7 @@ class AuthService {
 
   async oauth2() {
     return axios
-      .get(API_URL + "oauth2/redirect", {
+      .get(API_URL + "/oauth2/redirect", {
         headers: {
           'Cache-Control': 'no-cache',
           'Pragma': 'no-cache'
@@ -49,7 +49,7 @@ class AuthService {
   }
 
   register(user) {
-    return axios.post(API_URL + "signup", {
+    return axios.post(API_URL + "/signup", {
       username: user.username,
       email: user.email,
       password: user.password,
@@ -58,7 +58,7 @@ class AuthService {
   }
 
   checkAuth() {
-    return axios.get(API_URL + "checkAuth");
+    return axios.get(API_URL + "/checkAuth");
   }
 }
 

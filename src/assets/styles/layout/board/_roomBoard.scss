@@ -218,7 +218,14 @@
           .room-board-pageNumber-now {
             color: #615f5f;
           }
-          
+
+          span {
+            font-size: 28px;
+            font-weight: bold;
+            color: #afafaf;
+            user-select: none;
+          }
+
           p {
             color: #afafaf;
             cursor: pointer;
@@ -267,7 +274,6 @@
         gap: 35px 24px;
         width: 1520px;
         margin-left: 2rem;
-        margin-bottom: 35px;
 
         > div {
           height: 180px;

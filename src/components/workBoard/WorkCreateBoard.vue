@@ -75,13 +75,15 @@ const roomNumber = ref("123");
 function handleLoginData(password, roomCode) {
   BoardUploadService.accessRoom(password, roomCode)
     .then((response) => {
-      router.push(`/BulletinBoard/roomboard/${roomCode}`);
+      router.push(`/workBoard/WorkRoomBoard/${roomCode}`);
       console.log(response);
     })
     .catch((error) => {
       console.log(error);
     });
 }
+// 
+const boardType = ref("ASSIGNMENT_BOARD");
 
 function handleCreate(room) {
   const roomType = isPublicChecked.value ? "PUBLIC" : "PRIVATE";
@@ -91,6 +93,7 @@ function handleCreate(room) {
     pwd: room.pwd,
     roomType: roomType,
     file: file.value.files[0],
+    boardType: boardType.value,
   };
   BoardUploadService.uploadMessageWithImage(roomData, file.value.files[0])
     .then((response) => {

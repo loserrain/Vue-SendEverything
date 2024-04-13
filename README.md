@@ -27,3 +27,12 @@ npm run dev
 ```sh
 npm run build
 ```
+
+```sh
+API_URL.js
+Login.vue
+
+http://140.130.33.147:8083
+or
+http://localhost:8080
+```

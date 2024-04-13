@@ -1,54 +1,86 @@
 <script setup>
-import { ref, onMounted, computed } from "vue";
+import { ref, onMounted, computed, watch } from "vue";
 import WorkCreateBoard from "./WorkCreateBoard.vue";
 import WorkLoginBoard from "./WorkLoginBoard.vue";
 import BoardUploadService from "../boardUploadService/BoardRoom.js";
+import { useAuthStore } from "../../stores/auth.module";
 import { useRouter } from "vue-router";
+
+const authStore = useAuthStore();
+const currentUser = computed(() => {
+  return authStore.dataStatus.user;
+});
 
 const router = useRouter();
 const createStatus = ref(false);
 const loginStatus = ref(false);
 
 function handleSendCreateStatus(newStatus) {
-  createStatus.value = newStatus;
+  if (currentUser.value !== null) {
+    createStatus.value = newStatus;
+  } else {
+    return alert("Please login first.");
+  }
 }
 
 function handleLoginStatus(newStatus) {
   loginStatus.value = newStatus;
 }
 
-const roomTestNumber = 12;
-
 const RoomType = {
   ALL: "ALL",
-  PUBLIC: "JOINED",
-  PRIVATE: "CREATED",
+  PUBLIC: "PUBLIC",
+  PRIVATE: "PRIVATE",
+  CREATED: "CREATED",
+  JOINED: "JOINED",
 };
 
 const activeTab = ref(RoomType.ALL);
 
 const handleTabClick = (tab) => {
   activeTab.value = tab;
-}
-// 篩選房間類型
+};
+
+// 篩選房間類型，關鍵資料，一切資料都由這個變數控制
 const filteredRoomData = computed(() => {
   if (activeTab.value === RoomType.ALL) {
     return roomData.value;
+  } else if (activeTab.value === RoomType.PUBLIC) {
+    // 只顯示公共房間
+    return roomData.value.filter((room) => room.roomType === RoomType.PUBLIC);
+  } else if (activeTab.value === RoomType.PRIVATE) {
+    // 只顯示私人房間
+    return roomData.value.filter((room) => room.roomType === RoomType.PRIVATE);
+  } else if (activeTab.value === RoomType.CREATED) {
+    // 只顯示由當前用戶創建的房間
+    return roomData.value.filter((room) => room.isOwner === true);
+  } else if (activeTab.value === RoomType.JOINED) {
+    // 只顯示由當前用戶創建的房間
+    return roomData.value.filter((room) => room.isMember === true);
   } else {
-    return roomData.value.filter((room) => room.roomType === activeTab.value);
+    return []; // 預設返回空數組
   }
 });
 
+// // 篩選房間類型
+// const filteredRoomData = computed(() => {
+//   if (activeTab.value === RoomType.ALL) {
+//     return roomData.value;
+//   } else {
+//     return roomData.value.filter((room) => room.roomType === activeTab.value);
+//   }
+// });
+
 // 房間類型鎖定
 const roomTypeLock = computed(() => {
-  return filteredRoomData.value.map((room) => {
+  return filteredSearchRoomData.value.map((room) => {
     return room.roomType === "PRIVATE" ? "lock" : "unlock";
   });
 });
 
 // 房間類型狀態
 const roomTypeStatus = computed(() => {
-  return filteredRoomData.value.map((room) => {
+  return filteredSearchRoomData.value.map((room) => {
     return room.roomType === "PRIVATE";
   });
 });
@@ -58,19 +90,17 @@ const searchWordFilter = ref("");
 
 const filteredSearchRoomData = computed(() => {
   const searchWord = searchWordFilter.value.toLowerCase().trim();
-  if (!searchWord) return filteredRoomData.value;
-  return filteredRoomData.value.filter((room) => {
-    return room.title.toLowerCase().includes(searchWord);
-    // ||
-    // room.roomCode.toLowerCase().includes(searchWord) ||
-    // room.description.toLowerCase().includes(searchWord);
-  });
+  if (searchWord) {
+    return filteredRoomData.value.filter((room) => {
+      return room.title.toLowerCase().includes(searchWord);
+      // ||
+      // room.roomCode.toLowerCase().includes(searchWord) ||
+      // room.description.toLowerCase().includes(searchWord);
+    });
+  } else {
+    return filteredRoomData.value;
+  }
 });
-
-// 透過綁定@input事件，當輸入框有輸入時，觸發filterRooms函式
-function filterRooms() {
-  searchWordFilter.value = evebn.target.value;
-}
 
 // 房間資料
 const roomData = ref([]);
@@ -81,13 +111,17 @@ const roomCodeNumber = ref(0);
 
 // 透過房間代碼編號，將房間代碼傳送至LoginBoard元件
 async function sendRoomNumber(roomNumber) {
-  roomCodeNumber.value = roomNumber;
-  const sendVerifyRoomCode = roomCode.value[roomNumber];
+  if (roomCurrentPage.value === 1) {
+    roomCodeNumber.value = roomNumber;
+  } else {
+    roomCodeNumber.value = roomNumber + (roomCurrentPage.value - 1) * 12;
+  }
+  const sendVerifyRoomCode = roomCode.value[roomCodeNumber.value];
   try {
     const response = await BoardUploadService.verifyCookie(sendVerifyRoomCode);
     if (response.status === 200) {
       router.push({
-        name: "RoomBoard",
+        name: "WorkRoomBoard",
         params: { roomCode: sendVerifyRoomCode },
       });
     }
@@ -99,45 +133,113 @@ async function sendRoomNumber(roomNumber) {
 
 // 處理房間資料
 function processRoomData(Data) {
-  for (let i = 0; i < Data.length; i++) {
-    roomCode.value.push(roomData.value[i].roomCode);
-    roomData.value[i].createTime = new Date(
-      roomData.value[i].createTime
-    ).toLocaleString();
+  roomCode.value = [];
+  Data.forEach((room) => {
+    roomCode.value.push(room.roomCode);
+  });
+}
+
+// 更新頁數
+function updataPageNumber() {
+  roomDataPage.value = Math.ceil(
+    filteredSearchRoomData.value.length / roomNumber.value,
+    0
+  );
+  for (let i = 0; i < roomNumber.value; i++) {
+    roomDataPageLength.value[i] = i;
   }
 }
 
+const boardType = ref("ASSIGNMENT_BOARD");
 // 獲取所有房間資料
 onMounted(() => {
-  BoardUploadService.getAllRooms().then((response) => {
+  BoardUploadService.getAllRooms(boardType.value).then((response) => {
     roomData.value = response.data;
-    processRoomData(roomData.value);
-  });
+    console.log(response.data);
+    roomData.value.sort((a, b) => {
+      const dateA = new Date(a.createTime);
+      const dateB = new Date(b.createTime);
+      return dateB - dateA;
+    })
+    roomData.value.forEach((room) => {
+      room.createTime = new Date(room.createTime).toLocaleString();
+    });
+    updataPageNumber();
+  }).catch((error) => {
+    console.error(error);
+  })
 });
 
+// 頁數房間號碼
+const roomNumber = ref(12);
+const roomActiveTab = ref(1);
+const roomDataPage = ref(1);
+const roomDataPageLength = ref([]);
+const roomCurrentPage = ref(1);
+const roomCurrentRouter = ref(router.currentRoute.value.query.page);
+
+// 點擊頁數，重新更新房間資料，並轉換頁數
+function clickPageNumber(page) {
+  roomCurrentPage.value = page;
+  const startIndex = (page - 1) * roomNumber.value;
+  let endIndex = page * roomNumber.value - 1;
+  endIndex = Math.min(endIndex, filteredSearchRoomData.value.length - 1);
+
+  roomDataPageLength.value = [];
+  for (let i = startIndex; i <= endIndex; i++) {
+    roomDataPageLength.value.push(i);
+  }
+  roomActiveTab.value = page;
+  router.push({ query: { page: page } });
+}
+
+// 監聽路由變化，並更新房間資料
+watch(router.currentRoute, (newRoute) => {
+  roomCurrentRouter.value = newRoute.query.page;
+  clickPageNumber(Number(roomCurrentRouter.value));
+});
+
+// 監聽搜尋房間資料，並更新房間資料，並同時處理資料、更新頁數與轉換頁數
+watch(filteredSearchRoomData, (newFilteredSearchRoomData) => {
+  roomDataPageLength.value = [];
+  if (newFilteredSearchRoomData.length < 13) {
+    roomNumber.value = newFilteredSearchRoomData.length;
+    roomDataPageLength.value = [];
+    for (let i = 0; i < newFilteredSearchRoomData.length; i++) {
+      roomDataPageLength.value.push(i);
+    }
+    updataPageNumber();
+    clickPageNumber(Number(router.currentRoute.value.query.page));
+    processRoomData(newFilteredSearchRoomData);
+  } else {
+    roomNumber.value = 12;
+    updataPageNumber();
+    clickPageNumber(Number(router.currentRoute.value.query.page));
+    processRoomData(newFilteredSearchRoomData);
+  }
+});
 </script>
 
 <template>
   <div v-if="loginStatus">
-    <WorkLoginBoard @send-login-status="handleLoginStatus" :roomCode="roomCode[roomCodeNumber]"></WorkLoginBoard>
+    <WorkLoginBoard
+      @send-login-status="handleLoginStatus"
+      :roomCode="roomCode[roomCodeNumber]"
+    ></WorkLoginBoard>
   </div>
   <div v-if="createStatus">
-    <WorkCreateBoard @send-create-status="handleSendCreateStatus"></WorkCreateBoard>
+    <WorkCreateBoard
+      @send-create-status="handleSendCreateStatus"
+    ></WorkCreateBoard>
   </div>
   <div class="board-container">
-
-<!--  -->
-<div class="board-sidebar">
+    <!--  -->
+    <div class="board-sidebar">
       <div class="board-sidebar-search">
         <p>Search Title</p>
         <div class="board-sidebar-input">
           <label for="search"></label>
-          <input
-            type="text"
-            id="search"
-            v-model="searchWordFilter"
-            @input="filterRooms"
-          />
+          <input type="text" id="search" v-model="searchWordFilter" />
           <span>
             <font-awesome-icon icon="fa-solid fa-magnifying-glass" />
           </span>
@@ -174,8 +276,8 @@ onMounted(() => {
         </div>
         <div
           class="board-sidebar-tab"
-          :class="[{ 'board-sidebar-status': activeTab === 'Joined' }]"
-          @click="handleTabClick('Joined')"
+          :class="[{ 'board-sidebar-status': activeTab === 'JOINED' }]"
+          @click="handleTabClick('JOINED')"
         >
           <p></p>
           <div><font-awesome-icon icon="lock-open" /></div>
@@ -205,11 +307,20 @@ onMounted(() => {
     <div class="board-main">
       <div class="board-main-title">
         <p>作業版 / 加入與設定</p>
+        <div class="board-main-page" v-if="filteredSearchRoomData.length != 0">
+          <p
+            v-for="pageNumber in roomDataPage"
+            @click="clickPageNumber(pageNumber)"
+            :class="[{ 'board-main-page-now': roomActiveTab === pageNumber }]"
+          >
+            {{ pageNumber }}
+          </p>
+        </div>
       </div>
       <div class="board-main-content">
         <div
           class="board-main-room"
-          v-for="(Data, index) in filteredSearchRoomData"
+          v-for="(data, index) in roomDataPageLength"
           :key="index"
           @click="sendRoomNumber(index)"
         >
@@ -220,21 +331,21 @@ onMounted(() => {
             <font-awesome-icon :icon="roomTypeLock[index]" />
           </p>
           <div class="board-main-room-number">
-            <p>{{ Data.title }}</p>
-            <span>{{ Data.roomCode }}</span>
+            <p>{{ filteredSearchRoomData[data].title }}</p>
+            <span>{{ filteredSearchRoomData[data].roomCode }}</span>
           </div>
           <p class="board-main-room-description">
-            {{ Data.description }}
+            {{ filteredSearchRoomData[data].description }}
           </p>
-          <p class="board-main-room-date">{{ Data.createTime }}</p>
+          <p class="board-main-room-date">
+            {{ filteredSearchRoomData[data].createTime }}
+          </p>
         </div>
       </div>
-
     </div>
   </div>
 </template>
 
 <style lang="scss" scoped>
 @import "../../assets/styles/layout/board/board";
-
 </style>

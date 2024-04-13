@@ -10,20 +10,13 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url))
+      '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
-  // css:{
-  //   preprocessorOptions: {
-  //     scss: {
-  //       additionalData: '@import "@/assets/scss/global.scss";'
-  //     }
-  //   }
-  // },
   server: {
     port: 8081,
   },
   build: {
-    ourDir: "F:/nginx-1.25.3/html"
+    outDir: "F:/nginx-1.25.4/html"
   },
 })

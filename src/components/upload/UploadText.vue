@@ -1,5 +1,6 @@
 <script setup>
 import { ref, watchEffect, onMounted } from "vue";
+import API_URL from "../../services/API_URL";
 
 const code = ref("");
 const isComplete = ref(false);
@@ -12,6 +13,18 @@ onMounted(() => {
   watchEffect(() => {
     isComplete.value = code.value.length === 6;
   });
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker
+        .register("/service-worker.js")
+        .then((registration) => {
+          console.log("SW registered: ", registration);
+        })
+        .catch((registrationError) => {
+          console.log("SW registration failed: ", registrationError);
+        });
+    });
+  }
 });
 
 const totalSize = ref(0);
@@ -20,34 +33,40 @@ const chunks = ref([]);
 const loadedSize = ref(0);
 const filename = ref("example.txt");
 
-function readStream(response) {
-  totalSize.value = response.headers.get("Content-Length") || "未知大小";
-  reader.value = response.body.getReader();
-  console.log(chunks.value);
-
-  const read = () => {
-    return reader.value.read().then(({ done, value }) => {
-      if (done) {
-        return new Blob(chunks.value);
-      }
-      loadedSize.value += value.length;
-      progress.value = ((loadedSize.value / totalSize.value) * 100).toFixed(0);
-      chunks.value.push(value);
-      return read();
-    });
-  };
-  return read();
+async function getDataStreamFromServiceWorker() {
+  const sw = await registerServiceWorker();
+  const { port1, port2 } = new MessageChannel();
+  sw.postMessage({ sendWorkerCode: code.value }, [port2]);
+  return new Promise((resolve) => {
+    port1.onmessage = (event) => {
+      progress.value = event.data.progress;
+      resolve({ stream: event.data.stream, filename: event.data.filename });
+    };
+  });
 }
 
-function downloadFile() {
-  uploadStatus.value = true;
+async function downloadFile() {
+  if(window.showSaveFilePicker) {
+    await dowlonadFileWithFileAPI();
+  } else {
+    await downloadFileWithNoFileAPI();
+  }
+
+}
+
+async function downloadFileWithNoFileAPI() {
+  // const url = API_URL + "/downloadFileByCode/" + code.value;
   const url = `http://localhost:8080/api/auth/downloadFileByCode/${code.value}`;
-  fetch(url)
-    .then((response) => {
-      uploadStatus.value = false;
+  try {
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
       code.value = "";
       progressStatus.value = false;
-      const contentDisposition = response.headers.get("Content-Disposition");
+
+    totalSize.value = parseInt(response.headers.get("Content-Length") || "0", 10);
+    const contentDisposition = response.headers.get("Content-Disposition");
       if (contentDisposition) {
         const filenameMatch = contentDisposition.match(
           /filename\*?=['"]?(?:UTF-8'')?([^'";]+)['"]?/i
@@ -56,27 +75,92 @@ function downloadFile() {
           filename.value = decodeURIComponent(filenameMatch[1]);
         }
       }
+    const reader = response.body.getReader();
 
-      return readStream(response);
-    })
-    .then((blob) => {
-      const downloadUrl = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = downloadUrl;
-      a.download = filename.value;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(downloadUrl);
-      progressStatus.value = true;
-      loadedSize.value = 0;
-      chunks.value = [];
-    })
-    .catch((error) => {
-      console.error("下載過程中發生錯誤:", error);
-      uploadStatus.value = false;
-      chunks.value = [];
+    // Create a stream and write to it in chunks as they arrive
+    const stream = new ReadableStream({
+      async start(controller) {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) {
+            progressStatus.value = true;
+            uploadStatus.value = false;
+            break;
+          }
+          loadedSize.value += value.length;
+          progress.value = ((loadedSize.value / totalSize.value) * 100).toFixed(0);
+          controller.enqueue(value);
+        }
+        controller.close();
+      }
     });
+
+    const blob = await new Response(stream).blob();
+    const downloadUrl = URL.createObjectURL(blob);
+
+    // Set up the download link and click it to start the download
+    const a = document.createElement("a");
+    a.href = downloadUrl;
+    a.download = filename.value;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(downloadUrl);
+
+    // Reset after download
+    code.value = "";
+    loadedSize.value = 0;
+    progress.value = 0;
+  } catch (error) {
+    console.error("下载过程中发生错误:", error);
+  }
+}
+
+async function dowlonadFileWithFileAPI() {
+
+  const { stream, filename } = await getDataStreamFromServiceWorker();
+
+  const fileHandle = await window.showSaveFilePicker({
+    suggestedName: filename,
+  });
+
+  // 创建写入流
+  const writableStream = await fileHandle.createWritable();
+
+  if (stream) {
+    progressStatus.value = false;
+    uploadStatus.value = true;
+    code.value = "";
+    await stream.pipeTo(writableStream);
+    progressStatus.value = true;
+    uploadStatus.value = false;
+  }
+}
+
+async function registerServiceWorker() {
+  if (navigator.serviceWorker.controller) {
+    return navigator.serviceWorker.controller;
+  }
+
+  const registration = await navigator.serviceWorker.register(
+    "/service-worker.js",
+    {
+      scope: "./",
+    }
+  );
+  return new Promise((resolve, reject) => {
+    if (registration.installing) {
+      registration.installing.onstatechange = function () {
+        if (this.state === "activated") {
+          resolve(this);
+        }
+      };
+    } else if (registration.active) {
+      resolve(registration.active);
+    } else {
+      reject("Service worker registration failed");
+    }
+  });
 }
 </script>
 
@@ -85,7 +169,6 @@ function downloadFile() {
     <div class="upload-code-box">
       <input type="text" v-model="code" />
     </div>
-
     <button
       class="submit-btn"
       :class="{ active: isComplete, 'wide-btn': !progressStatus }"
@@ -207,6 +290,7 @@ a {
   0% {
     transform: rotate(0deg);
   }
+
   100% {
     transform: rotate(360deg);
   }
@@ -234,7 +318,7 @@ a {
     background-color: rgb(150, 188, 225);
     border-radius: 0.25rem;
     width: 78%;
-  
+
     .upload-progress-bar-striped {
       background-image: linear-gradient(
         45deg,
@@ -248,7 +332,7 @@ a {
       );
       background-size: 1rem 1rem;
     }
-  
+
     .upload-progress-bar {
       display: flex;
       align-items: center;
@@ -260,5 +344,4 @@ a {
     }
   }
 }
-
 </style>
