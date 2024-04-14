@@ -69,11 +69,12 @@ const fileBlob = ref(undefined);
 const previewImageStatue = ref(false);
 function handlePreviewClick(index) {
   // 構建點擊的圖片路徑
-  const imagePath = `src/assets/image/createRoomIMG/Default_picture${
-    index + 1
-  }.jpg`;
+  // const imagePath = `src/assets/image/createRoomIMG/Default_picture${
+  //   index + 1
+  // }.jpg`;
+  // :src="`src/assets/image/Default_picture` + (index + 1) + `.jpg` "
   const reader = new FileReader();
-  fetch(imagePath)
+  fetch(getImageUrl(index + 1))
     .then((response) => response.blob()) // 將文件轉換為 Blob 對象
     .then((blob) => {
       previewImageStatue.value = true;
@@ -138,6 +139,11 @@ const formData = ref({
   description: "This is a description.",
   pwd: ""
 });
+
+const getImageUrl = (fileIndex) => {
+  return new URL(`../../assets/image/Default_picture${fileIndex}.jpg`, import.meta.url).href;
+}
+
 </script>
 
 <template>
@@ -212,11 +218,7 @@ const formData = ref({
           <div class="create-board-Select">
             <div class="create-boare-default">
               <img
-                :src="
-                  'src/assets/image/createRoomIMG/Default_picture' +
-                  (index + 1) +
-                  '.jpg'
-                "
+                :src="getImageUrl(index + 1)"
                 alt=""
                 v-for="(amount, index) in 5"
                 :key="index"

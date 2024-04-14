@@ -16,7 +16,6 @@ const currentUser = computed(() => {
 
 function logOut() {
   authStore.logout();
-  router.push("/login");
 }
 
 function setSelectedTab(tab) {
@@ -62,7 +61,7 @@ function setSelectedTab(tab) {
               <font-awesome-icon icon="circle-arrow-up" /> Upload
             </li>
           </RouterLink>
-          <RouterLink to="/login" class="nav-link">
+          <RouterLink to="/singin" class="nav-link">
             <li class="nav-item">
               <font-awesome-icon icon="sign-in-alt" /> Sign in
             </li>

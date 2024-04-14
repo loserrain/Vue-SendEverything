@@ -28,8 +28,8 @@ const router = createRouter({
       component: Home,
     },
     {
-      path: "/login",
-      name: "login",
+      path: "/singin",
+      name: "singin",
       component: Login,
     },
     {

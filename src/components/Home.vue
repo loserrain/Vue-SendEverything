@@ -1,30 +1,13 @@
 <script setup>
 import { RouterLink } from "vue-router";
-import OauthService from "../services/auth.service";
-import { useAuthStore } from "../stores/auth.module";
 import { useUploadTab } from "../stores/upload";
-import { onMounted } from "vue";
 
-const authStore = useAuthStore();
 const uploadTab = useUploadTab();
 
-// const oauth2 = async() => {
-//   try {
-//     const response = await OauthService.oauth2();
-//     localStorage.setItem("user", JSON.stringify(response.data));
-//     console.log("test oauth2", response.data);
-//   } catch (error) {
-//     console.log("error:", error)
-//   }
-// }
 
 function setSelectedTab(tab) {
   uploadTab.setSelectedTab(tab);
 }
-
-onMounted(() => {
-  authStore.oauth2();
-});
 </script>
 
 <template>

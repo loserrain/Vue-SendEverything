@@ -20,24 +20,23 @@ const loggedIn = computed(() => {
 });
 
 onMounted(() => {
-  if (loggedIn.value) {
-    router.push("/profile");
-  }
+  // if (loggedIn.value) {
+  //   router.push("/profile");
+  // }
 });
 
 // 跨視窗傳遞訊息，Google登入用
 window.addEventListener("message", (event) => {
   if (event.data.isAuthenticated) {
+    authStore.oauth2();
     router.push("/");
-    setTimeout(() => {
-      location.reload();
-    });
   }
 });
 
 function loginNewGoogle() {
   // google登入畫面
-  const authUrl = "http://localhost:8080/oauth2/authorization/google";
+  const authUrl = "https://imbig404.com/oauth2/authorization/google";
+  // const authUrl = "/api/test/all";
   // const authUrl = "http://nfu404.ddns.net/oauth2/authorization/google";
   window.open(authUrl, "_blank", "width=550,height=550");
 }
@@ -51,7 +50,6 @@ function register() {
 }
 
 function handleLogin(user) {
-  console.log("user", user);
   loading.value = true;
   authStore
     .login(user)

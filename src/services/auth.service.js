@@ -37,7 +37,7 @@ class AuthService {
 
   async logout() {
     try {
-      const response = await axios.post(API_URL + "signout");
+      const response = await axios.post(API_URL + "/signout");
       if (response.data.message) {
         console.log(response.data.message);
       }

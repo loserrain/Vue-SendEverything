@@ -5,6 +5,7 @@ import vue from '@vitejs/plugin-vue'
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  // base: '/web/',
   plugins: [
     vue(),
   ],
@@ -17,6 +18,6 @@ export default defineConfig({
     port: 8081,
   },
   build: {
-    outDir: "F:/nginx-1.25.4/html"
+    outDir: "C:/nginx-1.25.4/html"
   },
 })

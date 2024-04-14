@@ -1,7 +1,8 @@
 <script setup>
-import { ref, watchEffect, onMounted } from "vue";
+import { ref, watchEffect, onMounted, watch, computed } from "vue";
 import API_URL from "../../services/API_URL";
 import UploadService from "../../services/uploadFilesService"
+import Webstomp from "webstomp-client";
 
 const code = ref("");
 const isComplete = ref(false);
@@ -10,165 +11,47 @@ const uploadStatus = ref(false);
 const progressStatus = ref(true);
 const progress = ref(0);
 
+let client;
+
 onMounted(() => {
   watchEffect(() => {
     isComplete.value = code.value.length === 6;
   });
-  if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => {
-      navigator.serviceWorker
-        .register("/service-worker.js")
-        .then((registration) => {
-          console.log("SW registered: ", registration);
-        })
-        .catch((registrationError) => {
-          console.log("SW registration failed: ", registrationError);
-        });
-    });
-  }
 });
 
-const totalSize = ref(0);
-const reader = ref(null);
-const chunks = ref([]);
-const loadedSize = ref(0);
-const filename = ref("example.txt");
-
-async function getDataStreamFromServiceWorker() {
-  const sw = await registerServiceWorker();
-  const { port1, port2 } = new MessageChannel();
-  sw.postMessage({ sendWorkerCode: code.value }, [port2]);
-  return new Promise((resolve) => {
-    port1.onmessage = (event) => {
-      progress.value = event.data.progress;
-      resolve({ stream: event.data.stream, filename: event.data.filename });
-    };
-  });
-}
-
 async function downloadFile() {
-  if(window.showSaveFilePicker) {
-    await dowlonadFileWithFileAPI();
-  } else {
-    await downloadFileWithNoFileAPI();
-  }
 
-}
-
-async function downloadFileWithNoFileAPI() {
-  const url = API_URL + "/downloadFileByCode/" + code.value;
-  // const url = `http://localhost:8080/api/auth/downloadFileByCode/${code.value}`;
-  try {
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error('Network response was not ok');
-    }
-      code.value = "";
-      progressStatus.value = false;
-
-    totalSize.value = parseInt(response.headers.get("Content-Length") || "0", 10);
-    const contentDisposition = response.headers.get("Content-Disposition");
-      if (contentDisposition) {
-        const filenameMatch = contentDisposition.match(
-          /filename\*?=['"]?(?:UTF-8'')?([^'";]+)['"]?/i
-        );
-        if (filenameMatch && filenameMatch[1]) {
-          filename.value = decodeURIComponent(filenameMatch[1]);
+  const socket = new WebSocket("wss://imbig404.com/websocket");
+  client = Webstomp.over(socket);
+  client.connect(
+    {},
+    () => {
+      client.subscribe("/topic/downloadProgress", (message) => {
+        progress.value = Math.round(JSON.parse(message.body));
+        if (progress.value === 100) {
+          client.disconnect();
+          progressStatus.value = true;
+          uploadStatus.value = false;
         }
-      }
-    const reader = response.body.getReader();
-
-    // Create a stream and write to it in chunks as they arrive
-    const stream = new ReadableStream({
-      async start(controller) {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) {
-            progressStatus.value = true;
-            uploadStatus.value = false;
-            break;
-          }
-          loadedSize.value += value.length;
-          progress.value = ((loadedSize.value / totalSize.value) * 100).toFixed(0);
-          controller.enqueue(value);
-        }
-        controller.close();
-      }
-    });
-
-    const blob = await new Response(stream).blob();
-    const downloadUrl = URL.createObjectURL(blob);
-
-    // Set up the download link and click it to start the download
-    const a = document.createElement("a");
-    a.href = downloadUrl;
-    a.download = filename.value;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(downloadUrl);
-
-    // Reset after download
-    code.value = "";
-    loadedSize.value = 0;
-    progress.value = 0;
-  } catch (error) {
-    console.error("下载过程中发生错误:", error);
-  }
-}
-const downloadWithFileAPIName = ref("example.txt");
-async function dowlonadFileWithFileAPI() {
-  await UploadService.getFileNameByCode(code.value)
-  .then((response) => {
-    downloadWithFileAPIName.value = response.data.fileName;
-  }).catch((error) => {
-    console.log(error);
-  });
-  
-  const fileHandle = await window.showSaveFilePicker({
-    suggestedName: downloadWithFileAPIName.value,
-  });
-  
-  // 创建写入流
-  const writableStream = await fileHandle.createWritable();
-  
-  const { stream } = await getDataStreamFromServiceWorker();
-
-  if (stream) {
-    progressStatus.value = false;
-    uploadStatus.value = true;
-    code.value = "";
-    await stream.pipeTo(writableStream);
-    progressStatus.value = true;
-    uploadStatus.value = false;
-  }
-}
-
-async function registerServiceWorker() {
-  if (navigator.serviceWorker.controller) {
-    return navigator.serviceWorker.controller;
-  }
-
-  const registration = await navigator.serviceWorker.register(
-    "/service-worker.js",
-    {
-      scope: "./",
+      });
+    },
+    (error) => {
+      console.error("WebSocket Connection error: ", error);
     }
   );
-  return new Promise((resolve, reject) => {
-    if (registration.installing) {
-      registration.installing.onstatechange = function () {
-        if (this.state === "activated") {
-          resolve(this);
-        }
-      };
-    } else if (registration.active) {
-      resolve(registration.active);
-    } else {
-      reject("Service worker registration failed");
-    }
-  });
+
+  progressStatus.value = false;
+  uploadStatus.value = true;
+  const url = API_URL + "/downloadFileByCode/" + code.value;
+  code.value = "";
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
 }
+
 </script>
 
 <template>
@@ -199,7 +82,6 @@ async function registerServiceWorker() {
         <div class="upload-progress-percent">{{ progress }}%</div>
       </div>
     </button>
-
     <a ref="downloadLink"></a>
   </div>
 </template>
@@ -276,7 +158,7 @@ async function registerServiceWorker() {
   }
 }
 
-a {
+ a {
   display: none;
 }
 
