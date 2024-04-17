@@ -83,8 +83,8 @@ function handleLogin(user) {
 <template>
   <div class="card-container">
     <div class="card-img">
-      <!-- <img src="../assets/image/test.jpg" alt=""> -->
-      <img src="../assets/image/103593601_p0.jpg" alt="" />
+      <img src="../assets/image/test.jpg" alt="">
+      <!-- <img src="../assets/image/103593601_p0.jpg" alt="" /> -->
     </div>
     <div class="card-form">
       <div class="card-nav">

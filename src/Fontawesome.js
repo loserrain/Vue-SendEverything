@@ -10,7 +10,9 @@ import {
   faFolderOpen,
   faFile,
   faUser,
-  faCircleDown
+  faCircleDown,
+  faCopy,
+  faImage
 } from "@fortawesome/free-regular-svg-icons";
 
 import {
@@ -37,7 +39,10 @@ import {
   faXmark,
   faGear,
   faWrench,
-  faUnlock
+  faUnlock,
+  faDownload,
+  faQrcode,
+  faStopwatch
 } from "@fortawesome/free-solid-svg-icons";
 
 library.add(
@@ -74,7 +79,12 @@ library.add(
     faUser,
     faWrench,
     faCircleDown,
-    faUnlock
+    faUnlock,
+    faDownload,
+    faCopy,
+    faImage,
+    faQrcode,
+    faStopwatch
   );
 
   export { FontAwesomeIcon };

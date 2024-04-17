@@ -88,48 +88,58 @@ function readStream(response) {
   return read();
 }
 
-function downloadFile(code) {
-  // uploadStatus.value = true;
+async function downloadFile(code) {
   const url = API_URL + "/downloadRoomFileByCode/" + code;
-  // const url = `http://localhost:8080/api/auth/downloadRoomFileByCode/${code}`;
-  // const url = `/api/auth/downloadRoomFileByCode/${code}`;
-  fetch(url)
-    .then((response) => {
-      console.log(response.headers.get("Content-Disposition"));
-      // uploadStatus.value = false;
-      code = "";
-      // progressStatus.value = false;
-      const contentDisposition = response.headers.get("Content-Disposition");
-      if (contentDisposition) {
-        const filenameMatch = contentDisposition.match(
-          /filename\*?=['"]?(?:UTF-8'')?([^'";]+)['"]?/i
-        );
-        if (filenameMatch && filenameMatch[1]) {
-          filename.value = decodeURIComponent(filenameMatch[1]);
-        }
-      }
-
-      return readStream(response);
-    })
-    .then((blob) => {
-      const downloadUrl = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = downloadUrl;
-      a.download = filename.value;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(downloadUrl);
-      // progressStatus.value = true;
-      loadedSize.value = 0;
-      chunks.value = [];
-    })
-    .catch((error) => {
-      console.error("下載過程中發生錯誤:", error);
-      chunks.value = [];
-      // uploadStatus.value = false;
-    });
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
 }
+
+// function downloadFile(code) {
+//   // uploadStatus.value = true;
+//   const url = API_URL + "/downloadRoomFileByCode/" + code;
+//   // const url = `http://localhost:8080/api/auth/downloadRoomFileByCode/${code}`;
+//   // const url = `/api/auth/downloadRoomFileByCode/${code}`;
+//   fetch(url)
+//     .then((response) => {
+//       console.log(response.headers.get("Content-Disposition"));
+//       // uploadStatus.value = false;
+//       code = "";
+//       // progressStatus.value = false;
+//       const contentDisposition = response.headers.get("Content-Disposition");
+//       if (contentDisposition) {
+//         const filenameMatch = contentDisposition.match(
+//           /filename\*?=['"]?(?:UTF-8'')?([^'";]+)['"]?/i
+//         );
+//         if (filenameMatch && filenameMatch[1]) {
+//           filename.value = decodeURIComponent(filenameMatch[1]);
+//         }
+//       }
+
+//       return readStream(response);
+//     })
+//     .then((blob) => {
+//       const downloadUrl = URL.createObjectURL(blob);
+//       const a = document.createElement("a");
+//       a.href = downloadUrl;
+//       a.download = filename.value;
+//       document.body.appendChild(a);
+//       a.click();
+//       document.body.removeChild(a);
+//       URL.revokeObjectURL(downloadUrl);
+//       // progressStatus.value = true;
+//       loadedSize.value = 0;
+//       chunks.value = [];
+//     })
+//     .catch((error) => {
+//       console.error("下載過程中發生錯誤:", error);
+//       chunks.value = [];
+//       // uploadStatus.value = false;
+//     });
+// }
 
 function formatFileSize(fileSize) {
   const KB = 1024;

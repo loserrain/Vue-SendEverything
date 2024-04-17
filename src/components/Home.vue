@@ -1,8 +1,8 @@
 <script setup>
 import { RouterLink } from "vue-router";
-import { useUploadTab } from "../stores/upload";
+import { useUploadInfo } from "../stores/upload";
 
-const uploadTab = useUploadTab();
+const uploadTab = useUploadInfo();
 
 
 function setSelectedTab(tab) {
@@ -14,8 +14,8 @@ function setSelectedTab(tab) {
   <div>
     <p><span class="send-word">Send</span>Everything</p>
     <p>Simple, Fast, and Free File Sharing</p>
-    <RouterLink to="/uploadfile" @click="setSelectedTab('Send')"
-      ><button class="upload-button">+ UPLOAD</button></RouterLink
+    <RouterLink to="/uploadfile" 
+      ><button class="upload-button" @click="setSelectedTab('Send')">+ UPLOAD</button></RouterLink
     >
   </div>
 </template>

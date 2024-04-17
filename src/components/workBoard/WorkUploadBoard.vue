@@ -140,7 +140,6 @@ const zipFileBlob = ref([]);
 const zipFileName = ref("SendEverything");
 const zipFileStatus = ref(false);
 const ckZipIcon = computed(() => {
-  console.log(zipFileStatus.value);
   return zipFileStatus.value ? ["far", "square-check"] : ["far", "square"];
 });
 
@@ -679,7 +678,16 @@ onMounted(() => {
       transparent
     );
     background-size: 1rem 1rem;
+    animation: progress-animation 1.5s linear infinite;
   }
+  @keyframes progress-animation {
+      0% {
+        background-position: 1rem 0;
+      }
+      100% {
+        background-position: 0 0;
+      }
+    }
 
   .upload-progress-bar {
     display: flex;

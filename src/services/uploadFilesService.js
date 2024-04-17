@@ -15,16 +15,15 @@ class UploadFilesService {
   }
 
   getFiles() {
-    return http.get(`/getFile`);
+    return http.get(`/getFiles`);
   }
-
-  test() {
-    return http.post(`/s3download`);
-  }
-
 
   uploadMessage(message){
-    return http.post("/uploadMessage", message);
+    return http.post("/uploadMessage", { content: message });
+  }
+
+  getMessage(receiveCode) {
+    return http.post(`/getMessage`, { code: receiveCode });
   }
 
   uploadChunk(file) {
@@ -47,6 +46,7 @@ class UploadFilesService {
       }
     });
   }
+
   uploadRoomFileChunk(file) {
     return http.post("/uploadRoomFileChunk", file, {
       headers: {
@@ -71,6 +71,8 @@ class UploadFilesService {
   getFileNameByCode(code) {
     return http.get(`/getFileNameByCode/${code}`);
   }
+
+  
 
 }
 

@@ -4,7 +4,7 @@ import BoardUploadService from "../boardUploadService/BoardRoom.js";
 import { useRouter } from "vue-router";
 
 const emits = defineEmits(["sendLoginStatus"]);
-const props = defineProps(["roomCode"]);
+const props = defineProps({ roomCode: String, roomType: String});
 const router = useRouter();
 
 function handleSendLoginStatus(newStatus) {
@@ -29,7 +29,7 @@ const elIcon = computed(() => {
 });
 
 function handleLoginData() {
-  BoardUploadService.accessRoom(pwd.value, props.roomCode)
+  BoardUploadService.accessRoom(pwd.value, props.roomCode, props.roomType)
     .then(() => {
       router.push(`/workBoard/WorkRoomBoard/${props.roomCode}`);
     })

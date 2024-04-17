@@ -1,13 +1,39 @@
 <script setup>
 import { ref, watchEffect } from "vue";
+import { useUploadInfo } from "../../stores/upload";
+import UploadService from "../../services/uploadFilesService";
+
+const uploadInfo = useUploadInfo();
 
 const textInput = ref("");
 
+function uploadMessage() {
+  UploadService.uploadMessage(textInput.value)
+    .then((response) => {
+      uploadInfo.setTextReceiveStatus(true);
+      uploadInfo.setTextReceiveCode(response.data.verificationCode);
+    })
+    .catch((e) => {
+      console.log(e);
+    });
+}
+
+const receiveMessage = ref("");
+
 watchEffect(() => {
-  console.log('Uploading data to Spring:', textInput.value)
+  if (uploadInfo.textReceiveResult === "") {
+    receiveMessage.value = "No message received.";
+  } else {
+    receiveMessage.value = uploadInfo.textReceiveResult;
+  }
 });
 
-
+// 複製訊息
+const copyMessage = () => {
+  const blob = new Blob([receiveMessage.value], { type: "text/plain" });
+  const clipboardItem = new ClipboardItem({ "text/plain": blob });
+  navigator.clipboard.write([clipboardItem]);
+};
 </script>
 
 <template>
@@ -19,20 +45,25 @@ watchEffect(() => {
         name="message"
         id="message"
         cols="45"
-        rows="11"
+        rows="12"
         placeholder="please input your message."
+        class="upload-send-message"
       ></textarea>
-      <button>CLick to Upload</button>
+      <button @click="uploadMessage">CLick to Upload</button>
     </div>
     <div class="upload-send">
-      <p class="p">Message.</p>
+      <p class="p">Receive Message.</p>
+      <div class="upload-send-copy" @click="copyMessage">
+        <font-awesome-icon :icon="['far', 'copy']" />
+      </div>
       <textarea
-        v-model="textInput"
-        name="message"
-        id="message"
-        cols="45"
-        rows="15"
-      ></textarea>
+        class="upload-send-receiveMessage"
+        @click="copyMessage"
+        cols="42"
+        rows="13"
+        readonly
+        >{{ receiveMessage }}
+      </textarea>
     </div>
   </div>
 </template>
@@ -40,25 +71,43 @@ watchEffect(() => {
 <style lang="scss" scoped>
 @import "../../assets/styles/layout/upload";
 
-.upload-file-container {
+.upload-send-copy {
+  position: absolute;
+  top: 0.8rem;
+  right: 2.5rem;
+  font-size: 22px;
+  color: #5380f0;
+  transition: all 0.1s;
+  cursor: pointer;
 
+  &:hover {
+    color: #1d58ee;
+  }
+
+  &:active {
+    scale: 0.8;
+  }
+}
+
+.upload-file-container {
   > div {
     margin-bottom: 15px;
   }
 }
 
 .upload-send {
+  position: relative;
   margin-top: 20px;
   height: 300px;
 
-  textarea {
+  .upload-send-message {
     margin-top: 10px;
     padding: 7px 10px 5px;
     border: 1px solid #ccc;
     border-radius: 5px;
     box-shadow: 4px 5px 5px rgba(0, 0, 0, 0.135);
-    background-color: #011222e2;
-    color: beige;
+    background-color: #021729dc;
+    color: #f5f5dc;
     letter-spacing: 1px;
     resize: none;
 
@@ -67,7 +116,7 @@ watchEffect(() => {
     }
 
     &::placeholder {
-      color: #b8b8b8;
+      color: #cccccc;
       font-weight: 700;
     }
   }
@@ -77,12 +126,35 @@ watchEffect(() => {
     padding: 7px 11px 6px;
   }
 
-  p{
+  p {
     // 設定margin-top的話，此距會根據父元素的邊距進行設定
     padding-top: 10px;
     font-size: 20px;
     font-weight: 700;
     color: #011222c3;
+  }
+}
+
+.upload-send-receiveMessage {
+  margin-top: 10px;
+  padding: 7px 10px 5px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  box-shadow: 2px 3px 5px rgba(0, 0, 0, 0.135);
+  background-color: #e9f2ff;
+  font-size: 14px;
+  color: #61615f;
+  letter-spacing: 1px;
+  resize: none;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: none;
+  }
+
+  &::placeholder {
+    color: #cccccc;
+    font-weight: 700;
   }
 }
 </style>

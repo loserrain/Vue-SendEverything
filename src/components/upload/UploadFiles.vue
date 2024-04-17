@@ -29,6 +29,19 @@ const fileList = ref([]);
 const zipFileBlob = ref(undefined);
 const zipFileName = ref("SendEverything");
 
+// 狀態管理
+const uploadStatus = ref(false);
+const userConfirmKK = ref(false);
+
+function userConfirm() {
+  setTimeout(() => {
+    userConfirmKK.value = !userConfirmKK.value;
+    fileReceive.value = [];
+    currentFile.value = undefined;
+    emits("sendFileInfo", false);
+    uploadGetFiles();
+  }, 200);
+}
 
 function formatFileSize(fileSize) {
   const KB = 1024;
@@ -64,15 +77,18 @@ function handleDragActive() {
 }
 
 function handleDragNoActive(event) {
-  console.log("event", event)
-  if (!event.relatedTarget || !event.currentTarget.contains(event.relatedTarget)) {
+  console.log("event", event);
+  if (
+    !event.relatedTarget ||
+    !event.currentTarget.contains(event.relatedTarget)
+  ) {
     dropActive.value = false;
   }
 }
 
 function handleFileDrop(event) {
   event.preventDefault();
-  
+
   files.value = event.dataTransfer.files;
   selectedFiles.value = files.value;
   outputFileName.value = files.value[0].name;
@@ -92,6 +108,7 @@ function selectFile() {
 }
 
 function handleFileSelectAndDrop(file) {
+  uploadStatus.value = true;
   for (let i = 0; i < file.length; i++) {
     fileList.value.push(file[i]);
 
@@ -183,15 +200,23 @@ const fileSort = ref([]);
 function uploadGetFiles() {
   UploadService.getFiles().then((response) => {
     fileInfos.value = response.data;
-    const fileNames = fileInfos.value.fileName || [];
-    const fileData = fileInfos.value.fileData || [];
+    const fileNames = fileInfos.value.map(
+      (fileInfo) => fileInfo.fileName || []
+    );
+    const fileSizes = fileInfos.value.map(
+      (fileInfo) => fileInfo.fileSize || []
+    );
 
+    let formattedSizes = fileSizes.map((size) => {
+      const formattedSize = formatFileSize(size);
+      return `${formattedSize.sizeValue} ${formattedSize.sizeUnit}`;
+    });
     shortFileName(fileNames);
 
-    if (fileNames.length === fileData.length) {
+    if (fileNames.length === fileSizes.length) {
       fileSort.value = fileNames.map((fileName, index) => ({
         fileName: fileName,
-        fileSize: fileData[index],
+        fileSize: formattedSizes[index],
       }));
     }
   });
@@ -270,7 +295,8 @@ async function uploadChunkThreads(file) {
     await Promise.all(workerPromises);
 
     // 加載中
-    uploadLoading.value = false;
+    // uploadLoading.value = false;
+    const formDataList = [];
 
     // 這裡使用 setTimeout 實現每100毫秒發送一次請求
     let i = 0;
@@ -297,13 +323,20 @@ async function uploadChunkThreads(file) {
         formData.append("fileId", fileId);
         formData.append("chunkId", chunkId);
         formData.append("size", size);
-
+        formDataList.push({
+          fileChunk: fileChunk,
+          chunkNumber: chunkNumber,
+          totalChunks: totalChunks,
+          fileId: fileId,
+          chunkId: chunkId,
+          size: size,
+        });
         // 檔案列表為複數時，修改壓縮檔的檔名
         if (fileList.value.length >= 2) {
           outputFileName.value = fileId;
         }
-        formData.append("outputFileName", outputFileName.value)
-        
+        formData.append("outputFileName", outputFileName.value);
+
         // 調用上傳函數
         UploadService.uploadChunk(formData).then(() => {
           // 計算當前分片數量
@@ -322,8 +355,15 @@ async function uploadChunkThreads(file) {
               chunkId
             )
               .then((response) => {
-                // console.log("File upload completed", response.data);
-                emits('sendFileInfo', response.data);
+                console.log(response.data)
+                let sendFileInfo = {
+                  downloadCode: response.data.downloadCode,
+                  qrcodeImg: response.data.qrcodeImg,
+                }
+                uploadStatus.value = false; // 上傳完成
+                userConfirmKK.value = true; // 確認按鈕
+                uploadLoading.value = false; // 加載中
+                emits("sendFileInfo", sendFileInfo);
               })
               .catch((error) => {
                 console.error("Error completing file upload", error);
@@ -335,7 +375,6 @@ async function uploadChunkThreads(file) {
       } else {
         clearInterval(interval); // 當所有結果都處理完後停止定時器
         fileList.value = []; // 清除檔案列表
-
         // 清除傳遞給upload.vue父組件的檔名、檔案大小與總檔案大小
         TotalFileSize.value = 0;
         sendEmitFileName.value = [];
@@ -427,28 +466,30 @@ async function uploadChunks() {
       @dragend="handleDragNoActive"
     >
       <label for="fileInput" class="upload-fileinput">
-        <font-awesome-icon icon="cloud-arrow-up" class="upload-font" />
+        <font-awesome-icon icon="plus" class="upload-font" />
         <input
           type="file"
           id="fileInput"
           multiple
           ref="file"
           @change="selectFile"
+          :disabled="userConfirmKK"
         />
       </label>
-      <div v-if="selectedFiles">{{ selectFileName }}</div>
+      <div v-if="selectedFiles" class="upload-send-fileName">{{ selectFileName }}</div>
       <div v-else class="upload-send-file-noselect">Please select a file.</div>
-      <p>
-        <button
-          @click="uploadChunks"
-          :disabled="!selectedFiles || uploadLoading"
-        >
+      <p class="upload-send-maxfile">(Max. File size: 5 GB)</p>
+      <p v-if="uploadStatus">
+        <button @click="uploadChunks" :disabled="uploadLoading">
           <span v-if="!uploadLoading">Click to Upload</span>
           <div v-else class="loader"></div>
         </button>
       </p>
-
-      <p class="upload-send-maxfile">(Max. File size: 25 MB)</p>
+      <p v-else>
+        <button v-if="userConfirmKK" @click="userConfirm()">
+          <span>OK</span>
+        </button>
+      </p>
     </div>
     <!-- upload的檔案傳送列表 -->
 
@@ -488,13 +529,13 @@ async function uploadChunks() {
     <!-- 上傳時的檔案區 -->
 
     <!-- 歷史紀錄區(登入後) -->
-    <p class="upload-history-line"></p>
-    <p class="upload-history-title">Historical record</p>
+    <!-- <p class="upload-history-line"></p> -->
+    <!-- <p class="upload-history-title">Historical record</p> -->
     <div class="upload-history">
       <div class="upload-file" v-for="(files, index) in fileSort" :key="index">
         <div class="upload-set">
-          <div>
-            <font-awesome-icon icon="file-lines" />
+          <div class="upload-set-icon">
+            <font-awesome-icon icon="clock-rotate-left" />
           </div>
           <div>
             <span>{{ files.fileName }}</span>
@@ -504,10 +545,14 @@ async function uploadChunks() {
             <font-awesome-icon icon="circle-check" class="upload-check" />
           </div>
         </div>
-        <div class="upload-progress-set">
-          <div class="upload-progress upload-progress-status"></div>
-
-          <div>100%</div>
+        <div class="upload-history-time">
+          <p class="">2024-04-18</p>
+          <div>
+            <font-awesome-icon icon="stopwatch" />
+            <span>
+              2d 4h
+            </span>
+          </div>
         </div>
       </div>
     </div>
@@ -546,6 +591,27 @@ async function uploadChunks() {
 
 .upload-history-line {
   border: 1.5px solid $primary-text-gray-100;
+}
+
+.upload-history-time {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 1.7rem;
+  p {
+    font-size: 16px;
+    font-weight: bold;
+    color: #5B5959;
+  }
+
+  div {
+    font-size: 18px;
+    color: #7D7A7A;
+
+    span {
+      font-size: 16px;
+      font-weight: bold;
+    }
+  }
 }
 
 .upload-delete {

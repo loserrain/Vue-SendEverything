@@ -39,7 +39,7 @@ function handleRegister(user) {
       message.value = data.message;
       successful.value = true;
       loading.value = false;
-      router.push("/login");
+      router.push("/signin");
     })
     .catch((error) => {
       loading.value = false;

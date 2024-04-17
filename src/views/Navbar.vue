@@ -2,10 +2,10 @@
 import { RouterLink } from "vue-router";
 import { useRouter } from "vue-router";
 import { useAuthStore } from "../stores/auth.module";
-import { useUploadTab } from "../stores/upload";
+import { useUploadInfo } from "../stores/upload";
 import { computed } from "vue";
 
-const uploadTab = useUploadTab();
+const uploadTab = useUploadInfo();
 
 const authStore = useAuthStore();
 const router = useRouter();
@@ -61,7 +61,7 @@ function setSelectedTab(tab) {
               <font-awesome-icon icon="circle-arrow-up" /> Upload
             </li>
           </RouterLink>
-          <RouterLink to="/singin" class="nav-link">
+          <RouterLink to="/signin" class="nav-link">
             <li class="nav-item">
               <font-awesome-icon icon="sign-in-alt" /> Sign in
             </li>

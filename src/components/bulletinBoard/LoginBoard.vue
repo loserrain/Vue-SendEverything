@@ -1,10 +1,10 @@
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
 import BoardUploadService from "../boardUploadService/BoardRoom.js";
 import { useRouter } from "vue-router";
 
 const emits = defineEmits(["sendLoginStatus"]);
-const props = defineProps(["roomCode"]);
+const props = defineProps({ roomCode: String, roomType: String});
 const router = useRouter();
 
 function handleSendLoginStatus(newStatus) {
@@ -27,10 +27,10 @@ const inputType = computed(() => {
 const elIcon = computed(() => {
   return flag.value ? ["far", "eye"] : ["far", "eye-slash"];
 });
-console.log(props.roomCode);
+console.log(props);
 
 function handleLoginData() {
-  BoardUploadService.accessRoom(pwd.value, props.roomCode)
+  BoardUploadService.accessRoom(pwd.value, props.roomCode, props.roomType)
     .then(() => {
       router.push(`/BulletinBoard/roomboard/${props.roomCode}`);
     })
@@ -38,6 +38,13 @@ function handleLoginData() {
       console.log(error);
     });
 }
+
+// onMounted(() => {
+//   if (props.roomType === "PUBLIC") {
+//     handleLoginData();
+//     console.log("public");
+//   }
+// });
 </script>
 
 <template>

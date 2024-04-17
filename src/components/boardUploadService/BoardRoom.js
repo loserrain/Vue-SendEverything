@@ -21,12 +21,12 @@ class BoardUploadService {
     return http.post("/getAllRooms", { boardType });
   }
 
-  accessRoom(password, roomCode) {
-    return http.post("/accessRoom", { password, roomCode });
+  accessRoom(password, roomCode, roomType) {
+    return http.post("/accessRoom", { password, roomCode, roomType });
   }
 
-  verifyCookie(roomCode) {
-    return http.post("/verifyCookie", { roomCode });
+  verifyCookie(roomCode, roomType) {
+    return http.post("/verifyCookie", { roomCode, roomType });
   }
 
   showRoomContent(roomCode) {

@@ -100,6 +100,8 @@ const roomData = ref([]);
 const roomCode = ref([]);
 // 房間代碼編號
 const roomCodeNumber = ref(0);
+// 房間類型
+const roomType = ref([]);
 
 // 透過房間代碼編號，將房間代碼傳送至LoginBoard元件
 async function sendRoomNumber(roomNumber) {
@@ -109,13 +111,26 @@ async function sendRoomNumber(roomNumber) {
     roomCodeNumber.value = roomNumber + (roomCurrentPage.value - 1) * 12;
   }
   const sendVerifyRoomCode = roomCode.value[roomCodeNumber.value];
+  const sendVerifyRoomType = roomType.value[roomCodeNumber.value];
   try {
-    const response = await BoardUploadService.verifyCookie(sendVerifyRoomCode);
-    if (response.status === 200) {
-      router.push({
-        name: "RoomBoard",
-        params: { roomCode: sendVerifyRoomCode },
-      });
+    if (filteredSearchRoomData.value[roomNumber].roomType === "PRIVATE") {
+      const response = await BoardUploadService.verifyCookie(
+        sendVerifyRoomCode
+      );
+      if (response.status === 200) {
+        router.push({
+          name: "RoomBoard",
+          params: { roomCode: sendVerifyRoomCode },
+        });
+      }
+    } else {
+      BoardUploadService.accessRoom("", roomCode.value[roomCodeNumber.value], sendVerifyRoomType)
+        .then(() => {
+          router.push(`/BulletinBoard/roomboard/${roomCode.value[roomCodeNumber.value]}`);
+        })
+        .catch((error) => {
+          console.log(error);
+        });
     }
   } catch (error) {
     console.error(error);
@@ -126,8 +141,10 @@ async function sendRoomNumber(roomNumber) {
 // 處理房間資料
 function processRoomData(Data) {
   roomCode.value = [];
+  roomType.value = [];
   Data.forEach((room) => {
     roomCode.value.push(room.roomCode);
+    roomType.value.push(room.roomType);
   });
 }
 
@@ -145,21 +162,22 @@ function updataPageNumber() {
 const boardType = ref("BULLETIN_BOARD");
 // 獲取所有房間資料
 onMounted(() => {
-  BoardUploadService.getAllRooms(boardType.value).then((response) => {
-    roomData.value = response.data;
-    // console.log(response.data);
-    roomData.value.sort((a, b) => {
-      const dateA = new Date(a.createTime);
-      const dateB = new Date(b.createTime);
-      return dateB - dateA;
+  BoardUploadService.getAllRooms(boardType.value)
+    .then((response) => {
+      roomData.value = response.data;
+      roomData.value.sort((a, b) => {
+        const dateA = new Date(a.createTime);
+        const dateB = new Date(b.createTime);
+        return dateB - dateA;
+      });
+      roomData.value.forEach((room) => {
+        room.createTime = new Date(room.createTime).toLocaleString();
+      });
+      updataPageNumber();
     })
-    roomData.value.forEach((room) => {
-      room.createTime = new Date(room.createTime).toLocaleString();
+    .catch((error) => {
+      console.error(error);
     });
-    updataPageNumber();
-  }).catch((error) => {
-    console.error(error);
-  })
 });
 
 // 頁數房間號碼
@@ -217,10 +235,11 @@ watch(filteredSearchRoomData, (newFilteredSearchRoomData) => {
     <LoginBoard
       @send-login-status="handleLoginStatus"
       :roomCode="roomCode[roomCodeNumber]"
+      :roomType="roomType[roomCodeNumber]"
     ></LoginBoard>
   </div>
   <div v-if="createStatus">
-    <CreateBoard @send-create-status="handleSendCreateStatus"></CreateBoard>
+    <CreateBoard @send-create-status="handleSendCreateStatus" ></CreateBoard>
   </div>
   <div class="board-container">
     <!--  -->

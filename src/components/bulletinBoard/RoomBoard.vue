@@ -120,12 +120,12 @@ const roomDataFileLength = ref(undefined);
 const roomDataFileSize = ref([]);
 const roomDataFileStatus = ref(false);
 const roomDataNumber = computed(() => {
-  if(roomDataFileLength.value < 8 ) {
+  if (roomDataFileLength.value < 8) {
     return roomDataFileLength.value;
   } else {
     return 8;
   }
-})
+});
 const roomDataPage = ref(1);
 const roomDataPageLength = ref([]);
 const roomActiveTab = ref(1);
@@ -137,9 +137,9 @@ onMounted(() => {
       roomDataStatus.value = false;
       roomData.value = response.data;
       roomDataIsOwner.value = roomData.value.isRoomOwner;
-      
+
       // 判斷是否有檔案
-      if(roomData.value.dbRoomFiles.length > 0) {
+      if (roomData.value.dbRoomFiles.length > 0) {
         roomDataFileStatus.value = true;
         sidebarStatus.value = true;
       }
@@ -151,7 +151,7 @@ onMounted(() => {
         roomChecked.value.push(false);
       }
     });
-  }, 1000)
+  }, 1000);
 });
 
 const totalSize = ref(0);
@@ -189,50 +189,63 @@ function readStream(response) {
   return read();
 }
 
-function downloadFile(code) {
-  // uploadStatus.value = true;
+async function downloadFile(code) {
   const url = API_URL + "/downloadRoomFileByCode/" + code;
-  // const url = `/api/auth/downloadRoomFileByCode/${code}`;
-  fetch(url)
-    .then((response) => {
-      console.log(response.headers.get("Content-Disposition"));
-      // uploadStatus.value = false;
-      code = "";
-      // progressStatus.value = false;
-      const contentDisposition = response.headers.get("Content-Disposition");
-      if (contentDisposition) {
-        const filenameMatch = contentDisposition.match(
-          /filename\*?=['"]?(?:UTF-8'')?([^'";]+)['"]?/i
-        );
-        if (filenameMatch && filenameMatch[1]) {
-          filename.value = decodeURIComponent(filenameMatch[1]);
-        }
-      }
-
-      return readStream(response);
-    })
-    .then((blob) => {
-      const downloadUrl = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = downloadUrl;
-      a.download = filename.value;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(downloadUrl);
-      // progressStatus.value = true;
-      loadedSize.value = 0;
-      chunks.value = [];
-    })
-    .catch((error) => {
-      console.error("下載過程中發生錯誤:", error);
-      chunks.value = [];
-      // uploadStatus.value = false;
-    });
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
 }
 
+// function downloadFile(code) {
+//   // uploadStatus.value = true;
+//   const url = API_URL + "/downloadRoomFileByCode/" + code;
+//   // const url = `/api/auth/downloadRoomFileByCode/${code}`;
+//   fetch(url)
+//     .then((response) => {
+//       console.log(response.headers.get("Content-Disposition"));
+//       // uploadStatus.value = false;
+//       code = "";
+//       // progressStatus.value = false;
+//       const contentDisposition = response.headers.get("Content-Disposition");
+//       if (contentDisposition) {
+//         const filenameMatch = contentDisposition.match(
+//           /filename\*?=['"]?(?:UTF-8'')?([^'";]+)['"]?/i
+//         );
+//         if (filenameMatch && filenameMatch[1]) {
+//           filename.value = decodeURIComponent(filenameMatch[1]);
+//         }
+//       }
+
+//       return readStream(response);
+//     })
+//     .then((blob) => {
+//       const downloadUrl = URL.createObjectURL(blob);
+//       const a = document.createElement("a");
+//       a.href = downloadUrl;
+//       a.download = filename.value;
+//       document.body.appendChild(a);
+//       a.click();
+//       document.body.removeChild(a);
+//       URL.revokeObjectURL(downloadUrl);
+//       // progressStatus.value = true;
+//       loadedSize.value = 0;
+//       chunks.value = [];
+//     })
+//     .catch((error) => {
+//       console.error("下載過程中發生錯誤:", error);
+//       chunks.value = [];
+//       // uploadStatus.value = false;
+//     });
+// }
+
 function updataPageNumber() {
-  roomDataPage.value = Math.ceil(roomDataFileLength.value / roomDataNumber.value, 0);
+  roomDataPage.value = Math.ceil(
+    roomDataFileLength.value / roomDataNumber.value,
+    0
+  );
   for (let i = 0; i < roomDataNumber.value; i++) {
     roomDataPageLength.value.push(i);
   }
@@ -423,7 +436,9 @@ function clickPageNumber(page) {
                     :checked="roomChecked[roomFile]"
                     @change="handleRoomCheckboxToggle(roomFile)"
                   />
-                  <span><font-awesome-icon :icon="ckRoomIcon[roomFile]" /></span>
+                  <span
+                    ><font-awesome-icon :icon="ckRoomIcon[roomFile]"
+                  /></span>
                 </label>
               </p>
               <div class="room-board-main-room-number">
@@ -463,17 +478,19 @@ function clickPageNumber(page) {
   display: flex;
   justify-content: center;
   align-items: center;
-  width: 30px;
-  height: 30px;
   font-size: 22px;
   padding-top: 2px;
   color: #767676;
-  transition: all 0.2s;
   cursor: pointer;
 
-  &:hover {
-    background-color: rgba(114, 114, 118, 0.174);
-    border-radius: 6px;
+  span {
+    padding: 3px 5px 2px;
+    border-radius: 5px;
+    transition: all 0.2s;
+
+    &:hover {
+      background-color: rgba(114, 114, 118, 0.174);
+    }
   }
 
   label {

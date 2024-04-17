@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, watch } from "vue";
+import { ref, computed, watch, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import BoardUploadService from "../boardUploadService/BoardRoom.js";
 import { Form, Field, ErrorMessage } from "vee-validate";
@@ -94,20 +94,22 @@ const schema = yup.object().shape({
 
 const roomNumber = ref("123");
 
-function handleLoginData(password, roomCode) {
-  BoardUploadService.accessRoom(password, roomCode)
-    .then((response) => {
+function handleLoginData(password, roomCode, roomType) {
+  BoardUploadService.accessRoom(password, roomCode, roomType)
+    .then(() => {
       router.push(`/workBoard/WorkRoomBoard/${roomCode}`);
-      // console.log(response);
     })
     .catch((error) => {
       console.log(error);
     });
 }
-//
 const boardType = ref("ASSIGNMENT_BOARD");
 
 function handleCreate(room) {
+  if(formData.pwd === undefined && isPrivateChecked.value) {
+    alert("Please enter the password.");
+    return;
+  }
   const roomType = isPublicChecked.value ? "PUBLIC" : "PRIVATE";
   if(previewImageStatue.value !== true) {
     fileBlob.value = file.value.files[0];
@@ -123,7 +125,7 @@ function handleCreate(room) {
   BoardUploadService.uploadMessageWithImage(roomData, fileBlob.value)
     .then((response) => {
       roomNumber.value = response.data.roomCode;
-      handleLoginData(room.pwd, roomNumber.value);
+      handleLoginData(room.pwd, roomNumber.value, roomType);
     })
     .catch((error) => {
       console.log("Error: ", error);
@@ -139,6 +141,17 @@ const formData = ref({
 const getImageUrl = (fileIndex) => {
   return new URL(`../../assets/image/Default_picture${fileIndex}.jpg`, import.meta.url).href;
 }
+
+// 當public被選取時，清空pwd
+watch(isPublicChecked, (newValue) => {
+  if (newValue) {
+    formData.value.pwd = "";
+  }
+});
+
+onMounted(() => {
+  handlePreviewClick(0);
+});
 </script>
 
 <template>
@@ -179,7 +192,10 @@ const getImageUrl = (fileIndex) => {
             <div class="create-board-pwd-flex">
               <div class="create-board-pwd">
                 <label for="pwd"></label>
-                <Field type="password" name="pwd" id="pwd" v-model="formData.pwd" />
+                <Field type="password" name="pwd" id="pwd" 
+                v-model="formData.pwd"
+                :disabled="isPublicChecked"
+                 />
                 <ErrorMessage name="pwd" class="error-feedback" />
               </div>
 

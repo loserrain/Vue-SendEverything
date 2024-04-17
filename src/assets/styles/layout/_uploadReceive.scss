@@ -1,0 +1,143 @@
+@import "./upload";
+
+.upload-receive-container {
+  position: relative;
+  margin: 120px 30px 0;
+  padding: 0.7rem 0rem 0 1.7rem;
+  background-color: #ffffff;
+  // border: 3px solid rgba(202, 135, 143, 0.3019607843);
+  // box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.135);
+  border-radius: 20px;
+  height: 120px;
+  width: 300px;
+  display: flex;
+  flex-direction: column;
+
+  .upload-receive {
+    font-size: 20px;
+    font-weight: bold;
+    color: #FB9109;
+    text-align: left;
+    user-select: none;
+  }
+
+  .upload-receive-fileName {
+    margin-top: 3px;
+    font-size: 11px;
+    color: #b9b9b9;
+    user-select: none;
+  }
+}
+
+.upload-code-box {
+  display: flex;
+  gap: 10px;
+  justify-content: left;
+  margin-top: 10px;
+
+  div {
+    width: 34px;
+    height: 34px;
+    background-color: #f7f7f7;
+    border-radius: 5px;
+    font-size: 20px;
+    color: #565656;
+    padding: 6px 6.5px 0;
+    transition: .2s;
+    cursor: pointer;
+
+    &:hover {
+      background-color: #ededed;
+      // transition: all .2s;
+    }
+
+    &:active {
+      transform: scale(.85);
+    }
+  }
+
+  input {
+    background-color: #f7f7f7;
+    border: solid 2px #ededed;
+    border-radius: 5px;
+    padding: 3px 5px;
+    font-size: 18px;
+    width: 70%;
+
+    &:focus-visible {
+      background-color: #ffffff;
+      outline: none;
+      border: solid 2px $primary-button-blue-100;
+      box-shadow: 0px 1px 6px rgba(0, 0, 0, 0.155);
+      transition: 0.1s;
+    }
+
+    &::placeholder {
+      font-size: 16px;
+      color: #b9b9b9;
+    }
+  }
+}
+
+a {
+  display: none;
+}
+
+.upload-progress-set {
+  margin-top: 10px;
+  color: #1e3050;
+  position: relative;
+
+  .upload-progress {
+    height: 1.7rem;
+    overflow: hidden;
+    background-color: #F7F7F7;
+    border-radius: 20px;
+    width: 250px;
+
+    .upload-progress-bar-striped {
+      background-image: linear-gradient(
+        45deg,
+        rgba(255, 255, 255, 0.15) 25%,
+        transparent 25%,
+        transparent 50%,
+        rgba(255, 255, 255, 0.15) 50%,
+        rgba(255, 255, 255, 0.15) 75%,
+        transparent 75%,
+        transparent
+      );
+      background-size: 1rem 1rem;
+      animation: progress-animation 1.5s linear infinite;
+    }
+    @keyframes progress-animation {
+      0% {
+        background-position: 1rem 0;
+      }
+      100% {
+        background-position: 0 0;
+      }
+    }
+
+    .upload-progress-bar {
+      display: flex;
+      align-items: center;
+      color: #a85151;
+      text-align: center;
+      white-space: nowrap;
+      background-color: #FB9109;
+      transition: width ease;
+    }
+
+    
+  }
+}
+
+.upload-progress-percent {
+  margin-top: 5px;
+  p {
+    font-size: 16px;
+    font-weight: 700;
+    text-align: right;
+    color: #1e3050;
+  }
+}

@@ -28,8 +28,8 @@ const router = createRouter({
       component: Home,
     },
     {
-      path: "/singin",
-      name: "singin",
+      path: "/signin",
+      name: "signin",
       component: Login,
     },
     {
@@ -96,7 +96,7 @@ router.beforeEach(async (to) => {
   if (to.meta.requiresAuth) {
     const roomCode = to.params.roomCode;
     try {
-      await BoardUploadService.verifyCookie(roomCode);
+      await BoardUploadService.verifyCookie(roomCode)
     } catch (error) {
       if (error.response.status !== 200 && to.name !== "BulletinLogin") {
         console.log("error", error);
