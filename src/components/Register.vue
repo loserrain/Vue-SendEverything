@@ -31,7 +31,7 @@ function handleRegister(user) {
   loading.value = true;
   message.value = "";
   successful.value = false;
-  console.log(user.role);
+  // console.log(user.role);
 
   authService
     .register(user)

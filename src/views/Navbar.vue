@@ -28,7 +28,7 @@ function setSelectedTab(tab) {
     <div class="navbar-nav">
       <li class="nav-logo">
         <RouterLink to="/">
-          <img class="nav-logo" src="../assets/image/1.png" alt="" />
+          <img class="nav-logo" src="../assets/image/logo4.png" alt="" />
         </RouterLink>
       </li>
       <RouterLink to="/home" class="nav-link">
@@ -107,14 +107,16 @@ function setSelectedTab(tab) {
 </template>
 
 <style scoped lang="scss">
+@import "../assets/styles/app";
+
 .nav {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 0 30px;
-  background: #9c080814;
+  background: $primary-theme-pink;
   height: 70px;
-  border-bottom: 2px solid #1f1b1b14;
+  border-bottom: 2px solid #E3CCCD;
 }
 
 .navbar-nav a,

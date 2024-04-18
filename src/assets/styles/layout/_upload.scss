@@ -16,11 +16,9 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background-image: linear-gradient(180deg, #d0368a 0%, #708ad4 99%);
+  background-image: linear-gradient(180deg, #7fcef6 0%, #72bbfa 50%,#25c1fa 100%);
   box-shadow: inset 2px 2px 5px 0 rgba(#fff, 0.5);
   border-radius: 100px;
-  // border-radius: 10px;
-  // background-color: $primary-text-gray-50;
 
   &:active {
     background-color: #a9a9a9a5;
@@ -92,7 +90,7 @@
     }
     
     &:active {
-      transform: scale(0.95);
+      transform: scale(0.9);
     }
 
     &:disabled,
@@ -219,11 +217,12 @@
     background-color: $primary-text-purple-200;
     transition: width ease;
   }
+  
+  .upload-progress-status {
+    background-color: #28a745;
+  }
 }
 
-.upload-progress-status {
-  background-color: #28a745;
-}
 
 .upload-check {
   color: #28a745;

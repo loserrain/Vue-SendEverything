@@ -27,7 +27,6 @@ const inputType = computed(() => {
 const elIcon = computed(() => {
   return flag.value ? ["far", "eye"] : ["far", "eye-slash"];
 });
-console.log(props);
 
 function handleLoginData() {
   BoardUploadService.accessRoom(pwd.value, props.roomCode, props.roomType)

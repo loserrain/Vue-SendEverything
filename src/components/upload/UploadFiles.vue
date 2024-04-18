@@ -1,6 +1,16 @@
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed } from "vue";
 import UploadService from "../../services/uploadFilesService";
+import API_URL from "../../services/API_URL";
+import { v4 as uuidv4 } from "uuid";
+import QRCode from "qrcode";
+import { useAuthStore } from "../../stores/auth.module"; 
+
+const authStore = useAuthStore();
+
+const currentUser = computed(() => {
+  return authStore.dataStatus.user;
+});
 
 const emits = defineEmits([
   "sendFileInfo",
@@ -38,7 +48,6 @@ function userConfirm() {
     userConfirmKK.value = !userConfirmKK.value;
     fileReceive.value = [];
     currentFile.value = undefined;
-    emits("sendFileInfo", false);
     uploadGetFiles();
   }, 200);
 }
@@ -77,7 +86,6 @@ function handleDragActive() {
 }
 
 function handleDragNoActive(event) {
-  console.log("event", event);
   if (
     !event.relatedTarget ||
     !event.currentTarget.contains(event.relatedTarget)
@@ -142,7 +150,6 @@ const createZipFile = async () => {
     name: file.name,
     content: file,
   }));
-  // console.log("filesData", filesData);
 
   const worker = new Worker(
     new URL("../../uploadService/zipWorker.js", import.meta.url),
@@ -196,6 +203,7 @@ function shortFileName(fileNames) {
 }
 
 const fileSort = ref([]);
+const verificationCode = ref("");
 // 上傳檔案後取得資料
 function uploadGetFiles() {
   UploadService.getFiles().then((response) => {
@@ -205,6 +213,10 @@ function uploadGetFiles() {
     );
     const fileSizes = fileInfos.value.map(
       (fileInfo) => fileInfo.fileSize || []
+    );
+
+    verificationCode.value = fileInfos.value.map(
+      (fileInfo) => fileInfo.verificationCode || []
     );
 
     let formattedSizes = fileSizes.map((size) => {
@@ -221,6 +233,41 @@ function uploadGetFiles() {
     }
   });
 }
+
+// QRCODE與驗證碼產生
+const qrCodeUrl = ref("");
+const downloadUUID = ref("");
+
+async function generateQRCode(code, uuid, size) {
+  try {
+    // const url = `${API_URL}/downloadFileByCode/${code}/${uuid}`;
+    const url = `http://api.imbig404.com/api/auth/downloadFileByCode/${code}/${uuid}`;
+    const qrCodeDataUrl = await QRCode.toDataURL(url, { width: size });
+    qrCodeUrl.value = qrCodeDataUrl;
+  } catch (error) {
+    console.log(`Error generating QR code: ${error}`);
+  }
+}
+
+async function produceQRCode(index) {
+  downloadUUID.value = uuidv4();
+  let downloadCode = verificationCode.value[index];
+  copyVerificationCode(downloadCode);
+
+  await generateQRCode(downloadCode, downloadUUID.value, 270);
+  let sendFileInfo = {
+    downloadCode: downloadCode,
+    qrcodeImg: qrCodeUrl.value,
+  };
+  emits("sendFileInfo", sendFileInfo);
+}
+
+// 複製驗證碼
+const copyVerificationCode = (downloadCode) => {
+  const blob = new Blob([downloadCode], { type: "text/plain" });
+  const clipboardItem = new ClipboardItem({ "text/plain": blob });
+  navigator.clipboard.write([clipboardItem]);
+};
 
 // 當載入文件時，呼叫此函數，並從後端取得已上傳的歷史紀錄檔案
 onMounted(() => {
@@ -295,7 +342,6 @@ async function uploadChunkThreads(file) {
     await Promise.all(workerPromises);
 
     // 加載中
-    // uploadLoading.value = false;
     const formDataList = [];
 
     // 這裡使用 setTimeout 實現每100毫秒發送一次請求
@@ -349,25 +395,32 @@ async function uploadChunkThreads(file) {
 
           // 若分片數量與總分片數量相同，通知後端合併
           if (currentChunkIndex.value === totalChunks) {
-            UploadService.completeFileUpload(
-              fileId,
-              outputFileName.value,
-              chunkId
-            )
-              .then((response) => {
-                console.log(response.data)
+            (async () => {
+              try {
+                const response = await UploadService.completeFileUpload(
+                  fileId,
+                  outputFileName.value,
+                  chunkId
+                );
+                downloadUUID.value = uuidv4();
+                await generateQRCode(
+                  response.data.downloadCode,
+                  downloadUUID.value,
+                  270
+                );
                 let sendFileInfo = {
                   downloadCode: response.data.downloadCode,
-                  qrcodeImg: response.data.qrcodeImg,
-                }
+                  qrcodeImg: qrCodeUrl.value,
+                };
                 uploadStatus.value = false; // 上傳完成
                 userConfirmKK.value = true; // 確認按鈕
                 uploadLoading.value = false; // 加載中
+                console.log("sendFileInfo", sendFileInfo)
                 emits("sendFileInfo", sendFileInfo);
-              })
-              .catch((error) => {
+              } catch (error) {
                 console.error("Error completing file upload", error);
-              });
+              }
+            })();
           }
         });
 
@@ -426,7 +479,6 @@ async function uploadChunks() {
   };
 
   fileReceive.value.push(fileInfo);
-  // console.log(fileInfo);
 
   workerResult.value = []; // 清空workerResult
 
@@ -443,10 +495,8 @@ async function uploadChunks() {
   if (fileList.value.length >= 2) {
     await createZipFile();
     uploadChunkThreads(zipFileBlob.value);
-    // console.log("zipFileBlob", zipFileBlob.value)
   } else {
     uploadChunkThreads(currentFile.value);
-    // console.log("currentFile", currentFile.value)
   }
 }
 
@@ -476,7 +526,9 @@ async function uploadChunks() {
           :disabled="userConfirmKK"
         />
       </label>
-      <div v-if="selectedFiles" class="upload-send-fileName">{{ selectFileName }}</div>
+      <div v-if="selectedFiles" class="upload-send-fileName">
+        {{ selectFileName }}
+      </div>
       <div v-else class="upload-send-file-noselect">Please select a file.</div>
       <p class="upload-send-maxfile">(Max. File size: 5 GB)</p>
       <p v-if="uploadStatus">
@@ -486,7 +538,7 @@ async function uploadChunks() {
         </button>
       </p>
       <p v-else>
-        <button v-if="userConfirmKK" @click="userConfirm()">
+        <button v-if="userConfirmKK" @click="userConfirm()" :class="userConfirmKK ? 'upload-ok-anime' : ''">
           <span>OK</span>
         </button>
       </p>
@@ -520,6 +572,7 @@ async function uploadChunks() {
               aria-valuemin="0"
               aria-valuemax="100"
               :style="{ width: progress + '%' }"
+              :class="userConfirmKK ? 'upload-progress-status' : ''"
             ></div>
           </div>
           <div>{{ progress }}%</div>
@@ -529,10 +582,13 @@ async function uploadChunks() {
     <!-- 上傳時的檔案區 -->
 
     <!-- 歷史紀錄區(登入後) -->
-    <!-- <p class="upload-history-line"></p> -->
-    <!-- <p class="upload-history-title">Historical record</p> -->
     <div class="upload-history">
-      <div class="upload-file" v-for="(files, index) in fileSort" :key="index">
+      <div
+        class="upload-history-file"
+        v-for="(files, index) in fileSort"
+        :key="index"
+        @click="produceQRCode(index)"
+      >
         <div class="upload-set">
           <div class="upload-set-icon">
             <font-awesome-icon icon="clock-rotate-left" />
@@ -549,9 +605,7 @@ async function uploadChunks() {
           <p class="">2024-04-18</p>
           <div>
             <font-awesome-icon icon="stopwatch" />
-            <span>
-              2d 4h
-            </span>
+            <span> 2d 4h </span>
           </div>
         </div>
       </div>
@@ -577,6 +631,41 @@ async function uploadChunks() {
   position: relative;
 }
 
+.upload-history-file {
+  position: relative;
+  height: 115px;
+  border: 2px solid #e8e8e8;
+  border-radius: 12px;
+  padding: 15px 15px 20px;
+  background-color: #f6f5f3;
+  box-shadow: 0px 3px 4px #0002;
+  transition: 0.3s;
+  cursor: pointer;
+
+  &:hover {
+    background-color: #ebebeb;
+  }
+
+  &:active {
+    background-color: #dcdcdc;
+    transform: scale(0.9);
+  }
+
+  &:hover::before {
+    position: absolute;
+    top: -47px;
+    left: 0;
+    font-size: 18px;
+    font-weight: bold;
+    color: #f7f7f7;
+    background-color: #1b9498;
+    border-radius: 10px;
+    padding: 8px 12px;
+    z-index: 9999;
+    content: "點擊查看驗證碼與QR Code";
+  }
+}
+
 .upload-history-title {
   text-align: center;
   margin-bottom: 10px;
@@ -600,12 +689,12 @@ async function uploadChunks() {
   p {
     font-size: 16px;
     font-weight: bold;
-    color: #5B5959;
+    color: #5b5959;
   }
 
   div {
     font-size: 18px;
-    color: #7D7A7A;
+    color: #7d7a7a;
 
     span {
       font-size: 16px;
@@ -639,6 +728,22 @@ async function uploadChunks() {
   }
   100% {
     transform: rotate(360deg);
+  }
+}
+
+.upload-ok-anime {
+  animation: upload-ok 0.5s infinite;
+}
+
+@keyframes upload-ok {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
   }
 }
 </style>

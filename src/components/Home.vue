@@ -11,9 +11,12 @@ function setSelectedTab(tab) {
 </script>
 
 <template>
-  <div>
-    <p><span class="send-word">Send</span>Everything</p>
-    <p>Simple, Fast, and Free File Sharing</p>
+  <div class="send-title">
+    <img src="../assets/image/Logo.png" alt="">
+    <h1><span class="send-word">Send</span>Everything</h1>
+  </div>
+  <div class="send-slogan">
+    <h2>FREE FILE SHARING PLATFORM</h2>
     <RouterLink to="/uploadfile" 
       ><button class="upload-button" @click="setSelectedTab('Send')">+ UPLOAD</button></RouterLink
     >
@@ -21,35 +24,47 @@ function setSelectedTab(tab) {
 </template>
 
 <style lang="scss" scoped>
-div {
+.send-title {
   display: flex;
   justify-content: center;
   align-items: center;
   flex-direction: column;
-  height: calc(83vh - 70px);
+  gap: 30px;
+  img {
+    margin-top: 120px;
+    width: 400px;
+  }
 
-  p,
+  h1,
   button {
-    margin: 36px 0 0 0;
+    font-size: 96px;
+    font-weight: 700;
+    color: #553721;
     user-select: none;
     cursor: default;
   }
 
-  p:first-child {
-    font-size: 96px;
+  .send-word {
+    color: #EC773D;
     font-weight: 700;
   }
+}
 
-  p:nth-child(2) {
-    font-size: 36px;
-    font-weight: 400;
+.send-slogan{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+
+  h2 {
+    margin: 2px 0 20px;
+    font-size: 22px;
+    font-weight: bold;
+    color: #553721;
+    letter-spacing: 6px;
   }
 }
 
-.send-word {
-  color: #f04545;
-  font-weight: 700;
-}
 
 .upload-button {
   border: 0;

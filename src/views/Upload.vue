@@ -178,7 +178,7 @@ const copyVerificationCode = () => {
             </div>
             <div v-else>
               <img
-                :src="`data:image/png;base64,${uploadData.qrcodeImg}`"
+                :src="uploadData.qrcodeImg"
                 alt="QR Code"
               />
             </div>

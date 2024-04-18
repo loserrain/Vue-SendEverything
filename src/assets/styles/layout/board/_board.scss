@@ -5,11 +5,13 @@
   .board-sidebar {
     display: flex;
     flex-direction: column;
+    background-color: $primary-theme-pink;
     height: calc(100vh - 70px);
+    border-right: 2.5px solid #E3CCCD;
 
     .board-sidebar-search {
-      padding: 2.5rem 2rem 1rem 2rem;
-      border-bottom: 5px solid $primary-board-white-80;
+      padding: 2rem 2rem 1rem 2rem;
+      // border-bottom: 5px solid $primary-board-white-80;
 
       p {
         font-size: 16px;
@@ -65,6 +67,7 @@
         color: $primary-board-gray-100;
         font-size: 20px;
         background-color: $primary-board-white-80;
+        border-radius: 10px;
         margin-top: 9px;
         padding-left: 1rem;
         transition: all 0.2s;
@@ -105,8 +108,8 @@
 
   .board-main {
     padding: 0 0 0 2rem;
-    border-left: 5px solid $primary-board-white-80;
-    border-right: 5px solid $primary-board-white-80;
+    // border-left: 5px solid $primary-board-white-80;
+    // border-right: 5px solid $primary-board-white-80;
 
     .board-main-title {
       position: relative;

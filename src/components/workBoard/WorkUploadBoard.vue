@@ -152,7 +152,6 @@ const createZipFile = async () => {
     name: file.name,
     content: file,
   }));
-  console.log("filesData", filesData);
 
   const worker = new Worker(
     new URL("../../uploadService/zipWorker.js", import.meta.url),
@@ -368,7 +367,6 @@ async function uploadChunkThreads(file) {
       // 等待所有worker的Promise完成後，再進行下一個檔案的處理
       await Promise.all(workerPromises);
       workerMultiple.value.push(...workerResult.value);
-      console.log("workerMultiple", workerMultiple.value);
       workerResult.value = [];
     }
     // 分片處理上傳的檔案 (多執行緒) ------------------------------------------------------------------------------------

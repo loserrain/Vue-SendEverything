@@ -27,7 +27,6 @@ onMounted(() => {
 
 function downloadFiles() {
   progress.value = 0;
-  console.log(/\d/.test(code.value));
   UploadService.getMessage(code.value)
     .then((response) => {
       uploadInfo.setTextReceiveResult(response.data.verificationCode);
@@ -58,23 +57,18 @@ async function downloadFile() {
 }
 
 function connectWebSocket(downloadUUID) {
-  console.log(downloadUUID);
   const socket = new WebSocket(`wss://imbig404.com/websocket`);
   client = Webstomp.over(socket);
   client.connect(
     {},
     () => {
       client.subscribe(`/topic/downloadProgress/${downloadUUID}`, (message) => {
-        console.log("Received message:", message.body); //
         progress.value = Math.round(JSON.parse(message.body));
         if (progress.value === 100) {
           client.disconnect();
           progressStatus.value = true;
           uploadStatus.value = false;
           downloadStatus.value = false;
-          // setTimeout(() => {
-          //   progress.value = 0;
-          // }, 2000);
         }
       });
     },
@@ -92,7 +86,7 @@ function connectWebSocket(downloadUUID) {
       <p class="upload-receive-fileName">input code</p>
     </div>
     <div class="upload-code-box" v-if="!downloadStatus">
-      <input type="text" v-model="code" @keyup.enter="downloadFile" placeholder="" />
+      <input type="text" v-model="code" @keyup.enter="downloadFiles()" placeholder="" />
       <div @click="downloadFiles()"><font-awesome-icon icon="download" /></div>
     </div>
     <div v-else>

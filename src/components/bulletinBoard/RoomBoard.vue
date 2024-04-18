@@ -154,39 +154,12 @@ onMounted(() => {
   }, 1000);
 });
 
-const totalSize = ref(0);
-const reader = ref(null);
-const chunks = ref([]);
-const loadedSize = ref(0);
-const filename = ref("example.txt");
-
 function handleDownloadFile() {
   for (let i = 0; i < roomDownloadCode.value.length; i++) {
-    console.log(roomDownloadCode.value[i]);
     setTimeout(() => {
       downloadFile(roomDownloadCode.value[i]);
     }, 300 * (i + 1));
   }
-}
-
-function readStream(response) {
-  totalSize.value = response.headers.get("Content-Length") || "未知大小";
-  reader.value = response.body.getReader();
-  console.log(totalSize.value);
-
-  const read = () => {
-    return reader.value.read().then(({ done, value }) => {
-      if (done) {
-        return new Blob(chunks.value);
-      }
-      loadedSize.value += value.length;
-      // progress.value = ((loadedSize.value / totalSize.value) * 100).toFixed(0);
-      chunks.value.push(value);
-      return read();
-    });
-  };
-  console.log(chunks.value);
-  return read();
 }
 
 async function downloadFile(code) {
@@ -198,48 +171,6 @@ async function downloadFile(code) {
   a.click();
   document.body.removeChild(a);
 }
-
-// function downloadFile(code) {
-//   // uploadStatus.value = true;
-//   const url = API_URL + "/downloadRoomFileByCode/" + code;
-//   // const url = `/api/auth/downloadRoomFileByCode/${code}`;
-//   fetch(url)
-//     .then((response) => {
-//       console.log(response.headers.get("Content-Disposition"));
-//       // uploadStatus.value = false;
-//       code = "";
-//       // progressStatus.value = false;
-//       const contentDisposition = response.headers.get("Content-Disposition");
-//       if (contentDisposition) {
-//         const filenameMatch = contentDisposition.match(
-//           /filename\*?=['"]?(?:UTF-8'')?([^'";]+)['"]?/i
-//         );
-//         if (filenameMatch && filenameMatch[1]) {
-//           filename.value = decodeURIComponent(filenameMatch[1]);
-//         }
-//       }
-
-//       return readStream(response);
-//     })
-//     .then((blob) => {
-//       const downloadUrl = URL.createObjectURL(blob);
-//       const a = document.createElement("a");
-//       a.href = downloadUrl;
-//       a.download = filename.value;
-//       document.body.appendChild(a);
-//       a.click();
-//       document.body.removeChild(a);
-//       URL.revokeObjectURL(downloadUrl);
-//       // progressStatus.value = true;
-//       loadedSize.value = 0;
-//       chunks.value = [];
-//     })
-//     .catch((error) => {
-//       console.error("下載過程中發生錯誤:", error);
-//       chunks.value = [];
-//       // uploadStatus.value = false;
-//     });
-// }
 
 function updataPageNumber() {
   roomDataPage.value = Math.ceil(
@@ -326,7 +257,7 @@ function clickPageNumber(page) {
       <pre>佈告欄 / 房間</pre>
 
       <div class="room-board-data" v-if="roomDataStatus">
-        <p class="room-board-data-line"></p>
+        <!-- <p class="room-board-data-line"></p> -->
         <div class="room-board-loading-img"></div>
         <div class="room-board-data-text room-board-loading-text">
           <h1><i class="flash-across"></i></h1>
@@ -343,7 +274,7 @@ function clickPageNumber(page) {
       </div>
 
       <div class="room-board-data" v-else>
-        <p class="room-board-data-line"></p>
+        <!-- <p class="room-board-data-line"></p> -->
         <div class="room-board-data-img">
           <img
             :src="'data:image/png;base64,' + roomData.roomResponse.image"

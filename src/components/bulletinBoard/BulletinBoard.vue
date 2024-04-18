@@ -3,8 +3,8 @@ import { ref, onMounted, computed, watch } from "vue";
 import CreateBoard from "./CreateBoard.vue";
 import LoginBoard from "./LoginBoard.vue";
 import BoardUploadService from "../boardUploadService/BoardRoom.js";
-import { useAuthStore } from "../../stores/auth.module";
 import { useRouter } from "vue-router";
+import { useAuthStore } from "../../stores/auth.module"; 
 
 const authStore = useAuthStore();
 
@@ -283,7 +283,7 @@ watch(filteredSearchRoomData, (newFilteredSearchRoomData) => {
           <div><font-awesome-icon icon="lock" /></div>
           <span>Private</span>
         </div>
-        <div
+        <!-- <div
           class="board-sidebar-tab"
           :class="[{ 'board-sidebar-status': activeTab === 'JOINED' }]"
           @click="handleTabClick('JOINED')"
@@ -291,7 +291,7 @@ watch(filteredSearchRoomData, (newFilteredSearchRoomData) => {
           <p></p>
           <div><font-awesome-icon icon="lock-open" /></div>
           <span>Joined</span>
-        </div>
+        </div> -->
         <div
           class="board-sidebar-tab"
           :class="[{ 'board-sidebar-status': activeTab === 'CREATED' }]"
@@ -299,7 +299,7 @@ watch(filteredSearchRoomData, (newFilteredSearchRoomData) => {
         >
           <p></p>
           <div><font-awesome-icon icon="clock-rotate-left" /></div>
-          <span>Created</span>
+          <span>History</span>
         </div>
       </div>
 

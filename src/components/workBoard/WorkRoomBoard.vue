@@ -234,7 +234,7 @@ function clickPageNumber(page) {
       <pre>作業版 / 房間</pre>
 
       <div class="room-board-data" v-if="roomDataStatus">
-        <p class="room-board-data-line"></p>
+        <!-- <p class="room-board-data-line"></p> -->
         <div class="room-board-loading-img"></div>
         <div class="room-board-data-text room-board-loading-text">
           <h1><i class="flash-across"></i></h1>
@@ -251,7 +251,7 @@ function clickPageNumber(page) {
       </div>
 
       <div class="room-board-data" v-else>
-        <p class="room-board-data-line"></p>
+        <!-- <p class="room-board-data-line"></p> -->
         <div class="room-board-data-img">
           <img
             :src="'data:image/png;base64,' + roomData.roomResponse.image"
