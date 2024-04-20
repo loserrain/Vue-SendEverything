@@ -27,13 +27,14 @@ onMounted(() => {
 
 function downloadFiles() {
   progress.value = 0;
-  UploadService.getMessage(code.value)
-    .then((response) => {
-      uploadInfo.setTextReceiveResult(response.data.verificationCode);
-    })
-    .catch(() => {
-      downloadFile();
-    });
+  if (/[a-zA-Z]/.test(code.value)) {
+    UploadService.getMessage(code.value)
+      .then((response) => {
+        uploadInfo.setTextReceiveResult(response.data.verificationCode);
+      })
+  } else {
+    downloadFile();
+  } 
 }
 
 async function downloadFile() {

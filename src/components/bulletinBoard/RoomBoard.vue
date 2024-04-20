@@ -1,11 +1,18 @@
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, watch } from "vue";
 import CreateBoard from "./CreateBoard.vue";
 import UploadBoard from "./UploadBoard.vue";
 import DeleteBoard from "./DeleteBoard.vue";
 import { useRouter } from "vue-router";
 import BoardUploadService from "../boardUploadService/BoardRoom.js";
 import API_URL from "../../services/API_URL";
+import { useAuthStore } from "../../stores/auth.module";
+
+const authStore = useAuthStore();
+
+const currentUser = computed(() => {
+  return authStore.dataStatus.user;
+});
 
 const router = useRouter();
 const roomLoadingCode = 8;
@@ -22,8 +29,38 @@ function handleSendUploadStatus(newStatus) {
 
 const deleteStatus = ref(false);
 function handleSendDeleteStatus(newStatus) {
-  deleteStatus.value = newStatus;
+  if (roomDownloadCode.value.length === 0) {
+    return;
+  } else {
+    deleteStatus.value = newStatus;
+  }
 }
+
+//
+watch([uploadStatus, deleteStatus], ([newUploadStatus, newDeleteStatus]) => {
+  if (!newUploadStatus || !newDeleteStatus) {
+    BoardUploadService.showRoomContent(roomCode).then((response) => {
+      roomDataStatus.value = false;
+      roomData.value = response.data;
+      roomDataIsOwner.value = roomData.value.isRoomOwner;
+
+      // 判斷是否有檔案
+      if (roomData.value.dbRoomFiles.length > 0) {
+        roomDataFileStatus.value = true;
+        sidebarStatus.value = true;
+      }
+
+      roomDataFileLength.value = roomData.value.dbRoomFiles.length;
+      handleRoomData(roomDataFileLength.value);
+      updataPageNumber();
+      if(!newDeleteStatus) {
+        for (let i = 0; i < roomChecked.value.length; i++) {
+          roomChecked.value[i] = false;
+        }
+      }
+    });
+  }
+});
 
 // check檔案下載
 const roomChecked = ref([]);
@@ -178,7 +215,7 @@ function updataPageNumber() {
     0
   );
   for (let i = 0; i < roomDataNumber.value; i++) {
-    roomDataPageLength.value.push(i);
+    roomDataPageLength.value[i] = i;
   }
 }
 
@@ -189,7 +226,7 @@ function clickPageNumber(page) {
 
   roomDataPageLength.value = [];
   for (let i = startIndex; i <= endIndex; i++) {
-    roomDataPageLength.value.push(i);
+    roomDataPageLength.value[i] = i;
   }
   roomActiveTab.value = page;
 }
@@ -206,7 +243,10 @@ function clickPageNumber(page) {
     ></UploadBoard>
   </div>
   <div v-if="deleteStatus">
-    <DeleteBoard @send-delete-status="handleSendDeleteStatus"></DeleteBoard>
+    <DeleteBoard
+      @send-delete-status="handleSendDeleteStatus"
+      :roomDownloadCode="roomDownloadCode"
+    ></DeleteBoard>
   </div>
 
   <a class="downloadLink" ref="downloadLink"></a>
@@ -257,7 +297,6 @@ function clickPageNumber(page) {
       <pre>佈告欄 / 房間</pre>
 
       <div class="room-board-data" v-if="roomDataStatus">
-        <!-- <p class="room-board-data-line"></p> -->
         <div class="room-board-loading-img"></div>
         <div class="room-board-data-text room-board-loading-text">
           <h1><i class="flash-across"></i></h1>
@@ -315,6 +354,7 @@ function clickPageNumber(page) {
             <button
               class="room-board-delete"
               @click="handleSendDeleteStatus(true)"
+              v-if="currentUser"
             >
               刪除
             </button>

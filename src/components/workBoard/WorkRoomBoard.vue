@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, watch } from "vue";
 import WorkCreateBoard from "./WorkCreateBoard.vue";
 import WorkUploadBoard from "./WorkUploadBoard.vue";
 import WorkDownloadBoard from "./WorkDownloadBoard.vue";
@@ -36,6 +36,40 @@ const deleteStatus = ref(false);
 function handleSendDeleteStatus(newStatus) {
   deleteStatus.value = newStatus;
 }
+
+watch(uploadStatus, (newStatus) => {
+  if (!newStatus) {
+    BoardUploadService.showRoomContent(roomCode)
+      .then((response) => {
+        roomDataStatus.value = false;
+        roomData.value = response.data;
+        roomDataIsOwner.value = roomData.value.isRoomOwner;
+
+        // 判斷是否為房間擁有者與是否有登入
+        if (roomDataIsOwner.value && currentUser.value) {
+          roomData.value.dbRoomFiles = roomData.value.dbRoomFiles;
+        } else if (currentUser.value && !roomDataIsOwner.value) {
+          roomData.value.dbRoomFiles = roomData.value.dbRoomFiles.filter(
+            (roomFile) => roomFile.uploaderName === currentUser.value.username
+          );
+        } else {
+          roomData.value.dbRoomFiles = [];
+        }
+
+        // 判斷是否有檔案，若非房間擁有者且無檔案則不顯示檔案列表
+        if (roomData.value.dbRoomFiles.length > 0) {
+          roomDataFileStatus.value = true;
+        }
+
+        roomDataFileLength.value = roomData.value.dbRoomFiles.length;
+        handleRoomData(roomDataFileLength.value);
+        updataPageNumber();
+      })
+      .catch((error) => {
+        console.error(error);
+      });
+  }
+});
 
 function handleRoomData(length) {
   roomData.value.roomResponse.createTime = new Date(
@@ -113,7 +147,7 @@ onMounted(() => {
         roomDataIsOwner.value = roomData.value.isRoomOwner;
 
         // 判斷是否為房間擁有者與是否有登入
-        if(roomDataIsOwner.value && currentUser.value) {
+        if (roomDataIsOwner.value && currentUser.value) {
           roomData.value.dbRoomFiles = roomData.value.dbRoomFiles;
         } else if (currentUser.value && !roomDataIsOwner.value) {
           roomData.value.dbRoomFiles = roomData.value.dbRoomFiles.filter(
@@ -144,7 +178,7 @@ function updataPageNumber() {
     0
   );
   for (let i = 0; i < roomDataNumber.value; i++) {
-    roomDataPageLength.value.push(i);
+    roomDataPageLength.value[i] = i;
   }
 }
 
@@ -155,7 +189,7 @@ function clickPageNumber(page) {
 
   roomDataPageLength.value = [];
   for (let i = startIndex; i <= endIndex; i++) {
-    roomDataPageLength.value.push(i);
+    roomDataPageLength.value[i] = i;
   }
   roomActiveTab.value = page;
 }
@@ -234,7 +268,6 @@ function clickPageNumber(page) {
       <pre>作業版 / 房間</pre>
 
       <div class="room-board-data" v-if="roomDataStatus">
-        <!-- <p class="room-board-data-line"></p> -->
         <div class="room-board-loading-img"></div>
         <div class="room-board-data-text room-board-loading-text">
           <h1><i class="flash-across"></i></h1>

@@ -307,10 +307,16 @@ async function uploadChunks() {
     await createZipFile();
     chunksFileInfo.value = calculateFileChunks(zipFileBlob.value, chunkSize);
     await uploadChunkThreads(zipFileBlob.value);
+    setTimeout(() => {
+      handleSendUploadStatus(false);
+    }, 1000);
   } else {
     // 開始上傳檔案
     chunksFileInfo.value = calculateFileChunks(fileList.value, chunkSize);
     await uploadChunkThreads(fileList.value);
+    setTimeout(() => {
+      handleSendUploadStatus(false);
+    }, 1000);
   }
 }
 
@@ -346,6 +352,7 @@ async function uploadChunkThreads(file) {
             endIndex,
             zipFileName: zipFileName.value,
             zipFileStatus: zipFileStatus.value,
+            roomCode: props.roomCode,
           });
           // 接收來自worker的JS檔案傳遞過來的參數
           worker.onmessage = (e) => {

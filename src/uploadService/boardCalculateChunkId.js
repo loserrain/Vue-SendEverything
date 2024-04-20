@@ -1,17 +1,16 @@
 import SparkMD5 from "spark-md5";
 
-export function boardCalculateChunkId(file, chunkNumber, chunkSize, zipFileName, zipFileStatus) {
+export function boardCalculateChunkId(file, chunkNumber, chunkSize, zipFileName, zipFileStatus, roomCode) {
     return new Promise((resolve) => {
         const start = chunkNumber * chunkSize;
         const end = start + chunkSize;
         let fileId = "";
         let fileName = "";
-        console.log("zipFileStatus", zipFileStatus)
         if(zipFileStatus){
             fileId = zipFileName;
             fileName = zipFileName;
         } else {
-            fileId = file.name + "_" + file.lastModified.valueOf() + "_" + file.size;
+            fileId = file.name + "_" + file.lastModified.valueOf() + "_" + file.size + "_" + roomCode;
             fileName = file.name;
         }
         const spark = new SparkMD5.ArrayBuffer();

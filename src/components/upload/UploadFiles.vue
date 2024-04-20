@@ -197,7 +197,7 @@ function shortenFileName(fileName, maxLength, front, end) {
 function shortFileName(fileNames) {
   fileNames.forEach((fileName, index) => {
     if (fileName.length > 24) {
-      fileNames[index] = `${fileName.slice(0, 10)} --- ${fileName.slice(-14)}`;
+      fileNames[index] = `${fileName.slice(0, 10)} ... ${fileName.slice(-14)}`;
     }
   });
 }
@@ -207,6 +207,7 @@ const verificationCode = ref("");
 // 上傳檔案後取得資料
 function uploadGetFiles() {
   UploadService.getFiles().then((response) => {
+    console.log(response.data)
     fileInfos.value = response.data;
     const fileNames = fileInfos.value.map(
       (fileInfo) => fileInfo.fileName || []
@@ -214,9 +215,14 @@ function uploadGetFiles() {
     const fileSizes = fileInfos.value.map(
       (fileInfo) => fileInfo.fileSize || []
     );
-
     verificationCode.value = fileInfos.value.map(
       (fileInfo) => fileInfo.verificationCode || []
+    );
+    const fileTimeLeft = fileInfos.value.map(
+      (fileInfo) => fileInfo.timeLeft || []
+    );
+    const fileUploadTime = fileInfos.value.map(
+      (fileInfo) => new Date(fileInfo.createdAt).toLocaleString() || []
     );
 
     let formattedSizes = fileSizes.map((size) => {
@@ -224,11 +230,12 @@ function uploadGetFiles() {
       return `${formattedSize.sizeValue} ${formattedSize.sizeUnit}`;
     });
     shortFileName(fileNames);
-
     if (fileNames.length === fileSizes.length) {
       fileSort.value = fileNames.map((fileName, index) => ({
         fileName: fileName,
         fileSize: formattedSizes[index],
+        fileTimeLeft: fileTimeLeft[index],
+        fileUploadTime: fileUploadTime[index],
       }));
     }
   });
@@ -415,7 +422,6 @@ async function uploadChunkThreads(file) {
                 uploadStatus.value = false; // 上傳完成
                 userConfirmKK.value = true; // 確認按鈕
                 uploadLoading.value = false; // 加載中
-                console.log("sendFileInfo", sendFileInfo)
                 emits("sendFileInfo", sendFileInfo);
               } catch (error) {
                 console.error("Error completing file upload", error);
@@ -602,10 +608,10 @@ async function uploadChunks() {
           </div>
         </div>
         <div class="upload-history-time">
-          <p class="">2024-04-18</p>
+          <p class="">{{ files.fileUploadTime }}</p>
           <div>
             <font-awesome-icon icon="stopwatch" />
-            <span> 2d 4h </span>
+            <span>{{ files.fileTimeLeft }}</span>
           </div>
         </div>
       </div>
@@ -699,6 +705,7 @@ async function uploadChunks() {
     span {
       font-size: 16px;
       font-weight: bold;
+      margin-left: 4px;
     }
   }
 }

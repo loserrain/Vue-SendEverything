@@ -32,6 +32,10 @@ class BoardUploadService {
   showRoomContent(roomCode) {
     return http.post("/showRoomContent", { roomCode });
   }
+
+  cleanUpRoomFileByCode(roomCode) {
+    return http.get(`/cleanupRoomFileByCode/${roomCode}`);
+  }
 }
 
 export default new BoardUploadService();

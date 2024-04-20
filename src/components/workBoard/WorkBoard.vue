@@ -132,9 +132,15 @@ async function sendRoomNumber(roomNumber) {
         });
       }
     } else {
-      BoardUploadService.accessRoom("", roomCode.value[roomCodeNumber.value], sendVerifyRoomType)
+      BoardUploadService.accessRoom(
+        "",
+        roomCode.value[roomCodeNumber.value],
+        sendVerifyRoomType
+      )
         .then(() => {
-          router.push(`/WorkBoard/WorkRoomBoard/${roomCode.value[roomCodeNumber.value]}`);
+          router.push(
+            `/WorkBoard/WorkRoomBoard/${roomCode.value[roomCodeNumber.value]}`
+          );
         })
         .catch((error) => {
           console.log(error);
@@ -293,6 +299,7 @@ watch(filteredSearchRoomData, (newFilteredSearchRoomData) => {
           <div><font-awesome-icon icon="lock" /></div>
           <span>Private</span>
         </div>
+        <p class="board-sidebar-history">Room History</p>
         <div
           class="board-sidebar-tab"
           :class="[{ 'board-sidebar-status': activeTab === 'JOINED' }]"

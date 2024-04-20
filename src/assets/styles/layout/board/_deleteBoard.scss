@@ -65,6 +65,9 @@
     .delete-board-confirm {
       color: #f0f0f0;
       background-color: #f24646;
+      span {
+        font-weight: bold;
+      }
     }
   }
 }

@@ -4,7 +4,7 @@ import CreateBoard from "./CreateBoard.vue";
 import LoginBoard from "./LoginBoard.vue";
 import BoardUploadService from "../boardUploadService/BoardRoom.js";
 import { useRouter } from "vue-router";
-import { useAuthStore } from "../../stores/auth.module"; 
+import { useAuthStore } from "../../stores/auth.module";
 
 const authStore = useAuthStore();
 
@@ -32,8 +32,8 @@ const RoomType = {
   ALL: "ALL",
   PUBLIC: "PUBLIC",
   PRIVATE: "PRIVATE",
-  CREATED: "CREATED",
   JOINED: "JOINED",
+  CREATED: "CREATED",
 };
 
 const activeTab = ref(RoomType.ALL);
@@ -124,9 +124,9 @@ async function sendRoomNumber(roomNumber) {
         });
       }
     } else {
-      BoardUploadService.accessRoom("", roomCode.value[roomCodeNumber.value], sendVerifyRoomType)
+      BoardUploadService.accessRoom("", sendVerifyRoomCode, sendVerifyRoomType)
         .then(() => {
-          router.push(`/BulletinBoard/roomboard/${roomCode.value[roomCodeNumber.value]}`);
+          router.push(`/BulletinBoard/roomboard/${sendVerifyRoomCode}`);
         })
         .catch((error) => {
           console.log(error);
@@ -165,6 +165,7 @@ onMounted(() => {
   BoardUploadService.getAllRooms(boardType.value)
     .then((response) => {
       roomData.value = response.data;
+      console.log(roomData.value)
       roomData.value.sort((a, b) => {
         const dateA = new Date(a.createTime);
         const dateB = new Date(b.createTime);
@@ -239,7 +240,7 @@ watch(filteredSearchRoomData, (newFilteredSearchRoomData) => {
     ></LoginBoard>
   </div>
   <div v-if="createStatus">
-    <CreateBoard @send-create-status="handleSendCreateStatus" ></CreateBoard>
+    <CreateBoard @send-create-status="handleSendCreateStatus"></CreateBoard>
   </div>
   <div class="board-container">
     <!--  -->
@@ -283,7 +284,8 @@ watch(filteredSearchRoomData, (newFilteredSearchRoomData) => {
           <div><font-awesome-icon icon="lock" /></div>
           <span>Private</span>
         </div>
-        <!-- <div
+        <p class="board-sidebar-history">Room History</p>
+        <div
           class="board-sidebar-tab"
           :class="[{ 'board-sidebar-status': activeTab === 'JOINED' }]"
           @click="handleTabClick('JOINED')"
@@ -291,7 +293,7 @@ watch(filteredSearchRoomData, (newFilteredSearchRoomData) => {
           <p></p>
           <div><font-awesome-icon icon="lock-open" /></div>
           <span>Joined</span>
-        </div> -->
+        </div>
         <div
           class="board-sidebar-tab"
           :class="[{ 'board-sidebar-status': activeTab === 'CREATED' }]"
@@ -299,7 +301,7 @@ watch(filteredSearchRoomData, (newFilteredSearchRoomData) => {
         >
           <p></p>
           <div><font-awesome-icon icon="clock-rotate-left" /></div>
-          <span>History</span>
+          <span>Created</span>
         </div>
       </div>
 
@@ -326,7 +328,9 @@ watch(filteredSearchRoomData, (newFilteredSearchRoomData) => {
           </p>
         </div>
       </div>
-      <div class="board-main-content">
+      <div
+        class="board-main-content"
+      >
         <div
           class="board-main-room"
           v-for="(data, index) in roomDataPageLength"

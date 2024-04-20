@@ -17,7 +17,7 @@ const currentUser = computed(() => {
 });
 
 function handleCurrentUserStatus() {
-  if(currentUser.value) {
+  if (currentUser.value) {
     textUserId.value = currentUser.value.username;
     verifyUserId.value = true;
   }
@@ -306,12 +306,16 @@ async function uploadChunks() {
     await createZipFile();
     chunksFileInfo.value = calculateFileChunks(zipFileBlob.value, chunkSize);
     await uploadChunkThreads(zipFileBlob.value);
-    handleSendUploadStatus(false)
+    setTimeout(() => {
+      handleSendUploadStatus(false);
+    }, 1000);
   } else {
     // 開始上傳檔案
     chunksFileInfo.value = calculateFileChunks(fileList.value, chunkSize);
     await uploadChunkThreads(fileList.value);
-    handleSendUploadStatus(false)
+    setTimeout(() => {
+      handleSendUploadStatus(false);
+    }, 1000);
   }
 }
 
@@ -347,6 +351,7 @@ async function uploadChunkThreads(file) {
             endIndex,
             zipFileName: zipFileName.value,
             zipFileStatus: zipFileStatus.value,
+            roomCode: props.roomCode,
           });
           // 接收來自worker的JS檔案傳遞過來的參數
           worker.onmessage = (e) => {
@@ -437,7 +442,7 @@ async function uploadChunkThreads(file) {
 
 onMounted(() => {
   handleCurrentUserStatus();
-})
+});
 </script>
 
 <template>
@@ -680,13 +685,13 @@ onMounted(() => {
     animation: progress-animation 1.5s linear infinite;
   }
   @keyframes progress-animation {
-      0% {
-        background-position: 1rem 0;
-      }
-      100% {
-        background-position: 0 0;
-      }
+    0% {
+      background-position: 1rem 0;
     }
+    100% {
+      background-position: 0 0;
+    }
+  }
 
   .upload-progress-bar {
     display: flex;

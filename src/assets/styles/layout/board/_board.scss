@@ -7,7 +7,7 @@
     flex-direction: column;
     background-color: $primary-theme-pink;
     height: calc(100vh - 70px);
-    border-right: 2.5px solid #E3CCCD;
+    border-right: 2.5px solid #e3cccd;
 
     .board-sidebar-search {
       padding: 2rem 2rem 1rem 2rem;
@@ -50,6 +50,10 @@
     // Room mode
     .board-sidebar-room-mode {
       padding: 1.5rem 0 0 0.8rem;
+
+      .board-sidebar-history {
+        margin-top: 1.5rem;
+      }
 
       > p {
         font-size: 16px;
@@ -114,18 +118,17 @@
     .board-main-title {
       position: relative;
 
-      
       .board-main-page {
         position: absolute;
         top: 10px;
         right: 50px;
         display: flex;
         gap: 10px;
-        
+
         .board-main-page-now {
           color: #615f5f;
         }
-        
+
         p {
           font-size: 28px;
           font-weight: bold;
@@ -139,7 +142,7 @@
         font-size: 32px;
         font-weight: bolder;
         color: $primary-board-gray-100;
-        margin: 3.8rem 0 3.5rem 0.5rem;
+        margin: 3rem 0 3rem 0.5rem;
         user-select: none;
       }
     }
