@@ -1,17 +1,188 @@
 @import "./variableBoard";
 .room-board-container {
   display: flex;
+  position: relative;
+
+  .room-board-chatRoom-message {
+    position: absolute;
+    right: 3rem;
+    bottom: 2rem;
+    width: 64px;
+    height: 64px;
+    background-color: #c2bfbf;
+    border-radius: 30px;
+    z-index: 9999;
+    img {
+      position: absolute;
+      right: -6px;
+      width: 75px;
+      cursor: pointer;
+    }
+  }
+
+  .room-board-chatRoom {
+    position: absolute;
+    bottom: 0;
+    right: 10rem;
+    width: 393px;
+    height: 457px;
+    border-top-right-radius: 20px;
+    border-top-left-radius: 20px;
+    background-color: #eff5f5;
+    border: 2px solid #dddddd;
+    z-index: 9999;
+
+    .room-board-chatRoom-top {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 26px 10px 14px;
+      border-bottom: 2px solid #E5E5E5;
+      .room-board-charRoom-title {
+        display: flex;
+
+        div {
+          margin: 4px 0 0 8px;
+          h2 {
+            font-size: 16px;
+            font-weight: bold;
+            color: #363737;
+          }
+          h3 {
+            margin-top: 4px;
+            font-size: 14px;
+            font-weight: bold;
+            color: #C7C7C7;
+          }
+        }
+        img {
+          width: 45px;
+          border-radius: 30px;
+        }
+      }
+
+      .room-board-chatRoom-icon {
+        display: flex;
+        gap: 24px;
+        margin-top: 10px;
+        
+        span {
+          width: 26px;
+          height: 26px;
+          text-align: center;
+          font-size: 24px;
+          color: #767676;
+          transition: all 0.2s;
+          cursor: pointer;
+          
+          &:hover {
+            background-color: #d8d8d8;
+            border-radius: 4px;
+            color: #363737;
+          }
+        }
+      }
+    }
+    
+    .room-board-chatRoom-content {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      height: 326px;
+      overflow-y: auto;
+      padding: 16px 0 0 0;
+
+      .room-board-chatRoom-receive {
+        > div {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          margin: 0px 5rem 10px 12px;
+
+          div {
+            font-size: 14px;
+            font-weight: bold;
+            color: #363737;
+            padding: 8px 18px;
+            background-color: #fff;
+            border-radius: 12px;
+            line-height: 20px;
+          }
+        }
+        img {
+          width: 45px;
+          border-radius: 30px;
+        }
+      }
+
+      .room-board-chatRoom-self {
+        text-align: right;
+        padding: 0 16px 0 6rem;
+        margin-bottom: 10px;
+        p {
+          text-align: left;
+          padding: 8px 18px;
+          display: inline-block;
+          font-size: 14px;
+          font-weight: bold;
+          color: #FFFFFF;
+          background-color: #2E89CA;
+          border-radius: 12px;
+          line-height: 20px;
+        }
+      }
+    }
+
+    .room-board-chatRoom-send {
+      position: absolute;
+      bottom: 0;
+      height: 60px;
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 3px solid #E5E5E5;
+      padding:10px 1.5rem;
+
+      .room-board-chatRoom-input {
+
+        input {
+          border: none;
+          outline: none;
+          height: 28px;
+          width: 240px;
+          font-size: 16px;
+          font-weight: bold;
+          border-radius: 12px;
+          padding: 0 8px;
+        }
+      }
+
+      .room-board-chatRoom-clip {
+        font-size: 26px;
+        color: #9A9A9A;
+        cursor: pointer;
+      }
+      .room-board-chatRoom-plane {
+        font-size: 18px;
+        color: #FFFFFF;
+        height: 35px;
+        padding: 8px 10px 8px 8px;
+        background-color: #2E89CA;
+        border-radius: 10px;
+        cursor: pointer;
+      }
+    }
+  }
 
   .room-board-sidebar {
     display: flex;
     flex-direction: column;
     background-color: $primary-theme-pink;
     height: calc(100vh - 70px);
-    border-right: 2.5px solid #E3CCCD;
+    border-right: 2.5px solid #e3cccd;
 
     .room-board-sidebar-search {
       padding: 2rem 2rem 1rem 2rem;
-      // border-bottom: 5px solid $primary-board-white-80;
 
       p {
         font-size: 16px;

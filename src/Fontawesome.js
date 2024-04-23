@@ -12,7 +12,9 @@ import {
   faUser,
   faCircleDown,
   faCopy,
-  faImage
+  faImage,
+  faPaperPlane,
+  faComments
 } from "@fortawesome/free-regular-svg-icons";
 
 import {
@@ -42,7 +44,10 @@ import {
   faUnlock,
   faDownload,
   faQrcode,
-  faStopwatch
+  faStopwatch,
+  faPaperclip,
+  faBarsStaggered,
+  faComment
 } from "@fortawesome/free-solid-svg-icons";
 
 library.add(
@@ -84,7 +89,12 @@ library.add(
     faCopy,
     faImage,
     faQrcode,
-    faStopwatch
+    faStopwatch,
+    faPaperclip,
+    faPaperPlane,
+    faComments,
+    faBarsStaggered,
+    faComment
   );
 
   export { FontAwesomeIcon };

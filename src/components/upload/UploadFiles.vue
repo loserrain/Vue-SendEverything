@@ -1,10 +1,11 @@
 <script setup>
-import { ref, onMounted, computed } from "vue";
+import { ref, onMounted, computed, watch } from "vue";
 import UploadService from "../../services/uploadFilesService";
 import API_URL from "../../services/API_URL";
 import { v4 as uuidv4 } from "uuid";
 import QRCode from "qrcode";
-import { useAuthStore } from "../../stores/auth.module"; 
+import { useAuthStore } from "../../stores/auth.module";
+import DeleteBoard from "../upload/DeleteBoard.vue";
 
 const authStore = useAuthStore();
 
@@ -207,7 +208,6 @@ const verificationCode = ref("");
 // 上傳檔案後取得資料
 function uploadGetFiles() {
   UploadService.getFiles().then((response) => {
-    console.log(response.data)
     fileInfos.value = response.data;
     const fileNames = fileInfos.value.map(
       (fileInfo) => fileInfo.fileName || []
@@ -289,7 +289,7 @@ const fileInfos = ref([]);
 const fileReceive = ref([]);
 
 // 增加檔案分割的資料
-const chunkSize = 10 * 1024 * 1024; // 5MB
+const chunkSize = 15 * 1024 * 1024; // 5MB
 const totalChunks = ref(0);
 const currentChunkIndex = ref(0);
 const totalThreads = navigator.hardwareConcurrency || 2;
@@ -507,9 +507,33 @@ async function uploadChunks() {
 }
 
 // ----------------------------------------測試區-------------------------------------------
+const deleteStatus = ref(false);
+const sendFileCode = ref("");
+function handleSendDeleteStatus(newStatus) {
+  deleteStatus.value = newStatus;
+}
+
+function handleFileCode(index) {
+  sendFileCode.value = verificationCode.value[index];
+}
+
+watch(deleteStatus, (newStatus) => {
+  if (!newStatus) {
+    uploadGetFiles()
+  }
+});
 </script>
 
 <template>
+
+  <div v-if="deleteStatus">
+    <DeleteBoard
+      @send-delete-status="handleSendDeleteStatus"
+      :fileCode="sendFileCode"
+    ></DeleteBoard>
+  </div>
+
+
   <div class="upload-file-container">
     <!-- upload的檔案傳送列表 -->
     <div
@@ -544,7 +568,11 @@ async function uploadChunks() {
         </button>
       </p>
       <p v-else>
-        <button v-if="userConfirmKK" @click="userConfirm()" :class="userConfirmKK ? 'upload-ok-anime' : ''">
+        <button
+          v-if="userConfirmKK"
+          @click="userConfirm()"
+          :class="userConfirmKK ? 'upload-ok-anime' : ''"
+        >
           <span>OK</span>
         </button>
       </p>
@@ -562,7 +590,7 @@ async function uploadChunks() {
           <div>
             <font-awesome-icon icon="file-lines" />
           </div>
-          <div>
+          <div class="upload-set-info">
             <span>{{ file.fileName }}</span>
             <p>{{ file.fileSize }}</p>
           </div>
@@ -590,28 +618,32 @@ async function uploadChunks() {
     <!-- 歷史紀錄區(登入後) -->
     <div class="upload-history">
       <div
-        class="upload-history-file"
+        class="upload-history-container"
         v-for="(files, index) in fileSort"
         :key="index"
-        @click="produceQRCode(index)"
       >
-        <div class="upload-set">
-          <div class="upload-set-icon">
-            <font-awesome-icon icon="clock-rotate-left" />
+        <span class="upload-history-delete"  @click="handleSendDeleteStatus(true), handleFileCode(index)"
+          ><font-awesome-icon icon="trash-can"
+        /></span>
+        <div class="upload-history-file" @click="produceQRCode(index)">
+          <div class="upload-set">
+            <div class="upload-set-clock">
+              <font-awesome-icon icon="clock-rotate-left" />
+            </div>
+            <div class="upload-set-info">
+              <span>{{ files.fileName }}</span>
+              <p>{{ files.fileSize }}</p>
+            </div>
+            <div class="upload-set-icon">
+              <font-awesome-icon icon="circle-check" class="upload-check" />
+            </div>
           </div>
-          <div>
-            <span>{{ files.fileName }}</span>
-            <p>{{ files.fileSize }}</p>
-          </div>
-          <div>
-            <font-awesome-icon icon="circle-check" class="upload-check" />
-          </div>
-        </div>
-        <div class="upload-history-time">
-          <p class="">{{ files.fileUploadTime }}</p>
-          <div>
-            <font-awesome-icon icon="stopwatch" />
-            <span>{{ files.fileTimeLeft }}</span>
+          <div class="upload-history-time">
+            <p class="">{{ files.fileUploadTime }}</p>
+            <div>
+              <font-awesome-icon icon="stopwatch" />
+              <span>{{ files.fileTimeLeft }}</span>
+            </div>
           </div>
         </div>
       </div>
@@ -637,8 +669,19 @@ async function uploadChunks() {
   position: relative;
 }
 
-.upload-history-file {
+.upload-history-container {
   position: relative;
+
+  .upload-history-delete {
+    position: absolute;
+    top: 45%;
+    right: -24px;
+    color: #EB6440;
+    cursor: pointer;
+  }
+}
+
+.upload-history-file {
   height: 115px;
   border: 2px solid #e8e8e8;
   border-radius: 12px;

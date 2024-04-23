@@ -16,6 +16,7 @@ const currentUser = computed(() => {
 
 function logOut() {
   authStore.logout();
+  router.push("/");
 }
 
 function setSelectedTab(tab) {
@@ -39,10 +40,12 @@ function setSelectedTab(tab) {
     <div class="navbar-nav">
       <div>
         <div class="navbar-login" v-if="!currentUser">
-          <RouterLink
-            :to="{ path: '/BulletinBoard', query: { page: 1 } }"
-            class="nav-link"
-          >
+          <RouterLink :to="{ path: '/chatroom' }" class="nav-link">
+            <li class="nav-item">
+              <font-awesome-icon :icon="['far', 'comments']" /> 聊天室
+            </li>
+          </RouterLink>
+          <RouterLink :to="{ path: '/BulletinBoard', query: { page: 1 } }" class="nav-link">
             <li class="nav-item">
               <font-awesome-icon icon="circle-arrow-up" /> 佈告欄
             </li>
@@ -52,11 +55,7 @@ function setSelectedTab(tab) {
               <font-awesome-icon icon="circle-arrow-up" /> 作業版
             </li>
           </RouterLink>
-          <RouterLink
-            to="/uploadfile"
-            class="nav-link"
-            @click="setSelectedTab('Send')"
-          >
+          <RouterLink to="/uploadfile" class="nav-link" @click="setSelectedTab('Send')">
             <li class="nav-item">
               <font-awesome-icon icon="circle-arrow-up" /> Upload
             </li>
@@ -70,14 +69,12 @@ function setSelectedTab(tab) {
       </div>
 
       <div v-if="currentUser">
-        <li class="nav-user">
-          <font-awesome-icon :icon="['far', 'user']" />
-          {{ currentUser.username }}
-        </li>
-        <RouterLink
-          :to="{ path: '/BulletinBoard', query: { page: 1 } }"
-          class="nav-link"
-        >
+        <RouterLink :to="{ path: '/chatroom' }" class="nav-link">
+          <li class="nav-item">
+            <font-awesome-icon :icon="['far', 'comments']" /> 聊天室
+          </li>
+        </RouterLink>
+        <RouterLink :to="{ path: '/BulletinBoard', query: { page: 1 } }" class="nav-link">
           <li class="nav-item">
             <font-awesome-icon icon="circle-arrow-up" /> 佈告欄
           </li>
@@ -87,15 +84,15 @@ function setSelectedTab(tab) {
             <font-awesome-icon icon="circle-arrow-up" /> 作業版
           </li>
         </RouterLink>
-        <RouterLink
-          to="/uploadfile"
-          class="nav-link"
-          @click="setSelectedTab('Send')"
-        >
+        <RouterLink to="/uploadfile" class="nav-link" @click="setSelectedTab('Send')">
           <li class="nav-item">
             <font-awesome-icon icon="circle-arrow-up" /> Upload
           </li>
         </RouterLink>
+        <li class="nav-user">
+          <img :src="`data:image/png;base64,${currentUser.profileImageBase64}`" alt="">
+          {{ currentUser.username }}
+        </li>
         <li class="nav-item" @click.prevent="logOut">
           <a class="nav-link">
             <font-awesome-icon icon="sign-in-alt" /> Sign out
@@ -131,8 +128,19 @@ li {
 }
 
 .nav-user {
+  position: relative;
   margin-right: 15px;
+  margin-left: 3rem;
   cursor: default;
+
+  img {
+    position: absolute;
+    top:-5px;
+    left: -2.6rem;
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+  }
 }
 
 .navbar-login {
@@ -147,6 +155,7 @@ li {
     background-color: rgba(114, 114, 118, 0.174);
     border-radius: 10px;
   }
+
   strong {
     font-weight: 650;
   }
@@ -155,6 +164,7 @@ li {
 .nav-logo {
   transform: translateY(11%);
   margin-right: -3px;
+
   img {
     width: 35px;
     height: 35px;

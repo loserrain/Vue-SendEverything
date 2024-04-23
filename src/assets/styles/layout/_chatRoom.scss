@@ -1,0 +1,421 @@
+.chatroom-container {
+  display: flex;
+  background-color: #eff5f5;
+  border-radius: 30px;
+  // border: 1px solid #363737;
+  box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.135);
+  width: 1580px;
+  height: 800px;
+  margin: 36px auto 0;
+  padding: 30px 0 0 50px;
+
+  .chatroom-line {
+    position: absolute;
+    bottom: 0;
+    border-bottom: 2px solid #e0e5e7;
+    width: 315px;
+  }
+
+  .chatroom-sidebar {
+    width: 94px;
+    height: 735px;
+    background-color: #497174;
+    border-radius: 18px;
+    text-align: center;
+    padding: 32px 0;
+
+    .chatroom-sidebar-click {
+      color: #ffffff;
+    }
+
+    span {
+      display: block;
+      font-size: 32px;
+      color: #839e9f;
+      margin-bottom: 40px;
+      cursor: pointer;
+    }
+  }
+
+  .chatroom-user {
+    width: 395px;
+    height: 735px;
+    overflow-y: hidden;
+    .chatroom-user-info {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 2.5rem 0 1.5rem;
+      padding: 0 35px 2.5rem;
+      position: relative;
+
+      .chatroom-user-image {
+        width: 90px;
+        img {
+          width: 100%;
+          border-radius: 50px;
+        }
+      }
+
+      h2 {
+        font-size: 28px;
+        font-weight: bold;
+        color: #363737;
+        margin-top: 6px;
+      }
+
+      p {
+        font-size: 14px;
+        font-weight: bold;
+        color: #9fa8c4;
+      }
+    }
+
+    .chatroom-user-chats {
+      padding: 0 16px;
+      h2 {
+        font-size: 22px;
+        font-weight: bold;
+        color: #363737;
+        margin: 0 0 4px 19px;
+      }
+
+      .chatroom-user-message {
+        display: flex;
+        justify-content: space-between;
+        position: relative;
+        // background-color: #D7E3E5;
+        border-radius: 17px;
+        padding: 1.2rem 28px 1.2rem 19px;
+        margin-bottom: 0.5rem;
+        cursor: pointer;
+
+        .chatroom-user-message-text {
+          display: flex;
+          align-items: center;
+          img {
+            width: 50px;
+            border-radius: 50px;
+          }
+
+          div {
+            margin-left: 12px;
+            h3 {
+              font-size: 18px;
+              font-weight: bold;
+              color: #4e4f4f;
+            }
+
+            p {
+              font-size: 14px;
+              color: #73778a;
+              width: 200px;
+              display: -webkit-box;
+              -webkit-box-orient: vertical;
+              -webkit-line-clamp: 1;
+              word-break: break-all;
+              overflow: hidden;
+            }
+          }
+        }
+
+        .chatroom-user-message-date {
+          font-size: 12px;
+          font-weight: bold;
+          color: #9fa8c4;
+          margin-top: 4px;
+        }
+      }
+    }
+  }
+
+  .show-scrollbar-user {
+    overflow-y: auto;
+
+    .chatroom-user-info {
+      padding: 0 23px 2.5rem 35px;
+    }
+
+    .chatroom-user-chats {
+      .chatroom-user-message {
+        padding: 1.2rem 16px 1.2rem 19px;
+      }
+    }
+    
+  }
+
+  .chatroom-message {
+    position: relative;
+    width: 645px;
+    height: 100%;
+    background-color: #fff;
+    border-top-right-radius: 20px;
+    border-top-left-radius: 20px;
+    padding: 1.5rem 0 0 2rem;
+
+    .chatroom-message-search {
+      width: 580px;
+      height: 50px;
+      display: flex;
+      align-items: center;
+      background-color: #f9fafa;
+      border-radius: 8px;
+      padding: 0 0 0 1rem;
+      margin-bottom: 20px;
+
+      span {
+        font-size: 18px;
+        color: #d2d5db;
+        margin-right: 6px;
+      }
+
+      input {
+        width: 550px;
+        font-size: 18px;
+        color: #9fa8c4;
+        border: none;
+        background: none;
+        outline: none;
+
+        &::placeholder {
+          color: #d2d5db;
+        }
+      }
+    }
+
+    h2 {
+      font-size: 28px;
+      font-weight: bold;
+      color: #363737;
+    }
+
+    h4 {
+      font-size: 14px;
+      font-weight: bold;
+      color: #d2d5db;
+    }
+
+    
+
+    .chatroom-message-content {
+      padding-right: 2rem;
+      margin-top: 1rem;
+      height: 540px;
+      overflow-y: hidden;
+
+
+      .chatroom-message-receive {
+        padding: 0 8rem 0 0;
+        margin-bottom: 26px;
+        p {
+          display: inline-block;
+          padding: 12px 1rem;
+          border: 2px solid #edeef1;
+          border-radius: 12px;
+        }
+      }
+  
+      .chatroom-message-self {
+        padding: 0 0 0 8rem;
+        margin-top: 26px;
+        text-align: right;
+        p {
+          text-align: left;
+          display: inline-block;
+          padding: 12px 1rem;
+          background-color: #eff5f5;
+          border-radius: 12px;
+          line-height: 20px;
+        }
+      }
+    }
+
+    // 更改捲軸時的樣式設定
+    .show-scrollbar-content {
+      padding-right: 20px;
+      overflow-y: auto;
+    }
+
+
+    .chatroom-message-send {
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      width: 100%;
+      height: 72px;
+      border-top: 3px solid #edeef1;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 1.5rem;
+
+      .chatroom-message-send-clip {
+        font-size: 26px;
+        color: #497174;
+        cursor: pointer;
+      }
+
+      .chatroom-message-send-input {
+        input {
+          width: 440px;
+          font-size: 18px;
+          color: #363737;
+          outline: none;
+          border: none;
+          padding: 8px 8px;
+          background-color: #eff5f5;
+          border-radius: 12px;
+        }
+      }
+
+      .chatroom-message-send-plane {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        height: 40px;
+        padding: 8px 10px 8px 16px;
+        background-color: #EB6440;
+        border-radius: 10px;
+        cursor: pointer;
+
+        p {
+          font-size: 18px;
+          color: #fff;
+        }
+
+        span {
+          width: 20px;
+          color: #fff;
+        }
+      }
+    }
+  }
+
+  .chatroom-group {
+    width: 395px;
+    height: 740px;
+    padding: 0 2.5rem;
+    overflow-y: hidden;
+
+    .chatroom-group-info {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 2.5rem 0 1.5rem;
+      padding: 0 0 2rem;
+      position: relative;
+
+      .chatroom-group-image {
+        width: 90px;
+        img {
+          width: 100%;
+          border-radius: 50px;
+        }
+      }
+
+      h2 {
+        font-size: 28px;
+        font-weight: bold;
+        color: #363737;
+        margin-top: 6px;
+      }
+
+      p {
+        font-size: 14px;
+        font-weight: bold;
+        color: #9fa8c4;
+      }
+
+      .chatroom-group-display {
+        display: flex;
+        gap: 4rem;
+        margin-top: 1.5rem;
+
+        img {
+          width: 60px;
+          border-radius: 50px;
+        }
+
+        p {
+          font-size: 16px;
+          font-weight: bold;
+          color: #363737;
+        }
+      }
+    }
+
+    .chatroom-group-shared {
+      h2 {
+        font-size: 22px;
+        font-weight: bold;
+        color: #363737;
+      }
+
+      .chatroom-group-shared-file {
+        display: flex;
+        justify-content: space-between;
+        margin: 1.2rem 0 1.2rem;
+
+        .chatroom-group-file-info {
+          display: flex;
+          align-items: center;
+          gap: 14px;
+          img {
+            width: 40px;
+            border-radius: 8px;
+          }
+
+          div {
+            h3 {
+              font-size: 14px;
+              font-weight: bold;
+              color: #363737;
+              width: 200px;
+              display: -webkit-box;
+              -webkit-box-orient: vertical;
+              -webkit-line-clamp: 1;
+              word-break: break-all;
+              overflow: hidden;
+            }
+            p {
+              font-size: 11px;
+              font-weight: bold;
+              color: #73778a;
+              margin-top: 4px;
+            }
+          }
+        }
+        p {
+          font-size: 14px;
+          font-weight: bold;
+          color: #4e4f4f;
+          margin-top: 4px;
+        }
+      }
+    }
+  }
+
+  .show-scrollbar-group {
+    padding: 0 28px 0 2.5rem;
+    overflow-y: auto;
+  }
+}
+
+::-webkit-scrollbar {
+  width: 12px;
+}
+
+::-webkit-scrollbar-thumb {
+  background-image: linear-gradient(
+    180deg,
+    #7fcef6 0%,
+    #72bbfa 50%,
+    #25c1fa 100%
+  );
+  box-shadow: inset 2px 2px 5px 0 rgba(#fff, 0.5);
+  border-radius: 100px;
+
+  &:active {
+    background-color: #a9a9a9a5;
+  }
+}

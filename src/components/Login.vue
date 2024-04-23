@@ -35,7 +35,7 @@ window.addEventListener("message", (event) => {
 
 function loginNewGoogle() {
   // google登入畫面
-  const authUrl = "https://imbig404.com/oauth2/authorization/google";
+  const authUrl = "http://localhost:8088/oauth2/authorization/google";
   // const authUrl = "/api/test/all";
   // const authUrl = "http://nfu404.ddns.net/oauth2/authorization/google";
   window.open(authUrl, "_blank", "width=550,height=550");
@@ -84,7 +84,6 @@ function handleLogin(user) {
   <div class="card-container">
     <div class="card-img">
       <img src="../assets/image/test.jpg" alt="">
-      <!-- <img src="../assets/image/103593601_p0.jpg" alt="" /> -->
     </div>
     <div class="card-form">
       <div class="card-nav">

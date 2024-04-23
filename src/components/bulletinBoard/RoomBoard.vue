@@ -7,6 +7,7 @@ import { useRouter } from "vue-router";
 import BoardUploadService from "../boardUploadService/BoardRoom.js";
 import API_URL from "../../services/API_URL";
 import { useAuthStore } from "../../stores/auth.module";
+import webstomp from 'webstomp-client';
 
 const authStore = useAuthStore();
 
@@ -53,7 +54,7 @@ watch([uploadStatus, deleteStatus], ([newUploadStatus, newDeleteStatus]) => {
       roomDataFileLength.value = roomData.value.dbRoomFiles.length;
       handleRoomData(roomDataFileLength.value);
       updataPageNumber();
-      if(!newDeleteStatus) {
+      if (!newDeleteStatus) {
         for (let i = 0; i < roomChecked.value.length; i++) {
           roomChecked.value[i] = false;
         }
@@ -230,6 +231,65 @@ function clickPageNumber(page) {
   }
   roomActiveTab.value = page;
 }
+
+const roomChatStatus = ref(false);
+function toggleRoomChatStatus(newStatus) {
+  roomChatStatus.value = newStatus;
+  connect();
+}
+
+// asdasdl;kasd;lkasdl;askdl;ask;dksa l;dk;asldkdl;sak;ldkasl;dklas;dkl;sadkl;askdl;askl;d
+
+const username = ref('');
+const messageContent = ref('');
+const messages = ref([]);
+let stompClient = null;
+const meeeageSenderStatus = ref([]);
+
+
+
+const connect = () => {
+  const socket = new WebSocket('ws://localhost:8088/websocket');
+  stompClient = webstomp.over(socket);
+  stompClient.connect({}, onConnected, onError);
+  username.value = currentUser.value.username;
+}
+
+const onConnected = () => {
+  stompClient.subscribe(`/topic/${roomCode}`, onMessageReceived);
+
+  const jsonData = { sender: username.value, type: 'JOIN' };
+  const jsonString = JSON.stringify(jsonData);
+}
+
+const onError = (error) => {
+  console.error('Could not connect to WebSocket server. Please refresh this page to try again!', error);
+}
+
+const sendMessage = () => {
+  console.log(stompClient)
+  if (messageContent.value.trim() && stompClient) {
+    const chatMessage = {
+      sender: username.value,
+      content: messageContent.value,
+      type: 'CHAT'
+    };
+    stompClient.send(`/app/chat.sendMessage/${roomCode}`, JSON.stringify(chatMessage), {});
+    messageContent.value = '';
+  }
+}
+
+const onMessageReceived = (payload) => {
+  console.log("payload", payload);
+  const message = JSON.parse(payload.body);
+  if(message.sender === username.value) {
+    meeeageSenderStatus.value.push(true);
+  } else {
+    meeeageSenderStatus.value.push(false);
+  }
+  messages.value.push(message);
+}
+
 </script>
 
 <template>
@@ -237,21 +297,63 @@ function clickPageNumber(page) {
     <CreateBoard @send-create-status="handleSendCreateStatus"></CreateBoard>
   </div>
   <div v-if="uploadStatus">
-    <UploadBoard
-      @send-upload-status="handleSendUploadStatus"
-      :roomCode="roomCode"
-    ></UploadBoard>
+    <UploadBoard @send-upload-status="handleSendUploadStatus" :roomCode="roomCode"></UploadBoard>
   </div>
   <div v-if="deleteStatus">
-    <DeleteBoard
-      @send-delete-status="handleSendDeleteStatus"
-      :roomDownloadCode="roomDownloadCode"
-    ></DeleteBoard>
+    <DeleteBoard @send-delete-status="handleSendDeleteStatus" :roomDownloadCode="roomDownloadCode"></DeleteBoard>
   </div>
 
   <a class="downloadLink" ref="downloadLink"></a>
 
   <div class="room-board-container">
+
+    <div class="room-board-chatRoom-message" @click="toggleRoomChatStatus(true)">
+      <img src="/src/assets/image/chatRoomLogo.png" alt="" />
+    </div>
+    <transition name="fade">
+      <div class="room-board-chatRoom" v-if="roomChatStatus">
+        <div class="room-board-chatRoom-top">
+          <div class="room-board-charRoom-title">
+            <img :src="`data:image/png;base64,${currentUser.profileImageBase64}`" alt="">
+            <div>
+              <h2>This is a title.</h2>
+              <h3>This is a description.</h3>
+            </div>
+          </div>
+          <div class="room-board-chatRoom-icon">
+            <span @click="toggleRoomChatStatus(false)"><font-awesome-icon icon="xmark" /></span>
+          </div>
+        </div>
+        <div class="room-board-chatRoom-content">
+          <div>
+            <div v-for="(message, index) in messages" :key="index" :class="meeeageSenderStatus[index] ? 'room-board-chatRoom-self' : 'room-board-chatRoom-receive'">
+              <div v-if="!meeeageSenderStatus[index]">
+                <img :src="`data:image/png;base64,${currentUser.profileImageBase64}`" alt="">
+                <div>
+                  {{ message.sender }}: {{ message.content }}
+                </div>
+              </div>
+              <p v-else>
+                {{ message.sender }}: {{ message.content }}
+              </p>
+            </div>
+          </div>
+          <!-- <div class="room-board-chatRoom-self" v-for="i in 2">
+            <p>Do you want to see me?Do you want to see me?</p>
+          </div> -->
+        </div>
+        <div class="room-board-chatRoom-send">
+          <span class="room-board-chatRoom-clip"><font-awesome-icon icon="paperclip" /></span>
+          <div class="room-board-chatRoom-input">
+            <label for="message"></label>
+            <input type="text" name="message" id="message" v-model="messageContent" @keyup.enter="sendMessage()">
+          </div>
+          <span @click="sendMessage()" class="room-board-chatRoom-plane"><font-awesome-icon
+              :icon="['far', 'paper-plane']" /></span>
+        </div>
+      </div>
+    </transition>
+
     <div class="room-board-sidebar">
       <div class="room-board-sidebar-search">
         <p>Room Search</p>
@@ -265,27 +367,18 @@ function clickPageNumber(page) {
       </div>
       <div class="room-board-sidebar-room-mode">
         <p>Room Mode</p>
-        <div
-          class="room-board-sidebar-tab"
-          :class="sidebarStatus ? 'room-board-sidebar-status' : ''"
-          @click="toggleSidebarStatus()"
-        >
+        <div class="room-board-sidebar-tab" :class="sidebarStatus ? 'room-board-sidebar-status' : ''"
+          @click="toggleSidebarStatus()">
           <p></p>
           <div><font-awesome-icon :icon="['far', 'circle-down']" /></div>
           <span>Download File</span>
         </div>
         <div v-if="roomDataIsOwner">
-          <div
-            class="room-board-sidebar-tab"
-            @click="handleSendUploadStatus(true)"
-          >
+          <div class="room-board-sidebar-tab" @click="handleSendUploadStatus(true)">
             <div><font-awesome-icon icon="arrow-up-from-bracket" /></div>
             <span>Upload File</span>
           </div>
-          <div
-            class="room-board-sidebar-tab"
-            @click="handleSendCreateStatus(true)"
-          >
+          <div class="room-board-sidebar-tab" @click="handleSendCreateStatus(true)">
             <div><font-awesome-icon icon="gear" /></div>
             <span>Room Setup</span>
           </div>
@@ -315,10 +408,7 @@ function clickPageNumber(page) {
       <div class="room-board-data" v-else>
         <!-- <p class="room-board-data-line"></p> -->
         <div class="room-board-data-img">
-          <img
-            :src="'data:image/png;base64,' + roomData.roomResponse.image"
-            alt=""
-          />
+          <img :src="'data:image/png;base64,' + roomData.roomResponse.image" alt="" />
         </div>
         <div class="room-board-data-text">
           <h1>{{ roomData.roomResponse.title }}</h1>
@@ -337,11 +427,8 @@ function clickPageNumber(page) {
         <div class="room-board-fileTitle">
           <div class="room-board-pageNumber" v-if="roomDataFileStatus">
             <span>Page -</span>
-            <p
-              v-for="page in roomDataPage"
-              @click="clickPageNumber(page)"
-              :class="[{ 'room-board-pageNumber-now': roomActiveTab === page }]"
-            >
+            <p v-for="page in roomDataPage" @click="clickPageNumber(page)"
+              :class="[{ 'room-board-pageNumber-now': roomActiveTab === page }]">
               {{ page }}
             </p>
           </div>
@@ -351,11 +438,7 @@ function clickPageNumber(page) {
           </p>
           <div v-if="sidebarStatus">
             <button @click="handleDownloadFile()">下載</button>
-            <button
-              class="room-board-delete"
-              @click="handleSendDeleteStatus(true)"
-              v-if="currentUser"
-            >
+            <button class="room-board-delete" @click="handleSendDeleteStatus(true)" v-if="currentUser">
               刪除
             </button>
             <button @click="selectAllRooms()">全選</button>
@@ -364,11 +447,7 @@ function clickPageNumber(page) {
         </div>
 
         <div class="room-board-file" v-if="roomDataStatus">
-          <div
-            class="room-board-main-room"
-            v-for="(roomFile, index) in roomLoadingCode"
-            :key="index"
-          >
+          <div class="room-board-main-room" v-for="(roomFile, index) in roomLoadingCode" :key="index">
             <div class="room-board-main-room-number">
               <span><font-awesome-icon :icon="['far', 'file']" /></span>
               <div class="room-board-main-loading-text">
@@ -376,9 +455,7 @@ function clickPageNumber(page) {
                 <p><i class="flash-across"></i></p>
               </div>
             </div>
-            <div
-              class="room-board-main-room-description room-board-main-loading-description"
-            >
+            <div class="room-board-main-room-description room-board-main-loading-description">
               <p><i class="flash-across"></i></p>
               <p class="loading-text-210"><i class="flash-across"></i></p>
               <p class="loading-text-260"><i class="flash-across"></i></p>
@@ -394,22 +471,12 @@ function clickPageNumber(page) {
 
         <div v-else>
           <div class="room-board-file" v-if="roomDataFileStatus">
-            <div
-              class="room-board-main-room"
-              v-for="(roomFile, index) in roomDataPageLength"
-              :key="index"
-            >
+            <div class="room-board-main-room" v-for="(roomFile, index) in roomDataPageLength" :key="index">
               <p class="room-board-main-room-check" v-if="sidebarStatus">
                 <label :for="'checkbox' + roomFile">
-                  <input
-                    type="checkbox"
-                    :id="'checkbox' + roomFile"
-                    :checked="roomChecked[roomFile]"
-                    @change="handleRoomCheckboxToggle(roomFile)"
-                  />
-                  <span
-                    ><font-awesome-icon :icon="ckRoomIcon[roomFile]"
-                  /></span>
+                  <input type="checkbox" :id="'checkbox' + roomFile" :checked="roomChecked[roomFile]"
+                    @change="handleRoomCheckboxToggle(roomFile)" />
+                  <span><font-awesome-icon :icon="ckRoomIcon[roomFile]" /></span>
                 </label>
               </p>
               <div class="room-board-main-room-number">
@@ -437,6 +504,21 @@ function clickPageNumber(page) {
 
 <style scoped lang="scss">
 @import "../../assets/styles/layout/board/roomBoard";
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+.fade-enter-to,
+.fade-leave-from {
+  opacity: 1;
+}
 
 .downloadLink {
   display: none;

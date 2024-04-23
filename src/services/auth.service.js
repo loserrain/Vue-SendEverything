@@ -1,5 +1,5 @@
 import axios from "axios";
-import API_URL from "./API_URL"
+import API_URL from "./API_URL";
 
 axios.defaults.withCredentials = true;
 
@@ -22,9 +22,9 @@ class AuthService {
     return axios
       .get(API_URL + "/oauth2/redirect", {
         headers: {
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache'
-        }
+          "Cache-Control": "no-cache",
+          Pragma: "no-cache",
+        },
       })
       .then((response) => {
         if (response.data.accessToken) {
@@ -34,7 +34,6 @@ class AuthService {
       });
   }
 
-
   async logout() {
     try {
       const response = await axios.post(API_URL + "/signout");
@@ -42,18 +41,17 @@ class AuthService {
         console.log(response.data.message);
       }
       localStorage.removeItem("user");
-      location.reload(true)
+      location.reload(true);
     } catch (error) {
       console.error("Logout failed：", error);
     }
   }
 
-  register(user) {
-    return axios.post(API_URL + "/signup", {
-      username: user.username,
-      email: user.email,
-      password: user.password,
-      role: user.role,
+  register(formData) {
+    return axios.post(API_URL + "/signup", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
     });
   }
 

@@ -26,6 +26,7 @@ svg {
   .card-img {
     // width: 630px;
     width: 70%;
+    height: 100%;
   }
 
   img {
@@ -63,6 +64,54 @@ svg {
   height: 1px;
   border-top: solid $primary-text-gray-200 1.5px;
   margin: 15px 0 18px;
+}
+
+.card-select-img {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 180px;
+  height: 180px;
+  background-color: #f8faff;
+  border: 3px solid #bbbbbb;
+  border-radius: 100%;
+  overflow: hidden;
+  margin: 0 auto;
+
+  p {
+    font-size: 16px;
+    font-weight: bold;
+    color: #c6cbcc;
+    user-select: none;
+  }
+  img {
+    border-radius: 5px;
+    max-width: 99%;
+    max-height: 99%;
+  }
+}
+
+.card-select-file {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+  label {
+    display: inline-block;
+    margin-top: 12px;
+    padding: 8px 16px;
+    font-size: 16px;
+    font-weight: bold;
+    color: #FFFFFF;
+    background-color: #1565d8;
+    border: none;
+    border-radius: 5px;
+    user-select: none;
+    cursor: pointer;
+  }
+
+  input {
+    display: none;
+  }
 }
 
 .card-nav {
@@ -154,9 +203,6 @@ svg {
     }
   }
 }
-
-
-
 
 .card-button {
   width: 100%;

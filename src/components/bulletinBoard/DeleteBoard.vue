@@ -23,9 +23,7 @@ async function deleteFiles() {
       });
   }
   deleteStatus.value = false;
-  setTimeout(() => {
-    handleSendDeleteStatus(false);
-  }, 1000);
+  handleSendDeleteStatus(false);
 }
 </script>
 

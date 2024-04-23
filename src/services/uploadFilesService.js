@@ -72,7 +72,9 @@ class UploadFilesService {
     return http.get(`/getFileNameByCode/${code}`);
   }
 
-  
+  deleteFileByCode(code) {
+    return http.get(`/cleanupByCode/${code}`);
+  }
 
 }
 

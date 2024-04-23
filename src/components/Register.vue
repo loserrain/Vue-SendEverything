@@ -2,7 +2,7 @@
 import { Form, Field, ErrorMessage } from "vee-validate";
 import * as yup from "yup";
 import { useRouter } from "vue-router";
-import { ref } from "vue";
+import { onMounted, ref } from "vue";
 import authService from "../services/auth.service";
 
 const router = useRouter();
@@ -27,14 +27,25 @@ const schema = yup.object().shape({
     .max(40, "Must be maximum 40 characters!"),
 });
 
+const fileBlob = ref(undefined);
+
 function handleRegister(user) {
   loading.value = true;
   message.value = "";
   successful.value = false;
-  // console.log(user.role);
+  if(!defaultImageStatus.value) {
+    file.value.files[0]
+  }
+
+  let formData = new FormData();
+  formData.append("image", fileBlob.value);
+  formData.append("username", user.username);
+  formData.append("email", user.email);
+  formData.append("password", user.password);
+  console.log(user)
 
   authService
-    .register(user)
+    .register(formData)
     .then((data) => {
       message.value = data.message;
       successful.value = true;
@@ -57,28 +68,82 @@ function handleRegister(user) {
 function back() {
   router.go(-1);
 }
+
+// 檔案預覽
+const file = ref(undefined);
+const previewImage = ref(null);
+const previewStatus = ref(false);
+const previewImageStatue = ref(false);
+
+function selectFile() {
+  previewImageStatue.value = false;
+  handlePreviewImg(file.value.files);
+}
+function handlePreviewImg(file) {
+  const reader = new FileReader();
+  const selectFileSize = file[0].size / 1024 / 1024;
+  const isImage = /^image\//.test(file[0].type);
+
+  if (selectFileSize < 5 && isImage) {
+    reader.readAsDataURL(file[0]);
+    reader.onload = () => {
+      previewImage.value = reader.result;
+    };
+    previewStatus.value = true;
+  } else {
+    file.value = "";
+    previewStatus.value = false;
+  }
+}
+
+const getImageUrl = () => {
+  return new URL(
+    `../assets/image/User.png`,
+    import.meta.url
+  ).href;
+};
+
+const defaultImageStatus = ref(false);
+function handlePreviewDefault() {
+  // const reader = new FileReader();
+  fetch(getImageUrl())
+    .then((response) => response.blob()) // 將文件轉換為 Blob 對象
+    .then((blob) => {
+      // previewImageStatue.value = true;
+      defaultImageStatus.value = true;
+      fileBlob.value = blob;
+      console.log(blob)
+      // 當文件讀取成功時，設置 FileReader 的讀取操作
+      // reader.readAsDataURL(blob);
+      // reader.onload = () => {
+      //   previewImage.value = reader.result;
+      // };
+      // previewStatus.value = true;
+    })
+    .catch((error) => {
+      console.error("Error fetching local image:", error);
+    });
+}
+
+onMounted(() => {
+  handlePreviewDefault();
+});
+
 </script>
 
 <template>
   <div class="card-container">
     <div class="card-img">
-      <img src="../assets/image/103593601_p0.jpg" alt="" />
+      <img src="../assets/image/test.jpg" alt="" />
     </div>
     <div class="card-form">
       <div class="card-nav">
         <p class="card-nav-svg" @click="back()">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            enable-background="new 0 0 24 24"
-            height="24"
-            viewBox="0 0 24 24"
-            width="24"
-          >
+          <svg xmlns="http://www.w3.org/2000/svg" enable-background="new 0 0 24 24" height="24" viewBox="0 0 24 24"
+            width="24">
             <rect fill="none" height="24" width="24" />
             <g>
-              <polygon
-                points="17.77,3.77 16,2 6,12 16,22 17.77,20.23 9.54,12"
-              />
+              <polygon points="17.77,3.77 16,2 6,12 16,22 17.77,20.23 9.54,12" />
             </g>
           </svg>
           <span>Back</span>
@@ -99,6 +164,15 @@ function back() {
           <!-- 用戶輸入的資料都會作為user參數傳遞給handleRegister方法 -->
           <Form @submit="handleRegister" :validation-schema="schema">
             <div v-if="!successful">
+              <div class="card-select-img">
+                <img v-if="previewStatus" :src="previewImage" alt="" />
+                <img v-else :src="getImageUrl()" />
+              </div>
+              <div class="card-select-file">
+                <label type="button" for="fileInput"> Select Picture </label>
+                <input type="file" name="fileInput" id="fileInput" ref="file" @change="selectFile" />
+              </div>
+
               <div class="card-field">
                 <label for="username">Username*</label>
                 <Field id="username" name="username" type="text" class="form-control" placeholder=" " />
@@ -117,25 +191,14 @@ function back() {
 
               <div class="card-button-field">
                 <button class="card-button" :disabled="loading">
-                  <span
-                    v-show="loading"
-                    class="spinner-border spinner-border-sm"
-                  ></span>
+                  <span v-show="loading" class="spinner-border spinner-border-sm"></span>
                   Register Account
                 </button>
-                <!-- <div class="card-line-or">
-                  <p class="card-line"></p>
-                  <span>or</span>
-                </div> -->
               </div>
             </div>
           </Form>
-          
-          <div
-            v-if="message"
-            class="alert"
-            :class="successful ? 'alert-success' : 'alert-danger'"
-          >
+
+          <div v-if="message" class="alert" :class="successful ? 'alert-success' : 'alert-danger'">
             {{ message }}
           </div>
         </div>
@@ -147,7 +210,8 @@ function back() {
 <style lang="scss" scoped>
 @import "../assets/styles/layout/card";
 
-.error-feedback, .alert {
+.error-feedback,
+.alert {
   color: red;
   margin-top: 5px;
 }
