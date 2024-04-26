@@ -34,7 +34,7 @@ function handleRegister(user) {
   message.value = "";
   successful.value = false;
   if(!defaultImageStatus.value) {
-    file.value.files[0]
+    fileBlob.value = file.value.files[0]
   }
 
   let formData = new FormData();
@@ -77,6 +77,7 @@ const previewImageStatue = ref(false);
 
 function selectFile() {
   previewImageStatue.value = false;
+  defaultImageStatus.value = false;
   handlePreviewImg(file.value.files);
 }
 function handlePreviewImg(file) {
@@ -109,16 +110,9 @@ function handlePreviewDefault() {
   fetch(getImageUrl())
     .then((response) => response.blob()) // 將文件轉換為 Blob 對象
     .then((blob) => {
-      // previewImageStatue.value = true;
       defaultImageStatus.value = true;
       fileBlob.value = blob;
       console.log(blob)
-      // 當文件讀取成功時，設置 FileReader 的讀取操作
-      // reader.readAsDataURL(blob);
-      // reader.onload = () => {
-      //   previewImage.value = reader.result;
-      // };
-      // previewStatus.value = true;
     })
     .catch((error) => {
       console.error("Error fetching local image:", error);

@@ -3,7 +3,7 @@ import { RouterLink } from "vue-router";
 import { useRouter } from "vue-router";
 import { useAuthStore } from "../stores/auth.module";
 import { useUploadInfo } from "../stores/upload";
-import { computed } from "vue";
+import { computed, onMounted } from "vue";
 
 const uploadTab = useUploadInfo();
 
@@ -22,6 +22,21 @@ function logOut() {
 function setSelectedTab(tab) {
   uploadTab.setSelectedTab(tab);
 }
+
+function checkAuth() {
+  authStore.checkAuth();
+}
+
+function alertLogin() {
+  if (!currentUser.value) {
+    alert("Please sign in first.");
+    router.push("/signin");
+  }
+}
+
+onMounted(() => {
+  checkAuth();
+});
 </script>
 
 <template>
@@ -40,7 +55,7 @@ function setSelectedTab(tab) {
     <div class="navbar-nav">
       <div>
         <div class="navbar-login" v-if="!currentUser">
-          <RouterLink :to="{ path: '/chatroom' }" class="nav-link">
+          <RouterLink :to="{ path: '/chatroom' }" class="nav-link" @click="alertLogin()">
             <li class="nav-item">
               <font-awesome-icon :icon="['far', 'comments']" /> 聊天室
             </li>

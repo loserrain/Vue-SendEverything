@@ -35,9 +35,9 @@ window.addEventListener("message", (event) => {
 
 function loginNewGoogle() {
   // google登入畫面
-  const authUrl = "http://localhost:8088/oauth2/authorization/google";
+  // const authUrl = "http://localhost:8088/oauth2/authorization/google";
   // const authUrl = "/api/test/all";
-  // const authUrl = "http://nfu404.ddns.net/oauth2/authorization/google";
+  const authUrl = "https://imbig404.com/oauth2/authorization/google";
   window.open(authUrl, "_blank", "width=550,height=550");
 }
 

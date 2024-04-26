@@ -106,7 +106,7 @@ function handleLoginData(password, roomCode, roomType) {
 const boardType = ref("ASSIGNMENT_BOARD");
 
 function handleCreate(room) {
-  if(formData.pwd === undefined && isPrivateChecked.value) {
+  if(formData.value.pwd === undefined && isPrivateChecked.value) {
     alert("Please enter the password.");
     return;
   }

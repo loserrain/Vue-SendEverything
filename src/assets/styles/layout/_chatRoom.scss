@@ -1,8 +1,29 @@
+.loader {
+  position: absolute;
+  top: 6px;
+  left: 47%;
+  border: 3px solid #acacac;
+  border-radius: 50%;
+  border-top: 3px solid #4f4e4f;
+  width: 20px;
+  height: 20px;
+  z-index: 9999;
+  animation: spin 1.5s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
 .chatroom-container {
   display: flex;
   background-color: #eff5f5;
   border-radius: 30px;
-  // border: 1px solid #363737;
   box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.135);
   width: 1580px;
   height: 800px;
@@ -40,7 +61,7 @@
   .chatroom-user {
     width: 395px;
     height: 735px;
-    overflow-y: hidden;
+    overflow-y: scroll;
     .chatroom-user-info {
       display: flex;
       flex-direction: column;
@@ -80,11 +101,15 @@
         margin: 0 0 4px 19px;
       }
 
+      .active-chatroom {
+        transition: all 0.2s ease-in-out;
+        background-color: #d7e3e5;
+      }
+
       .chatroom-user-message {
         display: flex;
         justify-content: space-between;
         position: relative;
-        // background-color: #D7E3E5;
         border-radius: 17px;
         padding: 1.2rem 28px 1.2rem 19px;
         margin-bottom: 0.5rem;
@@ -129,19 +154,23 @@
     }
   }
 
-  .show-scrollbar-user {
-    overflow-y: auto;
-
-    .chatroom-user-info {
-      padding: 0 23px 2.5rem 35px;
+  .chatroom-message-wait {
+    .chatroom-message-wait-icon {
+      font-size: 100px;
+      top: 42%;
+      left: 41%;
     }
 
-    .chatroom-user-chats {
-      .chatroom-user-message {
-        padding: 1.2rem 16px 1.2rem 19px;
-      }
+    span {
+      position: absolute;
+      top: 53%;
+      left: 24%;
+      transform: translateY(-50%);
+      font-size: 80px;
+      font-weight: bold;
+      color: #e8e8e8;
+      user-select: none;
     }
-    
   }
 
   .chatroom-message {
@@ -195,47 +224,65 @@
       color: #d2d5db;
     }
 
-    
-
     .chatroom-message-content {
+      position: relative;
       padding-right: 2rem;
       margin-top: 1rem;
+      width: 613px;
       height: 540px;
-      overflow-y: hidden;
-
+      overflow-y: scroll;
+      word-break: break-all;
 
       .chatroom-message-receive {
         padding: 0 8rem 0 0;
         margin-bottom: 26px;
-        p {
-          display: inline-block;
-          padding: 12px 1rem;
-          border: 2px solid #edeef1;
-          border-radius: 12px;
+        width: 100%;
+        > div {
+          .chatroom-message-ID {
+            font-size: 14px;
+            color: #61656d;
+          }
+          p {
+            position: relative;
+            display: inline-block;
+            padding: 12px 1rem;
+            border: 2px solid #edeef1;
+            border-radius: 12px;
+
+            span {
+              position: absolute;
+              bottom: 0;
+              right: -2.3rem;
+              font-size: 12px;
+              color: #9fa8c4;
+            }
+          }
         }
       }
-  
+
       .chatroom-message-self {
         padding: 0 0 0 8rem;
-        margin-top: 26px;
+        margin: 13px 0;
         text-align: right;
         p {
+          position: relative;
           text-align: left;
           display: inline-block;
           padding: 12px 1rem;
           background-color: #eff5f5;
           border-radius: 12px;
           line-height: 20px;
+
+          span {
+            position: absolute;
+            bottom: 0;
+            left: -2.3rem;
+            font-size: 12px;
+            color: #9fa8c4;
+          }
         }
       }
     }
-
-    // 更改捲軸時的樣式設定
-    .show-scrollbar-content {
-      padding-right: 20px;
-      overflow-y: auto;
-    }
-
 
     .chatroom-message-send {
       position: absolute;
@@ -274,7 +321,7 @@
         gap: 8px;
         height: 40px;
         padding: 8px 10px 8px 16px;
-        background-color: #EB6440;
+        background-color: #2e89ca;
         border-radius: 10px;
         cursor: pointer;
 
@@ -295,7 +342,7 @@
     width: 395px;
     height: 740px;
     padding: 0 2.5rem;
-    overflow-y: hidden;
+    overflow-y: scroll;
 
     .chatroom-group-info {
       display: flex;
@@ -393,11 +440,6 @@
         }
       }
     }
-  }
-
-  .show-scrollbar-group {
-    padding: 0 28px 0 2.5rem;
-    overflow-y: auto;
   }
 }
 

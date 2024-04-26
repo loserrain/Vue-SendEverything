@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, watch } from "vue";
+import { ref, computed, onMounted, watch, nextTick } from "vue";
 import WorkCreateBoard from "./WorkCreateBoard.vue";
 import WorkUploadBoard from "./WorkUploadBoard.vue";
 import WorkDownloadBoard from "./WorkDownloadBoard.vue";
@@ -7,6 +7,11 @@ import WorkDeleteBoard from "./WorkDeleteBoard.vue";
 import { useAuthStore } from "../../stores/auth.module";
 import { useRouter } from "vue-router";
 import BoardUploadService from "../boardUploadService/BoardRoom.js";
+import chatService from "../../services/chatService";
+import API_URL from "../../services/API_URL";
+import webstomp from "webstomp-client";
+
+const contentRef = ref(null);
 
 const authStore = useAuthStore();
 
@@ -120,6 +125,60 @@ function formatFileSize(fileSize) {
   return { sizeValue, sizeUnit };
 }
 
+function showRoomContent(roomCode) {
+  BoardUploadService.showRoomContent(roomCode)
+    .then((response) => {
+      roomDataStatus.value = false;
+      roomData.value = response.data;
+      roomDataIsOwner.value = roomData.value.isRoomOwner;
+
+      // 判斷是否為房間擁有者與是否有登入
+      if (roomDataIsOwner.value && currentUser.value) {
+        roomData.value.dbRoomFiles = roomData.value.dbRoomFiles;
+      } else if (currentUser.value && !roomDataIsOwner.value) {
+        roomData.value.dbRoomFiles = roomData.value.dbRoomFiles.filter(
+          (roomFile) => roomFile.uploaderName === currentUser.value.username
+        );
+      } else {
+        roomData.value.dbRoomFiles = [];
+      }
+
+      // 判斷是否有檔案，若非房間擁有者且無檔案則不顯示檔案列表
+      if (roomData.value.dbRoomFiles.length > 0) {
+        roomDataFileStatus.value = true;
+      }
+
+      roomDataFileLength.value = roomData.value.dbRoomFiles.length;
+      handleRoomData(roomDataFileLength.value);
+      updataPageNumber();
+    })
+    .catch((error) => {
+      console.error(error);
+    });
+}
+
+const messagesTimeStamps = ref([]);
+async function chatGetNewMessages(roomCode) {
+  console.log(roomCode)
+  await chatService.getNewMessages(roomCode).then((response) => {
+    response.data.reverse();
+
+    for (let i = 0; i < response.data.length; i++) {
+      if (
+        response.data[i].chatRoomMessage.sender === currentUser.value.username
+      ) {
+        messageSenderStatus.value.push(true);
+      } else {
+        messageSenderStatus.value.push(false);
+      }
+      messages.value.push(response.data[i]);
+      messagesTimeStamps.value[i] = new Date(
+        messages.value[i].chatRoomMessage.timestamp
+      ).toLocaleString();
+    }
+  });
+}
+
 const roomCode = router.currentRoute.value.params.roomCode;
 const roomData = ref(undefined);
 const roomDataStatus = ref(true);
@@ -140,36 +199,9 @@ const roomDataIsOwner = ref(false);
 
 onMounted(() => {
   setTimeout(() => {
-    BoardUploadService.showRoomContent(roomCode)
-      .then((response) => {
-        roomDataStatus.value = false;
-        roomData.value = response.data;
-        roomDataIsOwner.value = roomData.value.isRoomOwner;
-
-        // 判斷是否為房間擁有者與是否有登入
-        if (roomDataIsOwner.value && currentUser.value) {
-          roomData.value.dbRoomFiles = roomData.value.dbRoomFiles;
-        } else if (currentUser.value && !roomDataIsOwner.value) {
-          roomData.value.dbRoomFiles = roomData.value.dbRoomFiles.filter(
-            (roomFile) => roomFile.uploaderName === currentUser.value.username
-          );
-        } else {
-          roomData.value.dbRoomFiles = [];
-        }
-
-        // 判斷是否有檔案，若非房間擁有者且無檔案則不顯示檔案列表
-        if (roomData.value.dbRoomFiles.length > 0) {
-          roomDataFileStatus.value = true;
-        }
-
-        roomDataFileLength.value = roomData.value.dbRoomFiles.length;
-        handleRoomData(roomDataFileLength.value);
-        updataPageNumber();
-      })
-      .catch((error) => {
-        console.error(error);
-      });
+    showRoomContent(roomCode);
   }, 1000);
+  chatGetNewMessages(roomCode);
 });
 
 function updataPageNumber() {
@@ -192,6 +224,122 @@ function clickPageNumber(page) {
     roomDataPageLength.value[i] = i;
   }
   roomActiveTab.value = page;
+}
+
+// 更新聊天室訊息，並將畫面滾動至最底部
+const scrollToBottom = () => {
+  nextTick(() => {
+    const contentElement = contentRef.value;
+    contentElement.scrollTop = contentElement.scrollHeight;
+  });
+};
+
+// chatRoom WebSocket
+const roomChatStatus = ref(false);
+function toggleRoomChatStatus(newStatus) {
+  roomChatStatus.value = newStatus;
+  connect();
+}
+function handleDisconnect() {
+  roomChatStatus.value = false;
+  stompClient.disconnect();
+}
+
+const username = ref("");
+const messageContent = ref("");
+const messages = ref([]);
+let stompClient = null;
+const messageSenderStatus = ref([]);
+
+const connect = () => {
+  // const socket = new WebSocket('wss://imbig404.com/websocket');
+  const socket = new WebSocket("ws://localhost:8088/websocket");
+  stompClient = webstomp.over(socket);
+  stompClient.connect({}, onConnected, onError);
+  username.value = currentUser.value.username;
+  scrollToBottom();
+};
+
+const onConnected = () => {
+  stompClient.subscribe(`/topic/${roomCode}`, onMessageReceived);
+};
+
+const onError = (error) => {
+  console.error(
+    "Could not connect to WebSocket server. Please refresh this page to try again!",
+    error
+  );
+};
+
+const sendMessage = () => {
+  if (messageContent.value.trim() && stompClient) {
+    const chatMessage = {
+      sender: username.value,
+      content: messageContent.value,
+      type: "CHAT",
+      roomCode: roomCode,
+    };
+    stompClient.send(
+      `/app/chat.sendMessage/${roomCode}`,
+      JSON.stringify(chatMessage),
+      {}
+    );
+    messageContent.value = "";
+  }
+};
+
+const onMessageReceived = (payload) => {
+  const message = JSON.parse(payload.body);
+  if (message.chatRoomMessage.sender === username.value) {
+    messageSenderStatus.value.push(true);
+  } else {
+    messageSenderStatus.value.push(false);
+  }
+  messages.value.push(message);
+  messagesTimeStamps.value.push(new Date(
+    message.chatRoomMessage.timestamp
+      ).toLocaleString());
+  scrollToBottom();
+};
+// 卷軸滾至最頂部時觸發
+const sendMessageTime = ref("");
+const sendMessageStatus = ref(false);
+function handleScroll(e) {
+  // 偵測卷軸是否在最頂部
+  let contentScroll = e.srcElement;
+  // 取得舊的卷軸高度
+  let oldContentScrollHeight = contentScroll.scrollHeight;
+  // 取得最舊的訊息時間
+  sendMessageTime.value = messages.value[0].chatRoomMessage.timestamp;
+  if (contentScroll.scrollTop === 0) {
+    sendMessageStatus.value = true;
+    setTimeout(async () => {
+      await chatService
+        .getMessages(roomCode, sendMessageTime.value)
+        .then((response) => {
+          for (let i = 0; i < response.data.length; i++) {
+            if (
+              response.data[i].chatRoomMessage.sender ===
+              currentUser.value.username
+            ) {
+              messageSenderStatus.value.unshift(true);
+            } else {
+              messageSenderStatus.value.unshift(false);
+            }
+            messages.value.unshift(response.data[i]);
+            messagesTimeStamps.value.unshift(
+              new Date(
+                messages.value[0].chatRoomMessage.timestamp
+              ).toLocaleString()
+            );
+          }
+        });
+      contentScroll.scrollTop =
+        contentScroll.scrollHeight - oldContentScrollHeight;
+
+      sendMessageStatus.value = false;
+    }, 1000);
+  }
 }
 </script>
 
@@ -220,6 +368,88 @@ function clickPageNumber(page) {
   </div>
 
   <div class="room-board-container">
+    <div
+      class="room-board-chatRoom-message"
+      @click="toggleRoomChatStatus(true)"
+    >
+      <img src="/src/assets/image/chatRoomLogo.png" alt="" />
+    </div>
+    <transition name="fade">
+      <div class="room-board-chatRoom" v-if="roomChatStatus">
+        <div class="room-board-chatRoom-top">
+          <div class="room-board-chatRoom-title">
+            <img
+              :src="'data:image/png;base64,' + roomData.roomResponse.image"
+              alt=""
+            />
+            <div>
+              <h2>{{ roomData.roomResponse.title }}</h2>
+              <h3>{{ roomData.roomResponse.description }}</h3>
+            </div>
+          </div>
+          <div class="room-board-chatRoom-icon">
+            <span @click="handleDisconnect()"
+              ><font-awesome-icon icon="xmark"
+            /></span>
+          </div>
+        </div>
+        <div
+          class="room-board-chatRoom-content"
+          ref="contentRef"
+          @scroll="handleScroll($event)"
+        >
+          <div class="loader" v-if="sendMessageStatus"></div>
+          <div>
+            <div
+              v-for="(message, index) in messages"
+              :key="index"
+              :class="
+                messageSenderStatus[index]
+                  ? 'room-board-chatRoom-self'
+                  : 'room-board-chatRoom-receive'
+              "
+            >
+              <div v-if="!messageSenderStatus[index]">
+                <img
+                  :src="`data:image/png;base64,${message.senderImage}`"
+                  alt=""
+                />
+                <div :data-timestamp="messagesTimeStamps[index]">
+                  {{ message.chatRoomMessage.content }}
+                  <p class="room-board-chatRoom-receive-ID">
+                    {{ message.chatRoomMessage.sender }}
+                  </p>
+                </div>
+              </div>
+              <p v-else :data-timestamp="messagesTimeStamps[index]">
+                {{ message.chatRoomMessage.content }}
+              </p>
+            </div>
+          </div>
+        </div>
+        <div class="room-board-chatRoom-send">
+          <span class="room-board-chatRoom-clip"
+            ><font-awesome-icon icon="paperclip"
+          /></span>
+          <div class="room-board-chatRoom-input">
+            <label for="message"></label>
+            <input
+              type="text"
+              name="message"
+              id="message"
+              v-model="messageContent"
+              @keyup.enter="sendMessage()"
+              :disabled="!currentUser"
+            />
+            <div v-if="!currentUser">Ban messages.</div>
+          </div>
+          <span @click="sendMessage()" class="room-board-chatRoom-plane"
+            ><font-awesome-icon :icon="['far', 'paper-plane']"
+          /></span>
+        </div>
+      </div>
+    </transition>
+
     <div class="room-board-sidebar">
       <div class="room-board-sidebar-search">
         <p>Room Search</p>
@@ -403,6 +633,21 @@ function clickPageNumber(page) {
 
 <style scoped lang="scss">
 @import "../../assets/styles/layout/board/roomBoard";
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+.fade-enter-to,
+.fade-leave-from {
+  opacity: 1;
+}
 
 .room-board-main-room {
   .room-board-main-trash {
