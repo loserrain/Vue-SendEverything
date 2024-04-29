@@ -65,7 +65,7 @@ function formatFileSize(fileSize) {
     sizeUnit = "GB";
   }
 
-  return { sizeValue, sizeUnit };
+  return `${sizeValue} ${sizeUnit}`;
 }
 
 // 儲存拖曳上傳的檔案
@@ -123,10 +123,7 @@ function handleFileSelectAndDrop(file) {
   }
   for (let i = 0; i < file.length; i++) {
     fileList.value.push(file[i]);
-    let formattedSize = formatFileSize(file[i].size);
-    selectFileSize.value.push(
-      `${formattedSize.sizeValue}  ${formattedSize.sizeUnit}`
-    );
+    selectFileSize.value.push(formatFileSize(file[i].size));
     progress.value.push(0);
   }
   fileUploadStatus.value = false;
@@ -191,8 +188,7 @@ function updateSelectedZipFileSize() {
   for (let i = 0; i < fileList.value.length; i++) {
     selectedZipFileSize.value += parseFloat(fileList.value[i].size);
   }
-  let formattedSize = formatFileSize(selectedZipFileSize.value);
-  selectedZipFileSize.value = `${formattedSize.sizeValue}  ${formattedSize.sizeUnit}`;
+  selectedZipFileSize.value = formatFileSize(selectedZipFileSize.value);
 }
 // 監聽zip檔案狀態，若為true，則更新zip檔案大小，並為zip檔案命名
 watch(zipFileStatus, (newValue) => {

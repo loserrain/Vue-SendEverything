@@ -25,7 +25,7 @@
   background-color: #eff5f5;
   border-radius: 30px;
   box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.135);
-  width: 1580px;
+  width: 1600px;
   height: 800px;
   margin: 36px auto 0;
   padding: 30px 0 0 50px;
@@ -222,6 +222,11 @@
       font-size: 14px;
       font-weight: bold;
       color: #d2d5db;
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 1;
+      word-break: break-all;
+      overflow: hidden;
     }
 
     .chatroom-message-content {
@@ -339,9 +344,9 @@
   }
 
   .chatroom-group {
-    width: 395px;
+    width: 420px;
     height: 740px;
-    padding: 0 2.5rem;
+    padding: 0 1rem 0 1.5rem;
     overflow-y: scroll;
 
     .chatroom-group-info {
@@ -349,7 +354,7 @@
       flex-direction: column;
       align-items: center;
       margin: 2.5rem 0 1.5rem;
-      padding: 0 0 2rem;
+      padding: 0 0 1rem;
       position: relative;
 
       .chatroom-group-image {
@@ -376,7 +381,21 @@
       .chatroom-group-display {
         display: flex;
         gap: 4rem;
-        margin-top: 1.5rem;
+        margin-top: 2rem;
+
+        .chatroom-group-room-link {
+          span {
+            font-size: 32px;
+            color: #363737;
+            background-color: #d7e3e5;
+            border-radius: 50%;
+            padding: 10px;
+            cursor: pointer;
+          }
+          p {
+            margin: 1rem 0 0 5px;
+          }
+        }
 
         img {
           width: 60px;
@@ -396,20 +415,36 @@
         font-size: 22px;
         font-weight: bold;
         color: #363737;
+        margin: 0 1rem;
+
+        span {
+          font-size: 14px;
+          color: #9fa8c4;
+        }
       }
 
       .chatroom-group-shared-file {
         display: flex;
         justify-content: space-between;
-        margin: 1.2rem 0 1.2rem;
+        margin: 0.7rem 0 0.7rem;
+        padding: 0.5rem 1rem;
+        position: relative;
+        // background-color: #d7e3e5;
+        // border-radius: 16px;
+        cursor: pointer;
+
+        &:hover {
+          background-color: #d7e3e5;
+          border-radius: 16px;
+        }
 
         .chatroom-group-file-info {
           display: flex;
           align-items: center;
           gap: 14px;
-          img {
-            width: 40px;
-            border-radius: 8px;
+          span {
+            font-size: 28px;
+            color: #497174;
           }
 
           div {
@@ -437,6 +472,12 @@
           font-weight: bold;
           color: #4e4f4f;
           margin-top: 4px;
+        }
+        .chatroom-file-line {
+          position: absolute;
+          bottom: -4px;
+          border-bottom: 2px solid #e0e5e7;
+          width: 340px;
         }
       }
     }

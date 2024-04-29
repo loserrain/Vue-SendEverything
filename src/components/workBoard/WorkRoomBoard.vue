@@ -8,8 +8,8 @@ import { useAuthStore } from "../../stores/auth.module";
 import { useRouter } from "vue-router";
 import BoardUploadService from "../boardUploadService/BoardRoom.js";
 import chatService from "../../services/chatService";
-import API_URL from "../../services/API_URL";
 import webstomp from "webstomp-client";
+import { encryptMessage, decrypt } from "../cryptoUtils/CryptoUtils";
 
 const contentRef = ref(null);
 
@@ -93,10 +93,7 @@ function handleRoomData(length) {
     roomData.value.dbRoomFiles[i].timestamp = new Date(
       roomData.value.dbRoomFiles[i].timestamp
     ).toLocaleString();
-    let formattedSize = formatFileSize(roomData.value.dbRoomFiles[i].fileSize);
-    roomDataFileSize.value.push(
-      `${formattedSize.sizeValue}  ${formattedSize.sizeUnit}`
-    );
+    roomDataFileSize.value.push(formatFileSize(roomData.value.dbRoomFiles[i].fileSize));
   }
 }
 
@@ -122,7 +119,7 @@ function formatFileSize(fileSize) {
     sizeUnit = "GB";
   }
 
-  return { sizeValue, sizeUnit };
+  return `${sizeValue} ${sizeUnit}`;
 }
 
 function showRoomContent(roomCode) {
@@ -172,6 +169,9 @@ async function chatGetNewMessages(roomCode) {
         messageSenderStatus.value.push(false);
       }
       messages.value.push(response.data[i]);
+      messages.value[i].chatRoomMessage.content = decrypt(
+        messages.value[i].chatRoomMessage.content
+      );
       messagesTimeStamps.value[i] = new Date(
         messages.value[i].chatRoomMessage.timestamp
       ).toLocaleString();
@@ -279,6 +279,7 @@ const sendMessage = () => {
       type: "CHAT",
       roomCode: roomCode,
     };
+    chatMessage.content = encryptMessage(chatMessage.content);
     stompClient.send(
       `/app/chat.sendMessage/${roomCode}`,
       JSON.stringify(chatMessage),
@@ -290,6 +291,7 @@ const sendMessage = () => {
 
 const onMessageReceived = (payload) => {
   const message = JSON.parse(payload.body);
+  message.chatRoomMessage.content = decrypt(message.chatRoomMessage.content);
   if (message.chatRoomMessage.sender === username.value) {
     messageSenderStatus.value.push(true);
   } else {
@@ -327,6 +329,10 @@ function handleScroll(e) {
               messageSenderStatus.value.unshift(false);
             }
             messages.value.unshift(response.data[i]);
+            // 解密訊息
+            messages.value[0].chatRoomMessage.content = decrypt(
+              messages.value[0].chatRoomMessage.content
+            );
             messagesTimeStamps.value.unshift(
               new Date(
                 messages.value[0].chatRoomMessage.timestamp

@@ -48,7 +48,9 @@ import {
   faPaperclip,
   faBarsStaggered,
   faComment,
-  faMessage
+  faMessage,
+  faHouse,
+  faCommentMedical
 } from "@fortawesome/free-solid-svg-icons";
 
 library.add(
@@ -70,6 +72,7 @@ library.add(
     faLockOpen,
     faClockRotateLeft,
     faHouseUser,
+    faHouse,
     faChevronRight,
     faChevronLeft,
     faSignInAlt,
@@ -96,7 +99,8 @@ library.add(
     faComments,
     faBarsStaggered,
     faComment,
-    faMessage
+    faMessage,
+    faCommentMedical
   );
 
   export { FontAwesomeIcon };

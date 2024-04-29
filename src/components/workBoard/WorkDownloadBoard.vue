@@ -90,7 +90,7 @@ function formatFileSize(fileSize) {
     sizeUnit = "GB";
   }
 
-  return { sizeValue, sizeUnit };
+  return `${sizeValue} ${sizeUnit}`;
 }
 
 // download
@@ -101,10 +101,9 @@ function handleRoomDataDBFiles(dataFilesLength) {
   for (let i = 0; i < dataFilesLength; i++) {
     // 驗證檔案大小是否為數字
     if (Number(roomDataDBFiles.value[i].fileSize)) {
-      let formattedSize = formatFileSize(roomDataDBFiles.value[i].fileSize);
       roomDataDBFiles.value[
         i
-      ].fileSize = `${formattedSize.sizeValue} ${formattedSize.sizeUnit}`;
+      ].fileSize = formatFileSize(roomDataDBFiles.value[i].fileSize);
     } else {
       return;
     }

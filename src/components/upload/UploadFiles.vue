@@ -75,7 +75,7 @@ function formatFileSize(fileSize) {
     sizeUnit = "GB";
   }
 
-  return { sizeValue, sizeUnit };
+  return `${sizeValue} ${sizeUnit}`;
 }
 
 // 儲存拖曳上傳的檔案
@@ -123,15 +123,11 @@ function handleFileSelectAndDrop(file) {
 
     // 計算傳給Upload.vue的Name與Size
     sendEmitFileName.value.push(shortenFileName(file[i].name, 12, 4, -8));
-    let formattedSize = formatFileSize(file[i].size);
-    sendEmitFileSize.value.push(
-      `${formattedSize.sizeValue} ${formattedSize.sizeUnit}`
-    );
+    sendEmitFileSize.value.push(formatFileSize(file[i].size));
     TotalFileSize.value += file[i].size;
   }
 
-  let formattedTotalSize = formatFileSize(TotalFileSize.value);
-  sendTotalFileSize.value = `${formattedTotalSize.sizeValue} ${formattedTotalSize.sizeUnit}`;
+  sendTotalFileSize.value = formatFileSize(TotalFileSize.value);
   // 計算傳給Upload.vue的檔案列表狀態(是否顯現)
   sendFileStatus.value = true;
 
@@ -226,8 +222,7 @@ function uploadGetFiles() {
     );
 
     let formattedSizes = fileSizes.map((size) => {
-      const formattedSize = formatFileSize(size);
-      return `${formattedSize.sizeValue} ${formattedSize.sizeUnit}`;
+      return formatFileSize(size);
     });
     shortFileName(fileNames);
     if (fileNames.length === fileSizes.length) {
@@ -476,12 +471,11 @@ async function uploadChunks() {
   }
 
   // 決定檔案大小的單位
-  const formattedSize = formatFileSize(fileSize);
 
   // 上傳檔案區
   const fileInfo = {
     fileName: fileNames,
-    fileSize: `${formattedSize.sizeValue} ${formattedSize.sizeUnit}`,
+    fileSize: formatFileSize(fileSize),
   };
 
   fileReceive.value.push(fileInfo);

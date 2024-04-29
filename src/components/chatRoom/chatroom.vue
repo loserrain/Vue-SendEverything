@@ -1,11 +1,16 @@
 <script setup>
-import { ref, onMounted, computed, nextTick } from "vue";
-import CryptoJS from "crypto-js";
+import { ref, onMounted, computed, nextTick, watch } from "vue";
 import { useAuthStore } from "../../stores/auth.module";
+import { useRouter } from "vue-router";
 import webstomp from "webstomp-client";
 import chatService from "../../services/chatService";
+import BoardUploadService from "../boardUploadService/BoardRoom.js";
+import createSecretRoom from "./createSecretRoom.vue";
+import API_URL from "../../services/API_URL";
+import { encryptMessage, decrypt } from "../cryptoUtils/CryptoUtils";
 
 const authStore = useAuthStore();
+const router = useRouter();
 
 // 取得使用者資料
 const currentUser = computed(() => {
@@ -27,37 +32,45 @@ const getDefaultImageUrl = () => {
 };
 
 const chatIconType = {
+  COMMENTS: "COMMENTS",
   COMMENT: "COMMENT",
   GEAR: "GEAR",
 };
 
-const activeTab = ref(chatIconType.COMMENT);
-
+const activeTab = ref(chatIconType.COMMENTS);
 const handleTabClick = (tab) => {
   activeTab.value = tab;
+  chatGetMessageByUser();
 };
 
 const messagesTimeStamps = ref([]);
 const messagesStatus = ref(false);
+const chatRoomInfoStatus = ref(false);
 async function chatGetNewMessages(roomCode) {
-  await chatService.getNewMessages(roomCode).then((response) => {
+  await chatService.getNewChatMessages(roomCode).then((response) => {
     response.data.reverse();
     messages.value = [];
-    for (let i = 0; i < response.data.length; i++) {
-      if (
-        response.data[i].chatRoomMessage.sender === currentUser.value.username
-      ) {
-        messageSenderStatus.value.push(true);
-      } else {
-        messageSenderStatus.value.push(false);
-      }
-      messages.value.push(response.data[i]);
-      messagesTimeStamps.value[i] = new Date(
-        messages.value[i].chatRoomMessage.timestamp
-      ).toLocaleString([], { hour: '2-digit', minute: '2-digit', hour12: false });
-    }
+    messageSenderStatus.value = [];
+    messagesTimeStamps.value = [];
+    messageSenderStatus.value = response.data.map(
+      (message) => message.chatRoomMessage.sender === currentUser.value.username
+    );
+    messages.value = response.data.map((message) => ({
+      ...message,
+      chatRoomMessage: {
+        ...message.chatRoomMessage,
+        content: decrypt(message.chatRoomMessage.content),
+      },
+    }));
+    messagesTimeStamps.value = response.data.map((message) =>
+      formatTime(message.chatRoomMessage.timestamp)
+    );
     messagesStatus.value = true;
-    console.log("messages.value", messages.value);
+    if (activeTab.value === chatIconType.COMMENTS) {
+      chatRoomInfoStatus.value = true;
+    } else {
+      chatRoomInfoStatus.value = false;
+    }
   });
   scrollToBottom();
 }
@@ -67,7 +80,9 @@ const contentRef = ref(null);
 const scrollToBottom = () => {
   nextTick(() => {
     const contentElement = contentRef.value;
-    contentElement.scrollTop = contentElement.scrollHeight;
+    if (contentElement) {
+      contentElement.scrollTop = contentElement.scrollHeight;
+    }
   });
 };
 
@@ -78,7 +93,7 @@ let stompClient = false;
 const messageSenderStatus = ref([]);
 const chatRoomCode = ref("");
 
-const connect = () => {
+const connect = async () => {
   // const socket = new WebSocket('wss://imbig404.com/websocket');
   const socket = new WebSocket("ws://localhost:8088/websocket");
   stompClient = webstomp.over(socket);
@@ -89,9 +104,6 @@ const connect = () => {
 
 const onConnected = () => {
   stompClient.subscribe(`/topic/${chatRoomCode.value}`, onMessageReceived);
-  // stompClient.subscribe(`/topic/GATADODI`, onMessageReceived);
-  const jsonData = { sender: username.value, type: "JOIN" };
-  const jsonString = JSON.stringify(jsonData);
 };
 
 const onError = (error) => {
@@ -109,6 +121,7 @@ const sendMessage = () => {
       type: "CHAT",
       roomCode: chatRoomCode.value,
     };
+    chatMessage.content = encryptMessage(chatMessage.content);
     stompClient.send(
       `/app/chat.sendMessage/${chatRoomCode.value}`,
       JSON.stringify(chatMessage),
@@ -120,15 +133,23 @@ const sendMessage = () => {
 
 const onMessageReceived = (payload) => {
   const message = JSON.parse(payload.body);
+  message.chatRoomMessage.content = decrypt(message.chatRoomMessage.content);
   if (message.chatRoomMessage.sender === username.value) {
     messageSenderStatus.value.push(true);
   } else {
     messageSenderStatus.value.push(false);
   }
   messages.value.push(message);
-  messagesTimeStamps.value.push(
-    new Date(message.chatRoomMessage.timestamp).toLocaleString([], { hour: '2-digit', minute: '2-digit', hour12: false })
+  const roomToUpdate = chatRoomInfo.value.find(
+    (room) => room.chatRoomCode === chatRoomCode.value
   );
+  if (roomToUpdate) {
+    roomToUpdate.chatRoomMessage = message.chatRoomMessage.content;
+    roomToUpdate.chatRoomTime = message.chatRoomMessage.timestamp;
+    roomToUpdate.formattedTime = formatTime(message.chatRoomMessage.timestamp);
+  }
+  messagesTimeStamps.value.push(formatTime(message.chatRoomMessage.timestamp));
+  chatRoomInfoSort();
   scrollToBottom();
 };
 
@@ -142,69 +163,212 @@ function handleScroll(e) {
   let oldContentScrollHeight = contentScroll.scrollHeight;
   // 取得最舊的訊息時間
   sendMessageTime.value = messages.value[0].chatRoomMessage.timestamp;
+
   if (contentScroll.scrollTop === 0) {
     sendMessageStatus.value = true;
     setTimeout(async () => {
       await chatService
-        .getMessages(chatRoomMessage.value, sendMessageTime.value)
+        .getMessages(chatRoomCode.value, sendMessageTime.value)
         .then((response) => {
-          for (let i = 0; i < response.data.length; i++) {
-            if (
-              response.data[i].chatRoomMessage.sender ===
-              currentUser.value.username
-            ) {
+          response.data.forEach((message) => {
+            if (message.chatRoomMessage.sender === currentUser.value.username) {
               messageSenderStatus.value.unshift(true);
             } else {
               messageSenderStatus.value.unshift(false);
             }
-            messages.value.unshift(response.data[i]);
+            messages.value.unshift({
+              ...message,
+              chatRoomMessage: {
+                ...message.chatRoomMessage,
+                content: decrypt(message.chatRoomMessage.content),
+              },
+            });
             messagesTimeStamps.value.unshift(
-              new Date(
-                messages.value[0].chatRoomMessage.timestamp
-              ).toLocaleString([], { hour: '2-digit', minute: '2-digit', hour12: false })
+              formatTime(message.chatRoomMessage.timestamp)
             );
-          }
+          });
         });
       contentScroll.scrollTop =
         contentScroll.scrollHeight - oldContentScrollHeight;
-
       sendMessageStatus.value = false;
     }, 1000);
   }
 }
 
-function handleDisconnect() {
-  roomChatStatus.value = false;
-  stompClient.disconnect();
+// 聊天室最新訊息更新
+function handleChatRoomTopInfo(roomCode) {
+  chatRoomInfo.value.forEach((room) => {
+    if (room.chatRoomCode === roomCode) {
+      chatRoomTopInfo.value = {
+        roomCode: room.chatRoomCode,
+        roomDescription: room.chatRoomDescription,
+        roomImage: room.chatRoomImage,
+        roomType: room.chatRoomType,
+      };
+    }
+  });
 }
 
-const activeChatRoomIndex = ref(-1);
-function handleClickChatRoom(roomCode, roomDescription, index) {
-  if(stompClient) {
+function formatFileSize(fileSize) {
+  const KB = 1024;
+  const MB = KB * 1024;
+  const GB = MB * 1024;
+
+  let sizeUnit;
+  let sizeValue;
+
+  if (fileSize < KB) {
+    sizeValue = fileSize;
+    sizeUnit = "B";
+  } else if (fileSize < MB) {
+    sizeValue = (fileSize / KB).toFixed(0);
+    sizeUnit = "KB";
+  } else if (fileSize < GB) {
+    sizeValue = (fileSize / MB).toFixed(2);
+    sizeUnit = "MB";
+  } else {
+    sizeValue = (fileSize / GB).toFixed(2);
+    sizeUnit = "GB";
+  }
+
+  return `${sizeValue} ${sizeUnit}`;
+}
+
+// 聊天室檔案資訊
+const chatRoomFilesInfo = ref([]);
+async function ChatRoomGetFileInfo(roomCode) {
+  await chatService.getFileInfoByRoomCode(roomCode).then(({ data }) => {
+    const { fileNameResponse, boardType } = data;
+    chatRoomFilesInfo.value = {
+      boardType: boardType === "BULLETIN_BOARD" ? "RoomBoard" : "WorkRoomBoard",
+      fileNameResponse: fileNameResponse.map((file) => ({
+        ...file,
+        fileSize: formatFileSize(file.fileSize),
+        formattedTime: new Date(file.createdAt).toLocaleString(),
+      })),
+    };
+    chatRoomFilesInfo.value.fileNameResponse.sort(
+      (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+    );
+  });
+}
+
+// 下載檔案
+async function charRoomFileDownload(index) {
+  const fileCode =
+    chatRoomFilesInfo.value.fileNameResponse[index].verificationCode;
+  const url = `${API_URL}/downloadRoomFileByCode/${fileCode}`;
+  console.log(fileCode);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
+// 舊款程式碼
+// function ChatRoomGetFileInfo(roomCode) {
+//   chatService.getFileInfoByRoomCode(roomCode).then((response) => {
+//     chatRoomFilesInfo.value = response.data;
+//     chatRoomFilesInfo.value.fileNameResponse.sort(
+//       (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+//     );
+//     chatRoomFilesInfo.value.fileNameResponse.forEach((file) => {
+//       file.fileSize = formatFileSize(file.fileSize);
+//       file.formattedTime = new Date(file.createdAt).toLocaleString();
+//     });
+//     chatRoomFilesInfo.value.boardType === "BulletinBoard"
+//       ? (chatRoomFilesInfo.value.boardType = "BulletinBoard")
+//       : (chatRoomFilesInfo.value.boardType = "WorkRoomBoard");
+//   });
+// }
+
+const activeChatRoomIndex = ref(undefined);
+async function handleClickChatRoom(roomCode) {
+  if (stompClient) {
     stompClient.disconnect();
   }
   chatRoomCode.value = roomCode;
   connect();
-  chatGetNewMessages(roomCode);
-  chatRoomTopInfo.value = {
-    roomCode: roomCode,
-    roomDescription: roomDescription,
-  };
-  activeChatRoomIndex.value = index;
+  await chatGetNewMessages(roomCode);
+  ChatRoomGetFileInfo(roomCode);
+  handleChatRoomTopInfo(roomCode);
+  activeChatRoomIndex.value = roomCode;
 }
 
 const chatRoomInfo = ref({});
-const chatRoomTime = ref({});
 const chatRoomTopInfo = ref({});
 
+// 聊天室資訊排序
+function chatRoomInfoSort() {
+  chatRoomInfo.value.sort((a, b) => {
+    return new Date(b.chatRoomTime) - new Date(a.chatRoomTime);
+  });
+}
+
+function formatTime(time) {
+  return new Date(time).toLocaleString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+}
+
+async function chatGetMessageByUser() {
+  if (activeTab.value === chatIconType.COMMENTS) {
+    await chatService.getMessageByUser().then((response) => {
+      chatRoomInfo.value = response.data.map((message) => ({
+        ...message,
+        chatRoomMessage: decrypt(message.chatRoomMessage),
+        formattedTime: formatTime(message.chatRoomTime),
+      }));
+      chatRoomInfoSort();
+    });
+  } else {
+    await chatService.getSecretMessageByUser().then((response) => {
+      chatRoomInfo.value = response.data.map((message) => ({
+        ...message,
+        chatRoomMessage: decrypt(message.chatRoomMessage),
+        formattedTime: formatTime(message.chatRoomTime),
+      }));
+      chatRoomInfoSort();
+    });
+  }
+}
+
 onMounted(() => {
-  chatService.getMessageByUser().then((response) => {
-    chatRoomInfo.value = response.data;
-    for (let i = 0; i < chatRoomInfo.value.length; i++) {
-      chatRoomTime.value[i] = new Date(chatRoomInfo.value[i].chatRoomTime).toLocaleString([], { hour: '2-digit', minute: '2-digit', hour12: false });
-    }
-  })
+  chatGetMessageByUser();
 });
+
+async function chatRoomAccessRoom() {
+  try {
+    if (chatRoomTopInfo.value.roomType === "PRIVATE") {
+      const response = await BoardUploadService.verifyCookie(
+        chatRoomTopInfo.value.roomCode
+      );
+      if (response.status === 200) {
+        router.push({
+          name: `${chatRoomFilesInfo.value.boardType}`,
+          params: { roomCode: chatRoomTopInfo.value.roomCode },
+        });
+      }
+    } else {
+      await BoardUploadService.accessRoom(
+        "",
+        chatRoomTopInfo.value.roomCode,
+        "PUBLIC"
+      );
+      router.push({
+        name: `${chatRoomFilesInfo.value.boardType}`,
+        params: { roomCode: chatRoomTopInfo.value.roomCode },
+      });
+    }
+  } catch (error) {
+    console.log(error);
+    alert("Access denied");
+  }
+}
 
 // ----------------------------------------測試-----------------------------------
 // // 假設 DH 演算法生成的共享密鑰是一個數字
@@ -235,46 +399,63 @@ onMounted(() => {
 //   return key;
 // }
 
-// function encryptMessage(message) {
-//   const keyStr = "tdjyyxxytdjyyxxy";
-//   const key = CryptoJS.enc.Utf8.parse(keyStr);
-//   const srcs = CryptoJS.enc.Utf8.parse(message);
-//   const encrypted = CryptoJS.AES.encrypt(srcs, key, {
-//     mode: CryptoJS.mode.ECB,
-//     padding: CryptoJS.pad.Pkcs7,
-//   });
-//   return encrypted.toString();
-// }
 
-// function decrypt(word) {
-//   const keyStr = "tdjyyxxytdjyyxxy";
-//   const key = CryptoJS.enc.Utf8.parse(keyStr);
-//   const decrypt = CryptoJS.AES.decrypt(word, key, {
-//     mode: CryptoJS.mode.ECB,
-//     padding: CryptoJS.pad.Pkcs7,
-//   });
-//   return CryptoJS.enc.Utf8.stringify(decrypt).toString();
-// }
 // console.log("Test: ", encryptMessage("Hello World!"));
 // console.log(decrypt("+VNT0XaJEhtsdKbS8un/Yg=="));
 
-// let par2 = {
-//   name: "Dana Cora",
-// };
-
 // console.log(encryptMessage(JSON.stringify(par2)));
-// console.log(decrypt("VOWeEfJbIFpvRPJwahVmyio3/SnI1zpSOJAGIqWb4pU="));
+// console.log(decrypt(encryptMessage(JSON.stringify(par2))));
+// ----------------------------------------測試-----------------------------------
 
+const createStatus = ref(false);
+function handleSendCreateStatus(newStatus) {
+  if (currentUser.value !== null) {
+    createStatus.value = newStatus;
+  } else {
+    return alert("Please login first.");
+  }
+}
+
+async function handleSendCreateCode(code) {
+  chatRoomCode.value = code;
+  await connect();
+  messageContent.value = `${username.value} create a new secret room.`;
+  await new Promise((resolve) => setTimeout(resolve, 300));
+  sendMessage();
+  activeTab.value = chatIconType.COMMENT;
+  chatGetMessageByUser();
+  handleSendCreateStatus(false);
+}
 </script>
 
 <template>
+  <div v-if="createStatus">
+    <createSecretRoom
+      @send-create-status="handleSendCreateStatus"
+      @send-create-code="handleSendCreateCode"
+    ></createSecretRoom>
+  </div>
   <div class="chatroom-container">
     <div class="chatroom-sidebar">
       <span><font-awesome-icon icon="bars-staggered" /></span>
-      <span :class="[{ 'chatroom-sidebar-click': activeTab === 'COMMENT' }]"
-        @click="handleTabClick('COMMENT')"><font-awesome-icon icon="comment" /></span>
-      <span :class="[{ 'chatroom-sidebar-click': activeTab === 'GEAR' }]"
-        @click="handleTabClick('GEAR')"><font-awesome-icon icon="gear" /></span>
+      <span
+        :class="[{ 'chatroom-sidebar-click': activeTab === 'COMMENTS' }]"
+        @click="handleTabClick('COMMENTS')"
+        ><font-awesome-icon :icon="['far', 'comments']"
+      /></span>
+      <span
+        :class="[{ 'chatroom-sidebar-click': activeTab === 'COMMENT' }]"
+        @click="handleTabClick('COMMENT')"
+        ><font-awesome-icon icon="comment"
+      /></span>
+      <span @click="handleSendCreateStatus(true)"
+        ><font-awesome-icon icon="comment-medical"
+      /></span>
+      <span
+        :class="[{ 'chatroom-sidebar-click': activeTab === 'GEAR' }]"
+        @click="handleTabClick('GEAR')"
+        ><font-awesome-icon icon="gear"
+      /></span>
     </div>
     <div class="chatroom-user">
       <div class="chatroom-user-info">
@@ -287,37 +468,61 @@ onMounted(() => {
       </div>
       <div class="chatroom-user-chats">
         <h2>Chats</h2>
-        <div class="chatroom-user-message" v-for="(chatRoom, index) in chatRoomInfo"
-          @click="handleClickChatRoom(chatRoom.chatRoomCode, chatRoom.chatRoomDescription, index)"
-          :class="{ 'active-chatroom': index === activeChatRoomIndex }">
+        <div
+          class="chatroom-user-message"
+          v-for="(chatRoom, index) in chatRoomInfo"
+          @click="handleClickChatRoom(chatRoom.chatRoomCode)"
+          :class="{
+            'active-chatroom': chatRoom.chatRoomCode === activeChatRoomIndex,
+          }"
+        >
           <div class="chatroom-user-message-text">
-            <img :src="'data:image/png;base64,' + chatRoom.chatRoomImage" alt="" />
+            <img
+              :src="'data:image/png;base64,' + chatRoom.chatRoomImage"
+              alt=""
+            />
             <div>
               <h3>{{ chatRoom.chatRoomTitle }}</h3>
               <p>{{ chatRoom.chatRoomMessage }}</p>
             </div>
           </div>
           <div class="chatroom-user-message-date">
-            <p>{{ chatRoomTime[index] }}</p>
+            <p>{{ chatRoom.formattedTime }}</p>
           </div>
           <div class="chatroom-line"></div>
         </div>
       </div>
     </div>
+    <div></div>
     <div class="chatroom-message" v-if="messagesStatus">
       <div class="chatroom-message-search">
         <span><font-awesome-icon icon="fa-solid fa-magnifying-glass" /></span>
         <label for="search"></label>
-        <input type="text" name="search" id="search" placeholder="Search" autocomplete="off" />
+        <input
+          type="text"
+          name="search"
+          id="search"
+          placeholder="Search"
+          autocomplete="off"
+        />
       </div>
       <h2>{{ chatRoomTopInfo.roomCode }}</h2>
       <h4>{{ chatRoomTopInfo.roomDescription }}</h4>
-      <div class="chatroom-message-content" ref="contentRef" @scroll="handleScroll($event)">
+      <div
+        class="chatroom-message-content"
+        ref="contentRef"
+        @scroll="handleScroll($event)"
+      >
         <div class="loader" v-if="sendMessageStatus"></div>
-        <div v-for="(message, index) in messages" :key="index" :class="messageSenderStatus[index]
-        ? 'chatroom-message-self'
-        : 'chatroom-message-receive'
-        ">
+        <div
+          v-for="(message, index) in messages"
+          :key="index"
+          :class="
+            messageSenderStatus[index]
+              ? 'chatroom-message-self'
+              : 'chatroom-message-receive'
+          "
+        >
           <div v-if="!messageSenderStatus[index]">
             <div class="chatroom-message-ID">
               {{ message.chatRoomMessage.sender }}
@@ -329,18 +534,29 @@ onMounted(() => {
               </span>
             </p>
           </div>
-          <p v-else :data-timestamp="messagesTimeStamps[index]">{{ message.chatRoomMessage.content }}<span>
+          <p v-else>
+            {{ message.chatRoomMessage.content
+            }}<span>
               {{ messagesTimeStamps[index] }}
-            </span></p>
+            </span>
+          </p>
         </div>
       </div>
 
       <div class="chatroom-message-send">
-        <span class="chatroom-message-send-clip"><font-awesome-icon icon="paperclip" /></span>
+        <span class="chatroom-message-send-clip"
+          ><font-awesome-icon icon="paperclip"
+        /></span>
         <div class="chatroom-message-send-input">
           <label for="message"></label>
-          <input type="text" name="message" id="message" autocomplete="off" @keyup.enter="sendMessage()"
-            v-model="messageContent" />
+          <input
+            type="text"
+            name="message"
+            id="message"
+            autocomplete="off"
+            @keyup.enter="sendMessage()"
+            v-model="messageContent"
+          />
         </div>
         <div class="chatroom-message-send-plane" @click="sendMessage()">
           <p>Send</p>
@@ -356,43 +572,56 @@ onMounted(() => {
         <span>Message</span>
       </div>
     </div>
-    <div class="chatroom-group">
+    <div class="chatroom-group" v-if="chatRoomInfoStatus">
       <div class="chatroom-group-info">
         <div class="chatroom-group-image">
-          <img src="@/assets/image/Default_picture5.jpg" alt="" />
+          <img
+          :src="chatRoomTopInfo.roomImage ? 'data:image/png;base64,' + chatRoomTopInfo.roomImage : ''"
+            alt=""
+          />
         </div>
-        <h2>Haurka51</h2>
-        <p>之所以這麼努力，是因為我想要的都很貴。</p>
+        <h2>{{ chatRoomTopInfo.roomCode }}</h2>
+        <p>{{ chatRoomTopInfo.roomDescription }}</p>
         <div class="chatroom-group-display">
           <div class="chatroom-group-room-link">
-            <img src="@/assets/image/Default_picture3.jpg" alt="" />
+            <span @click="chatRoomAccessRoom()"
+              ><font-awesome-icon icon="house"
+            /></span>
             <p>Room</p>
-          </div>
-          <div class="chatroom-group-room-search">
-            <img src="@/assets/image/Default_picture4.jpg" alt="" />
-            <p>Search</p>
           </div>
         </div>
         <div class="chatroom-line"></div>
       </div>
       <div class="chatroom-group-shared">
-        <h2>Shared Files</h2>
+        <h2>Shared Files <span>(Click to download file.)</span></h2>
 
-        <div class="chatroom-group-shared-file" v-for="index in 8">
+        <div
+          class="chatroom-group-shared-file"
+          v-for="(chatFile, index) in chatRoomFilesInfo.fileNameResponse"
+          :key="index"
+          @click="charRoomFileDownload(index)"
+        >
           <div class="chatroom-group-file-info">
-            <img src="@/assets/image/Default_picture2.jpg" alt="" />
+            <span>
+              <font-awesome-icon :icon="['far', 'file']" />
+            </span>
             <div>
-              <h3>forward statement item 2.txtTTTTS</h3>
-              <p>2024-04-22</p>
+              <h3>{{ chatFile.fileName }}</h3>
+              <p>{{ chatFile.formattedTime }}</p>
             </div>
           </div>
-          <p>1.9Mb</p>
+          <p>{{ chatFile.fileSize }}</p>
+          <div class="chatroom-file-line"></div>
         </div>
       </div>
     </div>
   </div>
+  <a class="downloadLink" ref="downloadLink"></a>
 </template>
 
 <style scoped lang="scss">
 @import "@/assets/styles/layout/chatroom.scss";
+.downloadLink {
+  display: none;
+}
 </style>

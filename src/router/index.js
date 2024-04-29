@@ -11,7 +11,7 @@ import WorkRoomBoard from "../components/workBoard/WorkRoomBoard.vue";
 import BulletinLogin from "../components/bulletinBoard/LoginBoard.vue";
 import WorkLogin from "../components/workBoard/WorkLoginBoard.vue";
 import BoardUploadService from "../components/boardUploadService/BoardRoom.js";
-import chatRoom from "../components/chatRoom/ChatRoom.vue";
+import chatRoom from "../components/chatRoom/chatRoom.vue";
 
 const Profile = () => import("@/components/Profile.vue");
 const FilesCard = () => import("../views/FilesCard.vue");

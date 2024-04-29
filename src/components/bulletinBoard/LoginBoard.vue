@@ -37,13 +37,6 @@ function handleLoginData() {
       console.log(error);
     });
 }
-
-// onMounted(() => {
-//   if (props.roomType === "PUBLIC") {
-//     handleLoginData();
-//     console.log("public");
-//   }
-// });
 </script>
 
 <template>
