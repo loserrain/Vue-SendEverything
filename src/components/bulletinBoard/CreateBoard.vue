@@ -4,6 +4,11 @@ import { useRouter } from "vue-router";
 import BoardUploadService from "../boardUploadService/BoardRoom.js";
 import { Form, Field, ErrorMessage } from "vee-validate";
 import * as yup from "yup";
+import {
+  generatePrivateKey,
+  generatePublicKey,
+  rfc3526roomPrime,
+} from "../cryptoUtils/DH-Crypto.js";
 
 const emits = defineEmits(["sendCreateStatus"]);
 const router = useRouter();
@@ -93,9 +98,14 @@ const schema = yup.object().shape({
 });
 
 const roomNumber = ref("123");
+const roomPrime = rfc3526roomPrime();
+const roomPrivateKey = generatePrivateKey();
+const roomPublicKey = generatePublicKey(roomPrivateKey);
+const initVector = crypto.getRandomValues(new Uint8Array(12));
+const base64FromInitVector = btoa(String.fromCharCode.apply(null, initVector));
 
 function handleLoginData(password, roomCode, roomType) {
-  BoardUploadService.accessRoom(password, roomCode, roomType)
+  BoardUploadService.accessRoom(password, roomCode, roomType, roomPublicKey, roomPrivateKey)
     .then(() => {
       router.push(`/BulletinBoard/roomboard/${roomCode}`);
     })
@@ -105,9 +115,8 @@ function handleLoginData(password, roomCode, roomType) {
 }
 // Create Room
 const boardType = ref("BULLETIN_BOARD");
-
 function handleCreate(room) {
-  if(formData.value.pwd === undefined && isPrivateChecked.value) {
+  if (formData.value.pwd === undefined && isPrivateChecked.value) {
     alert("Please enter the password.");
     return;
   }
@@ -122,6 +131,10 @@ function handleCreate(room) {
     roomType: roomType,
     file: fileBlob.value,
     boardType: boardType.value,
+    userPublicKey: roomPublicKey,
+    userPrivateKey: roomPrivateKey,
+    roomPrime: roomPrime,
+    initVector: base64FromInitVector,
   };
   BoardUploadService.uploadMessageWithImage(roomData, fileBlob.value)
     .then((response) => {
@@ -155,7 +168,7 @@ watch(isPublicChecked, (newValue) => {
 
 onMounted(() => {
   handlePreviewClick(0);
-})
+});
 </script>
 
 <template>
@@ -194,16 +207,14 @@ onMounted(() => {
 
             <p>Password setting</p>
             <div class="create-board-pwd-flex">
-              <div
-                class="create-board-pwd"
-                >
+              <div class="create-board-pwd">
                 <label for="pwd"></label>
                 <Field
-                type="password"
-                name="pwd"
-                id="pwd"
-                v-model="formData.pwd"
-                :disabled="isPublicChecked"
+                  type="password"
+                  name="pwd"
+                  id="pwd"
+                  v-model="formData.pwd"
+                  :disabled="isPublicChecked"
                 />
                 <ErrorMessage name="pwd" class="error-feedback" />
               </div>

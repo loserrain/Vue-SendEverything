@@ -3,8 +3,13 @@ import { ref, onMounted, computed, watch } from "vue";
 import WorkCreateBoard from "./WorkCreateBoard.vue";
 import WorkLoginBoard from "./WorkLoginBoard.vue";
 import BoardUploadService from "../boardUploadService/BoardRoom.js";
+import webstomp from "webstomp-client";
 import { useAuthStore } from "../../stores/auth.module";
 import { useRouter } from "vue-router";
+import {
+  generatePrivateKey,
+  generatePublicKey,
+} from "../cryptoUtils/DH-Crypto.js";
 
 const authStore = useAuthStore();
 const currentUser = computed(() => {
@@ -102,6 +107,61 @@ const filteredSearchRoomData = computed(() => {
   }
 });
 
+// ```````````````````````````````````````````````
+let stompClient = null;
+const username = ref("");
+const connect = async (roomCode) => {
+  username.value = currentUser.value.username;
+  const socket = new WebSocket("wss://imbig404.com/websocket");
+  // const socket = new WebSocket("ws://localhost:8088/websocket");
+  stompClient = webstomp.over(socket);
+  stompClient.connect(
+    {},
+    () => {
+      stompClient.subscribe(`/topic/${roomCode}`);
+      stompClient.onopen = () => {
+        joinMessage(roomCode);
+      };
+    },
+    onError
+  );
+};
+
+// joinMessage
+const onError = (error) => {
+  console.error(
+    "Could not connect to WebSocket server. Please refresh this page to try again!",
+    error
+  );
+};
+
+const joinMessage = async (roomCode) => {
+  const chatMessage = {
+    sender: username.value,
+    content: username.value + "join the room",
+    type: "JOIN",
+    roomCode: roomCode,
+  };
+
+  if(stompClient && stompClient.connected) {
+    stompClient.send(
+      `/app/join.joinMessage/${roomCode}`,
+      JSON.stringify(chatMessage),
+      {}
+    );
+    disconnect();
+  } else {
+    console.error("Could not connect to WebSocket server. Please refresh this page to try again!");
+  }
+};
+
+const disconnect = () => {
+  if (stompClient) {
+    stompClient.disconnect();
+  }
+};
+// ````````````````````````````````````````````````````````
+
 // 房間資料
 const roomData = ref([]);
 // 房間代碼
@@ -110,6 +170,8 @@ const roomCode = ref([]);
 const roomCodeNumber = ref(0);
 // 房間類型
 const roomType = ref([]);
+const roomPrivateKey = generatePrivateKey();
+const roomPublicKey = generatePublicKey(roomPrivateKey);
 
 // 透過房間代碼編號，將房間代碼傳送至LoginBoard元件
 async function sendRoomNumber(roomNumber) {
@@ -122,6 +184,10 @@ async function sendRoomNumber(roomNumber) {
   const sendVerifyRoomType = roomType.value[roomCodeNumber.value];
   try {
     if (filteredSearchRoomData.value[roomNumber].roomType === "PRIVATE") {
+      if (!currentUser.value) {
+        return alert("Please login first.");
+      }
+      connect(sendVerifyRoomCode);
       const response = await BoardUploadService.verifyCookie(
         sendVerifyRoomCode
       );
@@ -135,7 +201,9 @@ async function sendRoomNumber(roomNumber) {
       BoardUploadService.accessRoom(
         "",
         roomCode.value[roomCodeNumber.value],
-        sendVerifyRoomType
+        sendVerifyRoomType,
+        roomPublicKey,
+        roomPrivateKey
       )
         .then(() => {
           router.push(

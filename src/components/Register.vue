@@ -42,7 +42,6 @@ function handleRegister(user) {
   formData.append("username", user.username);
   formData.append("email", user.email);
   formData.append("password", user.password);
-  console.log(user)
 
   authService
     .register(formData)

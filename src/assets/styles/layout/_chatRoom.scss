@@ -56,6 +56,22 @@
       margin-bottom: 40px;
       cursor: pointer;
     }
+    
+    .chatRoom-search {
+      &:hover::before {
+        position: absolute;
+        top: -47px;
+        left: 0;
+        font-size: 18px;
+        font-weight: bold;
+        color: #f7f7f7;
+        background-color: #1b9498;
+        border-radius: 10px;
+        padding: 8px 12px;
+        z-index: 9999;
+        content: "點擊查看驗證碼與QR Code";
+      }
+    }
   }
 
   .chatroom-user {

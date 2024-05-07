@@ -9,7 +9,12 @@ import BoardUploadService from "../boardUploadService/BoardRoom.js";
 import chatService from "../../services/chatService";
 import API_URL from "../../services/API_URL";
 import webstomp from "webstomp-client";
-import { encryptMessage, decrypt } from "../cryptoUtils/CryptoUtils";
+import {
+  generateSharedSecretKey,
+  digestMessage,
+  aesGcmEncrypt,
+  aesGcmDecrypt,
+} from "../cryptoUtils/DH-Crypto";
 
 const contentRef = ref(null);
 
@@ -123,7 +128,9 @@ function handleRoomData(length) {
     roomData.value.dbRoomFiles[i].timestamp = new Date(
       roomData.value.dbRoomFiles[i].timestamp
     ).toLocaleString();
-    roomDataFileSize.value.push(formatFileSize(roomData.value.dbRoomFiles[i].fileSize));
+    roomDataFileSize.value.push(
+      formatFileSize(roomData.value.dbRoomFiles[i].fileSize)
+    );
   }
 }
 
@@ -157,7 +164,7 @@ function showRoomContent(roomCode) {
     roomDataStatus.value = false;
     roomData.value = response.data;
     roomDataIsOwner.value = roomData.value.isRoomOwner;
-    
+
     // 判斷是否有檔案
     if (roomData.value.dbRoomFiles.length > 0) {
       roomDataFileStatus.value = true;
@@ -170,15 +177,18 @@ function showRoomContent(roomCode) {
     for (let i = 0; i < roomData.value.dbRoomFiles.length; i++) {
       roomChecked.value.push(false);
     }
-    console.log(roomData.value.dbRoomFiles);
   });
 }
-// 
-
+//
+async function decryptMessage(encodedMessage, aesKey, iv) {
+  const decodedData = atob(encodedMessage);
+  const uint8Array = Uint8Array.from(decodedData, (c) => c.charCodeAt(0));
+  return aesGcmDecrypt(uint8Array, aesKey, iv);
+}
 //
 const messagesTimeStamps = ref([]);
 async function chatGetNewMessages(roomCode) {
-  await chatService.getNewMessages(roomCode).then((response) => {
+  await chatService.getNewMessages(roomCode).then(async (response) => {
     response.data.reverse();
 
     for (let i = 0; i < response.data.length; i++) {
@@ -190,8 +200,25 @@ async function chatGetNewMessages(roomCode) {
         messageSenderStatus.value.push(false);
       }
       messages.value.push(response.data[i]);
-      messages.value[i].chatRoomMessage.content = decrypt(
-        messages.value[i].chatRoomMessage.content
+      let key = 0;
+      const currentCount = messages.value[i].chatRoomMessage.userCurrentCount;
+      if (historyAesKey.value.hasOwnProperty(currentCount)) {
+        key = currentCount;
+      } else {
+        key = 1;
+      }
+
+      historyAesKey.value[1] = await digestMessage(
+        generateSharedSecretKey(
+          roomPrivateKey.value,
+          roomPrivateKey.value
+        ).toString()
+      );
+      const messageAesKey = historyAesKey.value[key];
+      messages.value[i].chatRoomMessage.content = await decryptMessage(
+        messages.value[i].chatRoomMessage.content,
+        messageAesKey,
+        roomInitVector.value
       );
       messagesTimeStamps.value[i] = new Date(
         messages.value[i].chatRoomMessage.timestamp
@@ -217,12 +244,67 @@ const roomDataPage = ref(1);
 const roomDataPageLength = ref([]);
 const roomActiveTab = ref(1);
 const roomDataIsOwner = ref(false);
+const aesKey = ref(undefined);
+const historyAesKey = ref([]);
+const historyUserCurrentIndex = ref([]);
+const historyRoomPrivateKey = ref(undefined);
+const roomPublicKey = ref(undefined);
+const roomPrivateKey = ref(undefined);
+const roomSharedKey = ref(undefined);
+const roomInitVector = ref(undefined);
+
+function getHistoryKey() {
+  BoardUploadService.getChatMessageHistorySharedKey(roomCode).then(
+    async (response) => {
+      historyUserCurrentIndex.value = Object.keys(response.data);
+      for (let i = 0; i < historyUserCurrentIndex.value.length; i++) {
+        if (historyUserCurrentIndex.value[i] == 2) {
+          historyRoomPrivateKey.value =
+            response.data[historyUserCurrentIndex.value[i]];
+        } else {
+          historyRoomPrivateKey.value = generateSharedSecretKey(
+            BigInt(response.data[historyUserCurrentIndex.value[i]]),
+            roomPrivateKey.value
+          );
+        }
+        historyAesKey.value[historyUserCurrentIndex.value[i]] =
+          await digestMessage(historyRoomPrivateKey.value.toString());
+      }
+    }
+  );
+}
+
+async function getRoomKeyInfo() {
+  BoardUploadService.getChatMessageKeyAndIV(roomCode).then(async (response) => {
+    roomPublicKey.value = BigInt(response.data.PublicKey);
+    roomPrivateKey.value = BigInt(response.data.PrivateKey);
+    roomInitVector.value = Uint8Array.from(
+      atob(response.data.ChatRoomIV),
+      (c) => c.charCodeAt(0)
+    );
+    roomSharedKey.value = generateSharedSecretKey(
+      roomPublicKey.value,
+      roomPrivateKey.value
+    );
+    aesKey.value = await digestMessage(roomSharedKey.value.toString());
+  });
+}
 
 onMounted(() => {
+  if (currentUser.value) {
+    connect();
+    setTimeout(() => {
+      chatGetNewMessages(roomCode);
+      joinMessage();
+    }, 1000);
+    getRoomKeyInfo();
+    getHistoryKey();
+  }
   setTimeout(() => {
     showRoomContent(roomCode);
+    // chatGetNewMessages(roomCode);
+    // joinMessage();
   }, 1000);
-  chatGetNewMessages(roomCode);
 });
 
 function handleDownloadFile() {
@@ -279,7 +361,7 @@ const scrollToBottom = () => {
 const roomChatStatus = ref(false);
 function toggleRoomChatStatus(newStatus) {
   roomChatStatus.value = newStatus;
-  connect();
+  // connect();
 }
 function handleDisconnect() {
   roomChatStatus.value = false;
@@ -293,8 +375,8 @@ let stompClient = null;
 const messageSenderStatus = ref([]);
 
 const connect = () => {
-  // const socket = new WebSocket('wss://imbig404.com/websocket');
-  const socket = new WebSocket("ws://localhost:8088/websocket");
+  const socket = new WebSocket("wss://imbig404.com/websocket");
+  // const socket = new WebSocket("ws://localhost:8088/websocket");
   stompClient = webstomp.over(socket);
   stompClient.connect({}, onConnected, onError);
   username.value = currentUser.value.username;
@@ -312,7 +394,7 @@ const onError = (error) => {
   );
 };
 
-const sendMessage = () => {
+const sendMessage = async () => {
   if (messageContent.value.trim() && stompClient) {
     const chatMessage = {
       sender: username.value,
@@ -320,7 +402,17 @@ const sendMessage = () => {
       type: "CHAT",
       roomCode: roomCode,
     };
-    chatMessage.content = encryptMessage(chatMessage.content);
+
+    chatMessage.content = btoa(
+      String.fromCharCode.apply(
+        null,
+        await aesGcmEncrypt(
+          chatMessage.content,
+          aesKey.value,
+          roomInitVector.value
+        )
+      )
+    );
     stompClient.send(
       `/app/chat.sendMessage/${roomCode}`,
       JSON.stringify(chatMessage),
@@ -330,20 +422,49 @@ const sendMessage = () => {
   }
 };
 
-const onMessageReceived = (payload) => {
+const onMessageReceived = async (payload) => {
   const message = JSON.parse(payload.body);
-  message.chatRoomMessage.content = decrypt(message.chatRoomMessage.content);
-  if (message.chatRoomMessage.sender === username.value) {
-    messageSenderStatus.value.push(true);
+  if (message.isJoinedResponse.encrypt) {
+    message.chatRoomMessage.content = await decryptMessage(
+      message.chatRoomMessage.content,
+      aesKey.value,
+      roomInitVector.value
+    );
+    if (message.chatRoomMessage.sender === username.value) {
+      messageSenderStatus.value.push(true);
+    } else {
+      messageSenderStatus.value.push(false);
+    }
+    messages.value.push(message);
+    messagesTimeStamps.value.push(
+      new Date(message.chatRoomMessage.timestamp).toLocaleString()
+    );
+    scrollToBottom();
   } else {
-    messageSenderStatus.value.push(false);
+    if (!message.isJoinedResponse.joined) {
+      setTimeout(() => {
+        getRoomKeyInfo();
+      }, 200);
+    }
   }
-  messages.value.push(message);
-  messagesTimeStamps.value.push(new Date(
-    message.chatRoomMessage.timestamp
-      ).toLocaleString());
-  scrollToBottom();
 };
+
+const joinMessage = async () => {
+  console.log("joinMessage");
+  const chatMessage = {
+    sender: username.value,
+    content: username.value + "join the room",
+    type: "JOIN",
+    roomCode: roomCode,
+  };
+
+  stompClient.send(
+    `/app/join.joinMessage/${roomCode}`,
+    JSON.stringify(chatMessage),
+    {}
+  );
+};
+
 // 卷軸滾至最頂部時觸發
 const sendMessageTime = ref("");
 const sendMessageStatus = ref(false);
@@ -359,7 +480,7 @@ function handleScroll(e) {
     setTimeout(async () => {
       await chatService
         .getMessages(roomCode, sendMessageTime.value)
-        .then((response) => {
+        .then(async (response) => {
           for (let i = 0; i < response.data.length; i++) {
             if (
               response.data[i].chatRoomMessage.sender ===
@@ -370,10 +491,28 @@ function handleScroll(e) {
               messageSenderStatus.value.unshift(false);
             }
             messages.value.unshift(response.data[i]);
-            // 解密訊息
-            messages.value[0].chatRoomMessage.content = decrypt(
-              messages.value[0].chatRoomMessage.content
+
+            let key = 0;
+            const currentCount =
+              messages.value[0].chatRoomMessage.userCurrentCount;
+            if (historyAesKey.value.hasOwnProperty(currentCount)) {
+              key = currentCount;
+            } else {
+              key = 1;
+            }
+            historyAesKey.value[1] = await digestMessage(
+              generateSharedSecretKey(
+                roomPrivateKey.value,
+                roomPrivateKey.value
+              ).toString()
             );
+            const messageAesKey = historyAesKey.value[key];
+            messages.value[0].chatRoomMessage.content = await decryptMessage(
+              messages.value[0].chatRoomMessage.content,
+              messageAesKey,
+              roomInitVector.value
+            );
+
             messagesTimeStamps.value.unshift(
               new Date(
                 messages.value[0].chatRoomMessage.timestamp
@@ -388,6 +527,8 @@ function handleScroll(e) {
     }, 1000);
   }
 }
+
+// 加密測試
 </script>
 
 <template>

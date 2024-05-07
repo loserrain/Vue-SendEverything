@@ -105,7 +105,7 @@ onMounted(() => {
           </li>
         </RouterLink>
         <li class="nav-user">
-          <img :src="`data:image/png;base64,${currentUser.profileImageBase64}`" alt="">
+          <img :src="`data:image/png;base64,${currentUser.profileImage}`" alt="">
           {{ currentUser.username }}
         </li>
         <li class="nav-item" @click.prevent="logOut">

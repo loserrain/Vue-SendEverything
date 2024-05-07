@@ -1,9 +1,16 @@
 <script setup>
-import { ref, computed, watch, onMounted } from "vue";
+import { ref, computed } from "vue";
 import chatService from "../../services/chatService";
 import { Form, Field, ErrorMessage } from "vee-validate";
 import { useAuthStore } from "../../stores/auth.module";
 import * as yup from "yup";
+import {
+  digestMessage,
+  generatePrivateKey,
+  generatePublicKey,
+  generateSharedSecretKey,
+  rfc3526roomPrime,
+} from "../cryptoUtils/DH-Crypto.js";
 
 const emits = defineEmits(["sendCreateStatus", "sendCreateCode"]);
 
@@ -25,10 +32,18 @@ const schema = yup.object().shape({
 // Create Room
 const boardType = ref("SECRET_BOARD");
 
-function handleCreate(room) {
-  const base64Content = currentUser.value.profileImageBase64;
+async function handleCreate(room) {
+  const base64Content = currentUser.value.profileImage;
   const blob = new Blob([atob(base64Content)], { type: "image/png" });
   const file = new File([blob], "userImage.png", { type: "image/png" });
+  const roomPrime = rfc3526roomPrime();
+  const roomPrivateKey = generatePrivateKey();
+  const roomPublicKey = generatePublicKey(roomPrivateKey);
+  const initVector = crypto.getRandomValues(new Uint8Array(12));
+  const base64FromInitVector = btoa(
+    String.fromCharCode.apply(null, initVector)
+  );
+
   const chatData = {
     title: room.title,
     description: room.description,
@@ -36,21 +51,42 @@ function handleCreate(room) {
     boardType: boardType.value,
     chatImage: file,
     pwd: "",
+    userPublicKey: roomPublicKey,
+    userPrivateKey: roomPrivateKey,
+    roomPrime: roomPrime,
+    initVector: base64FromInitVector,
   };
-  chatService.createSecretChat(chatData)
-    .then((response) => {
-        emits("sendCreateCode", response.data.roomCode);
+  // 第一位使用者的 shared key 利用自己的 private values 進行 shared key 的產生
+  const roomSharedKey = generateSharedSecretKey(
+    roomPrivateKey,
+    roomPrivateKey,
+  );
+  console.log("roomSharedKey: ", roomSharedKey);
+  const asekey = await digestMessage(roomSharedKey.toString());
+  chatService
+  .createSecretChat(chatData)
+  .then((response) => {
+      const chatKeyData = {
+        aseKey: asekey,
+        roomInitVector: initVector,
+        roomCode: response.data.roomCode,
+      }
+      console.log("response: ", response.data.roomCode);
+      handleSendCreateCode(chatKeyData);
     })
     .catch((error) => {
       console.log("Error: ", error);
     });
 }
 
+function handleSendCreateCode(chatKeyData) {
+  emits("sendCreateCode", chatKeyData);
+}
+
 const formData = ref({
   title: "This is a title.",
   description: "This is a description.",
 });
-
 </script>
 
 <template>
@@ -88,7 +124,9 @@ const formData = ref({
             </div>
           </div>
         </div>
-        <p class="chatRoom-secret-remind">The created number can invite users to enter.</p>
+        <p class="chatRoom-secret-remind">
+          The created number can invite users to enter.
+        </p>
 
         <div class="create-board-decide">
           <button
@@ -122,8 +160,8 @@ const formData = ref({
 }
 
 .create-board {
-    height: 360px;
-    width: 500px;
+  height: 360px;
+  width: 500px;
 }
 
 .chatRoom-secret-remind {

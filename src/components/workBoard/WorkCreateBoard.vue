@@ -4,6 +4,11 @@ import { useRouter } from "vue-router";
 import BoardUploadService from "../boardUploadService/BoardRoom.js";
 import { Form, Field, ErrorMessage } from "vee-validate";
 import * as yup from "yup";
+import {
+  generatePrivateKey,
+  generatePublicKey,
+  rfc3526roomPrime,
+} from "../cryptoUtils/DH-Crypto.js";
 
 const emits = defineEmits(["sendCreateStatus"]);
 const router = useRouter();
@@ -94,8 +99,14 @@ const schema = yup.object().shape({
 
 const roomNumber = ref("123");
 
+const roomPrime = rfc3526roomPrime();
+const roomPrivateKey = generatePrivateKey();
+const roomPublicKey = generatePublicKey(roomPrivateKey);
+const initVector = crypto.getRandomValues(new Uint8Array(12));
+const base64FromInitVector = btoa(String.fromCharCode.apply(null, initVector));
+
 function handleLoginData(password, roomCode, roomType) {
-  BoardUploadService.accessRoom(password, roomCode, roomType)
+  BoardUploadService.accessRoom(password, roomCode, roomType, roomPublicKey, roomPrivateKey)
     .then(() => {
       router.push(`/workBoard/WorkRoomBoard/${roomCode}`);
     })
@@ -106,12 +117,12 @@ function handleLoginData(password, roomCode, roomType) {
 const boardType = ref("ASSIGNMENT_BOARD");
 
 function handleCreate(room) {
-  if(formData.value.pwd === undefined && isPrivateChecked.value) {
+  if (formData.value.pwd === undefined && isPrivateChecked.value) {
     alert("Please enter the password.");
     return;
   }
   const roomType = isPublicChecked.value ? "PUBLIC" : "PRIVATE";
-  if(previewImageStatue.value !== true) {
+  if (previewImageStatue.value !== true) {
     fileBlob.value = file.value.files[0];
   }
   const roomData = {
@@ -121,6 +132,10 @@ function handleCreate(room) {
     roomType: roomType,
     file: fileBlob.value,
     boardType: boardType.value,
+    userPublicKey: roomPublicKey,
+    userPrivateKey: roomPrivateKey,
+    roomPrime: roomPrime,
+    initVector: base64FromInitVector,
   };
   BoardUploadService.uploadMessageWithImage(roomData, fileBlob.value)
     .then((response) => {
@@ -135,12 +150,15 @@ function handleCreate(room) {
 const formData = ref({
   title: "This is a title.",
   description: "This is a description.",
-  pwd: ""
+  pwd: "",
 });
 
 const getImageUrl = (fileIndex) => {
-  return new URL(`../../assets/image/Default_picture${fileIndex}.jpg`, import.meta.url).href;
-}
+  return new URL(
+    `../../assets/image/Default_picture${fileIndex}.jpg`,
+    import.meta.url
+  ).href;
+};
 
 // 當public被選取時，清空pwd
 watch(isPublicChecked, (newValue) => {
@@ -192,10 +210,13 @@ onMounted(() => {
             <div class="create-board-pwd-flex">
               <div class="create-board-pwd">
                 <label for="pwd"></label>
-                <Field type="password" name="pwd" id="pwd" 
-                v-model="formData.pwd"
-                :disabled="isPublicChecked"
-                 />
+                <Field
+                  type="password"
+                  name="pwd"
+                  id="pwd"
+                  v-model="formData.pwd"
+                  :disabled="isPublicChecked"
+                />
                 <ErrorMessage name="pwd" class="error-feedback" />
               </div>
 

@@ -2,6 +2,10 @@
 import { ref, computed } from "vue";
 import BoardUploadService from "../boardUploadService/BoardRoom.js";
 import { useRouter } from "vue-router";
+import {
+  generatePrivateKey,
+  generatePublicKey,
+} from "../cryptoUtils/DH-Crypto.js";
 
 const emits = defineEmits(["sendLoginStatus"]);
 const props = defineProps({ roomCode: String, roomType: String});
@@ -28,8 +32,11 @@ const elIcon = computed(() => {
   return flag.value ? ["far", "eye"] : ["far", "eye-slash"];
 });
 
+const roomPrivateKey = generatePrivateKey();
+const roomPublicKey = generatePublicKey(roomPrivateKey);
+
 function handleLoginData() {
-  BoardUploadService.accessRoom(pwd.value, props.roomCode, props.roomType)
+  BoardUploadService.accessRoom(pwd.value, props.roomCode, props.roomType, roomPublicKey, roomPrivateKey)
     .then(() => {
       router.push(`/workBoard/WorkRoomBoard/${props.roomCode}`);
     })

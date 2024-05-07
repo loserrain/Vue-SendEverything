@@ -3,8 +3,13 @@ import { ref, onMounted, computed, watch } from "vue";
 import CreateBoard from "./CreateBoard.vue";
 import LoginBoard from "./LoginBoard.vue";
 import BoardUploadService from "../boardUploadService/BoardRoom.js";
+import webstomp from "webstomp-client";
 import { useRouter } from "vue-router";
 import { useAuthStore } from "../../stores/auth.module";
+import {
+  generatePrivateKey,
+  generatePublicKey,
+} from "../cryptoUtils/DH-Crypto.js";
 
 const authStore = useAuthStore();
 
@@ -94,6 +99,59 @@ const filteredSearchRoomData = computed(() => {
   }
 });
 
+let stompClient = null;
+const username = ref("");
+const connect = async (roomCode) => {
+  username.value = currentUser.value.username;
+  const socket = new WebSocket('wss://imbig404.com/websocket');
+  // const socket = new WebSocket("ws://localhost:8088/websocket");
+  stompClient = webstomp.over(socket);
+  stompClient.connect(
+    {},
+    () => {
+      stompClient.subscribe(`/topic/${roomCode}`);
+      stompClient.onopen = () => {
+        joinMessage(roomCode);
+      }
+    },
+    onError
+  );
+};
+
+// joinMessage
+const onError = (error) => {
+  console.error(
+    "Could not connect to WebSocket server. Please refresh this page to try again!",
+    error
+  );
+};
+
+const joinMessage = async (roomCode) => {
+  const chatMessage = {
+    sender: username.value,
+    content: username.value + "join the room",
+    type: "JOIN",
+    roomCode: roomCode,
+  };
+
+  if(stompClient && stompClient.connected) {
+    stompClient.send(
+      `/app/join.joinMessage/${roomCode}`,
+      JSON.stringify(chatMessage),
+      {}
+    );
+    disconnect();
+  } else {
+    console.error("Could not connect to WebSocket server. Please refresh this page to try again!");
+  }
+};
+
+const disconnect = () => {
+  if (stompClient) {
+    stompClient.disconnect();
+  }
+};
+
 // 房間資料
 const roomData = ref([]);
 // 房間代碼
@@ -114,6 +172,10 @@ async function sendRoomNumber(roomNumber) {
   const sendVerifyRoomType = roomType.value[roomCodeNumber.value];
   try {
     if (filteredSearchRoomData.value[roomNumber].roomType === "PRIVATE") {
+      if (!currentUser.value) {
+        return alert("Please login first.");
+      }
+      connect(sendVerifyRoomCode);
       const response = await BoardUploadService.verifyCookie(
         sendVerifyRoomCode
       );
@@ -124,7 +186,16 @@ async function sendRoomNumber(roomNumber) {
         });
       }
     } else {
-      BoardUploadService.accessRoom("", sendVerifyRoomCode, sendVerifyRoomType)
+      const roomPrivateKey = generatePrivateKey();
+      const roomPublicKey = generatePublicKey(roomPrivateKey);
+      connect(sendVerifyRoomCode);
+      BoardUploadService.accessRoom(
+        "",
+        sendVerifyRoomCode,
+        sendVerifyRoomType,
+        roomPublicKey,
+        roomPrivateKey
+      )
         .then(() => {
           router.push(`/BulletinBoard/roomboard/${sendVerifyRoomCode}`);
         })
@@ -165,7 +236,7 @@ onMounted(() => {
   BoardUploadService.getAllRooms(boardType.value)
     .then((response) => {
       roomData.value = response.data;
-      console.log(roomData.value)
+      console.log(roomData.value);
       roomData.value.sort((a, b) => {
         const dateA = new Date(a.createTime);
         const dateB = new Date(b.createTime);
@@ -328,9 +399,7 @@ watch(filteredSearchRoomData, (newFilteredSearchRoomData) => {
           </p>
         </div>
       </div>
-      <div
-        class="board-main-content"
-      >
+      <div class="board-main-content">
         <div
           class="board-main-room"
           v-for="(data, index) in roomDataPageLength"
