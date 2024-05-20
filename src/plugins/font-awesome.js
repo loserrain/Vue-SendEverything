@@ -10,7 +10,6 @@ import {
   faFolderOpen,
   faFile,
   faUser,
-  faCircleDown,
   faCopy,
   faImage,
   faPaperPlane,
@@ -50,7 +49,9 @@ import {
   faComment,
   faMessage,
   faHouse,
-  faCommentMedical
+  faCommentMedical,
+  faUpDown,
+  faCircleDown
 } from "@fortawesome/free-solid-svg-icons";
 
 library.add(
@@ -87,7 +88,6 @@ library.add(
     faFile,
     faUser,
     faWrench,
-    faCircleDown,
     faUnlock,
     faDownload,
     faCopy,
@@ -100,7 +100,9 @@ library.add(
     faBarsStaggered,
     faComment,
     faMessage,
-    faCommentMedical
+    faCommentMedical,
+    faUpDown,
+    faCircleDown
   );
 
   export { FontAwesomeIcon };

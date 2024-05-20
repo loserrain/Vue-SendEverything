@@ -2,6 +2,7 @@
 import { ref, computed } from "vue";
 import BoardRoom from "../boardUploadService/BoardRoom";
 import webstomp from "webstomp-client";
+import socketURL from "../../services/webSocket_URL";
 import { useAuthStore } from "../../stores/auth.module";
 import {
   generatePrivateKey,
@@ -30,8 +31,7 @@ const currentUser = computed(() => {
 let stompClient = null;
 const username = ref("");
 const connect = async (roomCode) => {
-  const socket = new WebSocket('wss://imbig404.com/websocket');
-  // const socket = new WebSocket("ws://localhost:8088/websocket");
+  const socket = new WebSocket(socketURL);
   stompClient = webstomp.over(socket);
   stompClient.connect(
     {},

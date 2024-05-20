@@ -284,7 +284,7 @@ const fileInfos = ref([]);
 const fileReceive = ref([]);
 
 // 增加檔案分割的資料
-const chunkSize = 15 * 1024 * 1024; // 5MB
+const chunkSize = 10 * 1024 * 1024; // 5MB
 const totalChunks = ref(0);
 const currentChunkIndex = ref(0);
 const totalThreads = navigator.hardwareConcurrency || 2;

@@ -8,7 +8,7 @@ import BoardUploadService from "../boardUploadService/BoardRoom.js";
 import createSecretRoom from "./createSecretRoom.vue";
 import searchChatRoom from "./searchChatRoom.vue";
 import API_URL from "../../services/API_URL";
-import { encryptMessage, decrypt } from "../cryptoUtils/CryptoUtils";
+import socketURL from "../../services/webSocket_URL";
 import {
   aesGcmDecrypt,
   aesGcmEncrypt,
@@ -161,8 +161,7 @@ const messageSenderStatus = ref([]);
 const chatRoomCode = ref("");
 
 const connect = async () => {
-  const socket = new WebSocket('wss://imbig404.com/websocket');
-  // const socket = new WebSocket("ws://localhost:8088/websocket");
+  const socket = new WebSocket(socketURL);
   stompClient = webstomp.over(socket);
   stompClient.connect({}, onConnected, onError);
   username.value = currentUser.value.username;

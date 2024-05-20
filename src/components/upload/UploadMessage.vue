@@ -117,12 +117,11 @@ const copyMessage = () => {
 
     &::placeholder {
       color: #cccccc;
-      font-weight: 700;
     }
   }
 
   button {
-    margin-top: 10px;
+    margin-top: 4px;
     padding: 7px 11px 6px;
   }
 

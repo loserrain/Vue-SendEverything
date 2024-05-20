@@ -1,6 +1,5 @@
 <script setup>
 import { ref } from "vue";
-import API_URL from "../../services/API_URL";
 import BoardUploadService from "../boardUploadService/BoardRoom.js";
 
 const emits = defineEmits(["sendDeleteStatus"]);
@@ -62,10 +61,6 @@ async function deleteFiles() {
   height: 20px;
   margin-left: 43%;
   animation: spin 1.5s linear infinite;
-}
-
-.drop-active {
-  background-color: #d9f7c3;
 }
 
 @keyframes spin {

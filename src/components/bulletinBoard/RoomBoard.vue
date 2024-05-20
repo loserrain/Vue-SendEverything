@@ -9,6 +9,7 @@ import BoardUploadService from "../boardUploadService/BoardRoom.js";
 import chatService from "../../services/chatService";
 import API_URL from "../../services/API_URL";
 import webstomp from "webstomp-client";
+import socketURL from "../../services/webSocket_URL";
 import {
   generateSharedSecretKey,
   digestMessage,
@@ -46,29 +47,9 @@ function handleSendDeleteStatus(newStatus) {
   }
 }
 
-//
 watch([uploadStatus, deleteStatus], ([newUploadStatus, newDeleteStatus]) => {
   if (!newUploadStatus || !newDeleteStatus) {
-    BoardUploadService.showRoomContent(roomCode).then((response) => {
-      roomDataStatus.value = false;
-      roomData.value = response.data;
-      roomDataIsOwner.value = roomData.value.isRoomOwner;
-
-      // 判斷是否有檔案
-      if (roomData.value.dbRoomFiles.length > 0) {
-        roomDataFileStatus.value = true;
-        sidebarStatus.value = true;
-      }
-
-      roomDataFileLength.value = roomData.value.dbRoomFiles.length;
-      handleRoomData(roomDataFileLength.value);
-      updataPageNumber();
-      if (!newDeleteStatus) {
-        for (let i = 0; i < roomChecked.value.length; i++) {
-          roomChecked.value[i] = false;
-        }
-      }
-    });
+    showRoomContent(roomCode);
   }
 });
 
@@ -112,10 +93,6 @@ function selectAllRooms() {
 }
 
 function handleRoomData(length) {
-  roomData.value.roomResponse.createTime = new Date(
-    roomData.value.roomResponse.createTime
-  ).toLocaleString();
-
   // 對 roomData.dbRoomFiles 根據 timestamp 進行排序
   roomData.value.dbRoomFiles.sort((a, b) => {
     // 將時間戳字串轉換為 Date 物件進行比較
@@ -164,18 +141,23 @@ function showRoomContent(roomCode) {
     roomDataStatus.value = false;
     roomData.value = response.data;
     roomDataIsOwner.value = roomData.value.isRoomOwner;
+    roomData.value.roomResponse.createTime = new Date(
+      roomData.value.roomResponse.createTime
+    ).toLocaleString();
 
     // 判斷是否有檔案
     if (roomData.value.dbRoomFiles.length > 0) {
       roomDataFileStatus.value = true;
       sidebarStatus.value = true;
-    }
-
-    roomDataFileLength.value = roomData.value.dbRoomFiles.length;
-    handleRoomData(roomDataFileLength.value);
-    updataPageNumber();
-    for (let i = 0; i < roomData.value.dbRoomFiles.length; i++) {
-      roomChecked.value.push(false);
+      roomDataFileLength.value = roomData.value.dbRoomFiles.length;
+      handleRoomData(roomDataFileLength.value);
+      updataPageNumber();
+      for (let i = 0; i < roomData.value.dbRoomFiles.length; i++) {
+        roomChecked.value.push(false);
+      }
+    } else {
+      roomDataFileStatus.value = false;
+      sidebarStatus.value = false;
     }
   });
 }
@@ -189,6 +171,7 @@ async function decryptMessage(encodedMessage, aesKey, iv) {
 const messagesTimeStamps = ref([]);
 async function chatGetNewMessages(roomCode) {
   await chatService.getNewMessages(roomCode).then(async (response) => {
+    console.log(response.data);
     response.data.reverse();
 
     for (let i = 0; i < response.data.length; i++) {
@@ -257,6 +240,7 @@ function getHistoryKey() {
   BoardUploadService.getChatMessageHistorySharedKey(roomCode).then(
     async (response) => {
       historyUserCurrentIndex.value = Object.keys(response.data);
+      console.log('response.data:', response.data);
       for (let i = 0; i < historyUserCurrentIndex.value.length; i++) {
         if (historyUserCurrentIndex.value[i] == 2) {
           historyRoomPrivateKey.value =
@@ -326,11 +310,14 @@ async function downloadFile(code) {
 }
 
 function updataPageNumber() {
-  roomDataPage.value = Math.ceil(
-    roomDataFileLength.value / roomDataNumber.value,
-    0
-  );
-
+  if (roomDataFileLength.value == 0) {
+    roomDataPage.value = 1;
+  } else {
+    roomDataPage.value = Math.ceil(
+      roomDataFileLength.value / roomDataNumber.value,
+      0
+    );
+  }
   for (let i = 0; i < roomDataNumber.value; i++) {
     roomDataPageLength.value[i] = i;
   }
@@ -345,7 +332,6 @@ function clickPageNumber(page) {
   for (let i = startIndex; i <= endIndex; i++) {
     roomDataPageLength.value.push(i);
   }
-  console.log(roomDataPageLength.value);
   roomActiveTab.value = page;
 }
 
@@ -361,6 +347,7 @@ const scrollToBottom = () => {
 const roomChatStatus = ref(false);
 function toggleRoomChatStatus(newStatus) {
   roomChatStatus.value = newStatus;
+  scrollToBottom();
   // connect();
 }
 function handleDisconnect() {
@@ -375,12 +362,11 @@ let stompClient = null;
 const messageSenderStatus = ref([]);
 
 const connect = () => {
-  const socket = new WebSocket("wss://imbig404.com/websocket");
-  // const socket = new WebSocket("ws://localhost:8088/websocket");
+  const socket = new WebSocket(socketURL);
   stompClient = webstomp.over(socket);
   stompClient.connect({}, onConnected, onError);
   username.value = currentUser.value.username;
-  scrollToBottom();
+  // scrollToBottom();
 };
 
 const onConnected = () => {
@@ -450,7 +436,6 @@ const onMessageReceived = async (payload) => {
 };
 
 const joinMessage = async () => {
-  console.log("joinMessage");
   const chatMessage = {
     sender: username.value,
     content: username.value + "join the room",
@@ -652,7 +637,7 @@ function handleScroll(e) {
           @click="toggleSidebarStatus()"
         >
           <p></p>
-          <div><font-awesome-icon :icon="['far', 'circle-down']" /></div>
+          <div><font-awesome-icon icon="circle-down" /></div>
           <span>Download File</span>
         </div>
         <div v-if="roomDataIsOwner">
@@ -708,7 +693,6 @@ function handleScroll(e) {
           </div>
           <div class="room-board-data-date">
             <p>Created: {{ roomData.roomResponse.createTime }}</p>
-            <p>20 people</p>
           </div>
           <p>{{ $route.params.roomCode }}</p>
         </div>

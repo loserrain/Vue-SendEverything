@@ -203,7 +203,7 @@ watch(zipFileStatus, (newValue) => {
 // ---------------------------- zip壓縮 ----------------------------
 
 // 增加檔案分割的資料
-const chunkSize = 5 * 1024 * 1024; // 檔案分片
+const chunkSize = 10 * 1024 * 1024; // 檔案分片
 const currentChunkIndex = ref(0); // 當前分片索引
 const totalThreads = navigator.hardwareConcurrency || 2; // 硬體執行緒數量
 const workerResult = ref([]); // 檔案分片worker的結果

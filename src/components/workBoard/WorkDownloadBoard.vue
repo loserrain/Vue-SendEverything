@@ -1,14 +1,21 @@
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, watch } from "vue";
 import API_URL from "../../services/API_URL";
+import WorkDeleteBoard from "./WorkDeleteBoard.vue";
+import BoardService from "../boardUploadService/BoardRoom";
+import { useAuthStore } from "../../stores/auth.module";
 
 const emits = defineEmits(["sendDownloadStatus"]);
 function handleSendDownloadStatus(newStatus) {
   emits("sendDownloadStatus", newStatus);
 }
-const props = defineProps(["roomData"]);
+const props = defineProps(["roomCode"]);
 
-const fileSizeList = 20;
+const authStore = useAuthStore();
+
+const currentUser = computed(() => {
+  return authStore.dataStatus.user;
+});
 
 // check檔案下載
 const roomChecked = ref([]);
@@ -17,8 +24,7 @@ const roomDownloadCode = computed(() => {
   const downloadCodes = [];
   roomChecked.value.forEach((checked, index) => {
     if (checked) {
-      // downloadCodes.push(roomData.value.dbRoomFiles[index].verificationCode);
-      downloadCodes.push(roomDataDBFiles.value[index].verificationCode)
+      downloadCodes.push(roomDataDBFiles.value[index].verificationCode);
     }
   });
   return downloadCodes;
@@ -101,31 +107,64 @@ function handleRoomDataDBFiles(dataFilesLength) {
   for (let i = 0; i < dataFilesLength; i++) {
     // 驗證檔案大小是否為數字
     if (Number(roomDataDBFiles.value[i].fileSize)) {
-      roomDataDBFiles.value[
-        i
-      ].fileSize = formatFileSize(roomDataDBFiles.value[i].fileSize);
+      roomDataDBFiles.value[i].fileSize = formatFileSize(
+        roomDataDBFiles.value[i].fileSize
+      );
     } else {
       return;
     }
   }
 }
 
+const deleteStatus = ref(false);
+function handleSendDeleteStatus(newStatus) {
+  deleteStatus.value = newStatus;
+}
+
+function showRoomFile(roomCode) {
+  BoardService.showRoomContent(roomCode)
+    .then((response) => {
+      roomDataDBFiles.value = response.data.dbRoomFiles;
+      roomDataDBFilesStatus.value = true;
+      handleRoomDataDBFiles(roomDataDBFiles.value.length);
+      for (let i = 0; i < roomDataDBFiles.value.length; i++) {
+        roomChecked.value[i] = false;
+        roomDataDBFiles.value[i].timestamp = new Date(
+          roomDataDBFiles.value[i].timestamp
+        ).toLocaleString();
+      }
+      fileEditStatus.value = true;
+    })
+    .catch((error) => {
+      console.log(error);
+    });
+}
+
 onMounted(() => {
-  roomDataDBFiles.value = props.roomData;
-  roomDataDBFilesStatus.value = true;
-  handleRoomDataDBFiles(roomDataDBFiles.value.length);
-  for (let i = 0; i < roomDataDBFiles.value.length; i++) {
-    roomChecked.value[i] = false;
-  }
-  fileEditStatus.value = true;
+  showRoomFile(props.roomCode);
 });
+
+watch()
+
+watch(deleteStatus, (newStatus) => {
+  if (!newStatus) {
+    showRoomFile(props.roomCode);
+  }
+});
+
 </script>
 
 <template>
+  <div v-if="deleteStatus">
+    <WorkDeleteBoard
+      @send-delete-status="handleSendDeleteStatus"
+      :room-download-code="roomDownloadCode"
+    ></WorkDeleteBoard>
+  </div>
   <a class="downloadLink" ref="downloadLink"></a>
   <div class="download-board-mask" @click="handleSendDownloadStatus(false)">
     <div class="download-board-user-list" @click.stop>
-      <h2>Uploaded by : 11161101</h2>
+      <h2>Current User : {{ currentUser.username }}</h2>
       <div class="download-board-mark">
         <h4 @click="togglefileEditStatus()">編輯</h4>
         <h3>檔案 / 記錄</h3>
@@ -173,27 +212,17 @@ onMounted(() => {
             </div>
           </div>
         </div>
-        <div v-else>
-          <div
-            class="download-board-file-title"
-            v-for="(size, index) in fileSizeList"
-            :key="index"
-          >
-            <div class="download-board-file-detail">
-              <p class="download-board-file-name">
-                Universal-Design-System-Web.mp4
-              </p>
-              <p class="download-board-file-date">2024/4/5 上午12:34:42</p>
-              <p class="download-board-file-ID">11161101</p>
-              <p class="download-board-file-size">40.9MB</p>
-            </div>
-          </div>
-        </div>
       </div>
 
       <div class="download-board-decide" v-show="fileEditStatus">
         <button class="download-board-download" @click="handleDownloadFile()">
           Download
+        </button>
+        <button
+          class="download-board-delete"
+          @click="handleSendDeleteStatus(true)"
+        >
+          Delete
         </button>
         <button class="download-board-cancel" @click="togglefileEditStatus()">
           Cancel
@@ -354,6 +383,11 @@ onMounted(() => {
     .download-board-download {
       margin-right: 1rem;
       background-color: #3497de;
+    }
+
+    .download-board-delete {
+      margin-right: 1rem;
+      background-color: #f95252;
     }
 
     .download-board-cancel {

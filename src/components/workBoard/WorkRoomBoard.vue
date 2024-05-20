@@ -3,13 +3,12 @@ import { ref, computed, onMounted, watch, nextTick } from "vue";
 import WorkCreateBoard from "./WorkCreateBoard.vue";
 import WorkUploadBoard from "./WorkUploadBoard.vue";
 import WorkDownloadBoard from "./WorkDownloadBoard.vue";
-import WorkDeleteBoard from "./WorkDeleteBoard.vue";
 import { useAuthStore } from "../../stores/auth.module";
 import { useRouter } from "vue-router";
 import BoardUploadService from "../boardUploadService/BoardRoom.js";
 import chatService from "../../services/chatService";
 import webstomp from "webstomp-client";
-import { encryptMessage, decrypt } from "../cryptoUtils/CryptoUtils";
+import socketURL from "../../services/webSocket_URL";
 import {
   generateSharedSecretKey,
   digestMessage,
@@ -43,49 +42,15 @@ function handleSendDownloadStatus(newStatus) {
   downloadStatus.value = newStatus;
 }
 
-const deleteStatus = ref(false);
-function handleSendDeleteStatus(newStatus) {
-  deleteStatus.value = newStatus;
-}
-
-watch(uploadStatus, (newStatus) => {
-  if (!newStatus) {
-    BoardUploadService.showRoomContent(roomCode)
-      .then((response) => {
-        roomDataStatus.value = false;
-        roomData.value = response.data;
-        roomDataIsOwner.value = roomData.value.isRoomOwner;
-
-        // 判斷是否為房間擁有者與是否有登入
-        if (roomDataIsOwner.value && currentUser.value) {
-          roomData.value.dbRoomFiles = roomData.value.dbRoomFiles;
-        } else if (currentUser.value && !roomDataIsOwner.value) {
-          roomData.value.dbRoomFiles = roomData.value.dbRoomFiles.filter(
-            (roomFile) => roomFile.uploaderName === currentUser.value.username
-          );
-        } else {
-          roomData.value.dbRoomFiles = [];
-        }
-
-        // 判斷是否有檔案，若非房間擁有者且無檔案則不顯示檔案列表
-        if (roomData.value.dbRoomFiles.length > 0) {
-          roomDataFileStatus.value = true;
-        }
-
-        roomDataFileLength.value = roomData.value.dbRoomFiles.length;
-        handleRoomData(roomDataFileLength.value);
-        updataPageNumber();
-      })
-      .catch((error) => {
-        console.error(error);
-      });
+watch(
+  [uploadStatus, downloadStatus],
+  ([newUploadStatus, newdownloadStatus]) => {
+    if (!newUploadStatus || !newdownloadStatus) {
+      showRoomContent(roomCode);
+    }
   }
-});
-
+);
 function handleRoomData(length) {
-  roomData.value.roomResponse.createTime = new Date(
-    roomData.value.roomResponse.createTime
-  ).toLocaleString();
 
   // 對 roomData.dbRoomFiles 根據 timestamp 進行排序
   roomData.value.dbRoomFiles.sort((a, b) => {
@@ -136,7 +101,9 @@ function showRoomContent(roomCode) {
       roomDataStatus.value = false;
       roomData.value = response.data;
       roomDataIsOwner.value = roomData.value.isRoomOwner;
-
+      roomData.value.roomResponse.createTime = new Date(
+        roomData.value.roomResponse.createTime
+      ).toLocaleString();
       // 判斷是否為房間擁有者與是否有登入
       if (roomDataIsOwner.value && currentUser.value) {
         roomData.value.dbRoomFiles = roomData.value.dbRoomFiles;
@@ -151,11 +118,12 @@ function showRoomContent(roomCode) {
       // 判斷是否有檔案，若非房間擁有者且無檔案則不顯示檔案列表
       if (roomData.value.dbRoomFiles.length > 0) {
         roomDataFileStatus.value = true;
+        roomDataFileLength.value = roomData.value.dbRoomFiles.length;
+        handleRoomData(roomDataFileLength.value);
+        updataPageNumber();
+      } else {
+        roomDataFileStatus.value = false;
       }
-
-      roomDataFileLength.value = roomData.value.dbRoomFiles.length;
-      handleRoomData(roomDataFileLength.value);
-      updataPageNumber();
     })
     .catch((error) => {
       console.error(error);
@@ -170,7 +138,6 @@ async function decryptMessage(encodedMessage, aesKey, iv) {
 
 const messagesTimeStamps = ref([]);
 async function chatGetNewMessages(roomCode) {
-  console.log(roomCode);
   await chatService.getNewMessages(roomCode).then(async (response) => {
     response.data.reverse();
 
@@ -276,21 +243,29 @@ function getHistoryKey() {
 }
 
 onMounted(() => {
-  connect();
+  if (currentUser.value) {
+    connect();
+    setTimeout(() => {
+      chatGetNewMessages(roomCode);
+      joinMessage();
+    }, 1000);
+    getRoomKeyInfo();
+    getHistoryKey();
+  }
   setTimeout(() => {
     showRoomContent(roomCode);
-    chatGetNewMessages(roomCode);
-    joinMessage();
   }, 1000);
-  getRoomKeyInfo();
-  getHistoryKey();
 });
 
 function updataPageNumber() {
-  roomDataPage.value = Math.ceil(
-    roomDataFileLength.value / roomDataNumber.value,
-    0
-  );
+  if (roomDataFileLength.value == 0) {
+    roomDataPage.value = 1;
+  } else {
+    roomDataPage.value = Math.ceil(
+      roomDataFileLength.value / roomDataNumber.value,
+      0
+    );
+  }
   for (let i = 0; i < roomDataNumber.value; i++) {
     roomDataPageLength.value[i] = i;
   }
@@ -320,6 +295,7 @@ const scrollToBottom = () => {
 const roomChatStatus = ref(false);
 function toggleRoomChatStatus(newStatus) {
   roomChatStatus.value = newStatus;
+  scrollToBottom();
 }
 function handleDisconnect() {
   roomChatStatus.value = false;
@@ -333,12 +309,11 @@ let stompClient = null;
 const messageSenderStatus = ref([]);
 
 const connect = () => {
-  const socket = new WebSocket("wss://imbig404.com/websocket");
-  // const socket = new WebSocket("ws://localhost:8088/websocket");
+  const socket = new WebSocket(socketURL);
   stompClient = webstomp.over(socket);
   stompClient.connect({}, onConnected, onError);
   username.value = currentUser.value.username;
-  scrollToBottom();
+  // scrollToBottom();
 };
 
 const onConnected = () => {
@@ -506,13 +481,8 @@ function handleScroll(e) {
   <div v-if="downloadStatus">
     <WorkDownloadBoard
       @send-download-status="handleSendDownloadStatus"
-      :roomData="roomData.dbRoomFiles"
+      :roomCode="roomCode"
     ></WorkDownloadBoard>
-  </div>
-  <div v-if="deleteStatus">
-    <WorkDeleteBoard
-      @send-delete-status="handleSendDeleteStatus"
-    ></WorkDeleteBoard>
   </div>
 
   <div class="room-board-container">
@@ -676,7 +646,6 @@ function handleScroll(e) {
           </div>
           <div class="room-board-data-date">
             <p>Created: {{ roomData.roomResponse.createTime }}</p>
-            <p>20 people</p>
           </div>
           <p>{{ $route.params.roomCode }}</p>
         </div>
@@ -707,12 +676,6 @@ function handleScroll(e) {
             v-for="(roomFile, index) in roomLoadingCode"
             :key="index"
           >
-            <div
-              class="room-board-main-trash"
-              @click="handleSendDeleteStatus(true)"
-            >
-              <font-awesome-icon icon="trash-can" />
-            </div>
             <div class="room-board-main-room-user">
               <div><font-awesome-icon :icon="['far', 'user']" /></div>
               <span>User 1</span>
@@ -745,12 +708,6 @@ function handleScroll(e) {
               v-for="(roomFile, index) in roomDataPageLength"
               :key="index"
             >
-              <div
-                class="room-board-main-trash"
-                @click="handleSendDeleteStatus(true)"
-              >
-                <font-awesome-icon icon="trash-can" />
-              </div>
               <div class="room-board-main-room-user">
                 <div><font-awesome-icon :icon="['far', 'user']" /></div>
                 <span>{{ roomData.dbRoomFiles[roomFile].uploaderName }}</span>
@@ -798,14 +755,14 @@ function handleScroll(e) {
 }
 
 .room-board-main-room {
-  .room-board-main-trash {
-    position: absolute;
-    top: 10px;
-    right: 16px;
-    color: #615f5f;
-    font-size: 16px;
-    cursor: pointer;
-  }
+  // .room-board-main-trash {
+  //   position: absolute;
+  //   top: 10px;
+  //   right: 16px;
+  //   color: #615f5f;
+  //   font-size: 16px;
+  //   cursor: pointer;
+  // }
 
   .room-board-main-room-user {
     display: flex;

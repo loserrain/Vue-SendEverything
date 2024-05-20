@@ -72,7 +72,7 @@ onMounted(() => {
           </RouterLink>
           <RouterLink to="/uploadfile" class="nav-link" @click="setSelectedTab('Send')">
             <li class="nav-item">
-              <font-awesome-icon icon="circle-arrow-up" /> Upload
+              <font-awesome-icon icon="circle-arrow-up" /> Upload / Download <font-awesome-icon icon="circle-down" />
             </li>
           </RouterLink>
           <RouterLink to="/signin" class="nav-link">
@@ -101,7 +101,7 @@ onMounted(() => {
         </RouterLink>
         <RouterLink to="/uploadfile" class="nav-link" @click="setSelectedTab('Send')">
           <li class="nav-item">
-            <font-awesome-icon icon="circle-arrow-up" /> Upload
+            <font-awesome-icon icon="circle-arrow-up" /> Upload / Download <font-awesome-icon icon="circle-down" />
           </li>
         </RouterLink>
         <li class="nav-user">

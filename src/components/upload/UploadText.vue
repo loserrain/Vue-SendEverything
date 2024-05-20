@@ -3,6 +3,7 @@ import { ref, watchEffect, onMounted, watch, computed } from "vue";
 import API_URL from "../../services/API_URL";
 import UploadService from "../../services/uploadFilesService";
 import Webstomp from "webstomp-client";
+import socketURL from "../../services/webSocket_URL";
 import { v4 as uuidv4 } from "uuid";
 import { useUploadInfo } from "../../stores/upload";
 
@@ -58,7 +59,7 @@ async function downloadFile() {
 }
 
 function connectWebSocket(downloadUUID) {
-  const socket = new WebSocket(`wss://imbig404.com/websocket`);
+  const socket = new WebSocket(socketURL);
   client = Webstomp.over(socket);
   client.connect(
     {},

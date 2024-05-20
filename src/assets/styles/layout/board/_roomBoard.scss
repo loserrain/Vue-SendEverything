@@ -237,6 +237,7 @@
           font-size: 16px;
           border-radius: 12px;
           padding: 0 8px;
+          white-space: pre-wrap;
           &:disabled {
             background-color: #db3d3d;
           }

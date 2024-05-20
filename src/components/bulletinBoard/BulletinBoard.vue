@@ -4,6 +4,7 @@ import CreateBoard from "./CreateBoard.vue";
 import LoginBoard from "./LoginBoard.vue";
 import BoardUploadService from "../boardUploadService/BoardRoom.js";
 import webstomp from "webstomp-client";
+import socketURL from "../../services/webSocket_URL";
 import { useRouter } from "vue-router";
 import { useAuthStore } from "../../stores/auth.module";
 import {
@@ -103,8 +104,7 @@ let stompClient = null;
 const username = ref("");
 const connect = async (roomCode) => {
   username.value = currentUser.value.username;
-  const socket = new WebSocket('wss://imbig404.com/websocket');
-  // const socket = new WebSocket("ws://localhost:8088/websocket");
+  const socket = new WebSocket(socketURL);
   stompClient = webstomp.over(socket);
   stompClient.connect(
     {},
