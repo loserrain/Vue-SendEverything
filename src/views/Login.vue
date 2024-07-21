@@ -19,12 +19,6 @@ const loggedIn = computed(() => {
   return authStore.dataStatus.status.loggedIn;
 });
 
-onMounted(() => {
-  // if (loggedIn.value) {
-  //   router.push("/profile");
-  // }
-});
-
 // 跨視窗傳遞訊息，Google登入用
 window.addEventListener("message", (event) => {
   if (event.data.isAuthenticated) {
@@ -62,7 +56,6 @@ function handleLogin(user) {
       console.log("Response data:", error.response);
       if (error.code) {
         const errorCode = error.code;
-        console.log(errorCode);
         switch (errorCode) {
           case "ERR_BAD_REQUEST":
             message.value = "Incorrect username or password. Try again.";

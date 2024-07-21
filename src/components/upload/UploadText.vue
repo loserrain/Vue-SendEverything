@@ -1,9 +1,9 @@
 <script setup>
 import { ref, watchEffect, onMounted } from "vue";
-import API_URL from "../../services/API_URL";
-import UploadService from "../../services/uploadFilesService";
+import API_URL from "../../services/Unify_API/API_URL";
+import UploadService from "../../services/FilesService";
 import Webstomp from "webstomp-client";
-import socketURL from "../../services/webSocket_URL";
+import socketURL from "../../services/Unify_API/webSocket_URL";
 import { v4 as uuidv4 } from "uuid";
 import { useUploadInfo } from "../../stores/upload";
 
@@ -45,16 +45,7 @@ async function downloadFile() {
   connectWebSocket(downloadUUID.value);
   progressStatus.value = false;
   uploadStatus.value = true;
-  const url =
-    API_URL + "/downloadFileByCode/" + code.value + "/" + downloadUUID.value;
-  code.value = "";
-  downloadStatus.value = true;
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "";
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
+  createDownloadLink();
 }
 
 function connectWebSocket(downloadUUID) {
@@ -74,6 +65,19 @@ function connectWebSocket(downloadUUID) {
       console.error("WebSocket Connection error: ", error);
     }
   );
+}
+
+function createDownloadLink() {
+  const url =
+    API_URL + "/downloadFileByCode/" + code.value + "/" + downloadUUID.value;
+  code.value = "";
+  downloadStatus.value = true;
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
 }
 
 function updateProgressComplete() {

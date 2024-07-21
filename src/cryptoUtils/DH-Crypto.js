@@ -54,11 +54,6 @@ export async function digestMessage(message) {
   const encoder = new TextEncoder();
   const data = encoder.encode(message);
   const hash = await crypto.subtle.digest("SHA-256", data);
-  // console.log("hash: ", hash)
-  // const hashArray = Array.from(new Uint8Array(hash));
-  // const hashHex = hashArray
-  //   .map((b) => b.toString(16).padStart(2, "0"))
-  //   .join(""); // 将字节数组转换为十六进制字符串
   return new Uint8Array(hash);
 }
 

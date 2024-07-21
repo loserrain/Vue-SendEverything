@@ -5,16 +5,16 @@ import WorkUploadBoard from "./WorkUploadBoard.vue";
 import WorkDownloadBoard from "./WorkDownloadBoard.vue";
 import { useAuthStore } from "../../stores/auth.module";
 import { useRouter } from "vue-router";
-import BoardUploadService from "../boardUploadService/BoardRoom.js";
+import BoardUploadService from "../../services/BoardService.js";
 import chatService from "../../services/chatService";
 import webstomp from "webstomp-client";
-import socketURL from "../../services/webSocket_URL";
+import socketURL from "../../services/Unify_API/webSocket_URL";
 import {
   generateSharedSecretKey,
   digestMessage,
   aesGcmEncrypt,
   aesGcmDecrypt,
-} from "../cryptoUtils/DH-Crypto";
+} from "../../cryptoUtils/DH-Crypto";
 
 const contentRef = ref(null);
 

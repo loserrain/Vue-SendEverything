@@ -1,14 +1,14 @@
 <script setup>
 import { ref, computed, watch, onMounted } from "vue";
 import { useRouter } from "vue-router";
-import BoardUploadService from "../boardUploadService/BoardRoom.js";
+import BoardUploadService from "../../services/BoardService.js";
 import { Form, Field, ErrorMessage } from "vee-validate";
 import * as yup from "yup";
 import {
   generatePrivateKey,
   generatePublicKey,
   rfc3526roomPrime,
-} from "../cryptoUtils/DH-Crypto.js";
+} from "../../cryptoUtils/DH-Crypto.js";
 
 const emits = defineEmits(["sendCreateStatus"]);
 const router = useRouter();

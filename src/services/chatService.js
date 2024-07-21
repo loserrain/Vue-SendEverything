@@ -1,4 +1,4 @@
-import http from "./http-common.js";
+import http from "./Unify_API/http-common";
 
 class ChatService {
   getNewMessages(roomCode) {
@@ -46,10 +46,6 @@ class ChatService {
         "Content-Type": "multipart/form-data",
       },
     });
-  }
-
-  test() {
-    return http.get("/test", { responseType: 'text' });
   }
 
   getChatMessageKeyAndIV(roomCode) {

@@ -4,11 +4,11 @@ import { useAuthStore } from "../../stores/auth.module";
 import { useRouter } from "vue-router";
 import webstomp from "webstomp-client";
 import chatService from "../../services/chatService";
-import BoardUploadService from "../boardUploadService/BoardRoom.js";
+import BoardUploadService from "../../services/BoardService.js";
 import createSecretRoom from "./createSecretRoom.vue";
 import searchChatRoom from "./searchChatRoom.vue";
-import API_URL from "../../services/API_URL";
-import socketURL from "../../services/webSocket_URL";
+import API_URL from "../../services/Unify_API/API_URL";
+import socketURL from "../../services/Unify_API/webSocket_URL";
 import {
   aesGcmDecrypt,
   aesGcmEncrypt,
@@ -16,7 +16,7 @@ import {
   generatePrivateKey,
   generatePublicKey,
   generateSharedSecretKey,
-} from "../cryptoUtils/DH-Crypto.js";
+} from "../../cryptoUtils/DH-Crypto.js";
 
 const authStore = useAuthStore();
 const router = useRouter();
@@ -606,7 +606,6 @@ async function handleSendCreateCode(chatKeyData) {
   await getSharedKeysByUser("SECRET");
   chatGetMessageByUser();
   handleSendCreateStatus(false);
-  // getRoomKeyInfo(chatRoomCode.value);
 }
 
 const searchChatRoomStatus = ref(false);

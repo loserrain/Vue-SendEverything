@@ -1,6 +1,6 @@
 <script setup>
 import { ref } from "vue";
-import uploadFilesService from "../../services/uploadFilesService";
+import uploadFilesService from "../../services/FilesService";
 
 const emits = defineEmits(["sendDeleteStatus"]);
 function handleSendDeleteStatus(newStatus) {

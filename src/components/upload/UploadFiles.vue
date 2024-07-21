@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted, watch } from "vue";
-import UploadService from "../../services/uploadFilesService";
+import UploadService from "../../services/FilesService";
 import { v4 as uuidv4 } from "uuid";
 import QRCode from "qrcode";
 import DeleteBoard from "../upload/DeleteBoard.vue";

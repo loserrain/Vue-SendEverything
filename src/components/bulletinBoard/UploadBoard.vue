@@ -1,7 +1,7 @@
 <script setup>
 import { ref, watch, computed, onMounted } from "vue";
 import { useAuthStore } from "../../stores/auth.module";
-import UploadService from "../../services/uploadFilesService";
+import UploadService from "../../services/FilesService";
 
 const emits = defineEmits(["sendUploadStatus"]);
 const props = defineProps(["roomCode"]);

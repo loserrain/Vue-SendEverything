@@ -10,7 +10,7 @@ import {
   generatePublicKey,
   generateSharedSecretKey,
   rfc3526roomPrime,
-} from "../cryptoUtils/DH-Crypto.js";
+} from "../../cryptoUtils/DH-Crypto.js";
 
 const emits = defineEmits(["sendCreateStatus", "sendCreateCode"]);
 

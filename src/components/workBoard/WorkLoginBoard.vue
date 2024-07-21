@@ -1,11 +1,11 @@
 <script setup>
 import { ref, computed } from "vue";
-import BoardUploadService from "../boardUploadService/BoardRoom.js";
+import BoardUploadService from "../../services/BoardService.js";
 import { useRouter } from "vue-router";
 import {
   generatePrivateKey,
   generatePublicKey,
-} from "../cryptoUtils/DH-Crypto.js";
+} from "../../cryptoUtils/DH-Crypto.js";
 
 const emits = defineEmits(["sendLoginStatus"]);
 const props = defineProps({ roomCode: String, roomType: String});

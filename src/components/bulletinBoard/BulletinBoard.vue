@@ -2,18 +2,18 @@
 import { ref, onMounted, computed, watch } from "vue";
 import CreateBoard from "./CreateBoard.vue";
 import LoginBoard from "./LoginBoard.vue";
-import BoardUploadService from "../boardUploadService/BoardRoom.js";
+import BoardUploadService from "../../services/BoardService.js";
 import webstomp from "webstomp-client";
-import socketURL from "../../services/webSocket_URL";
+import socketURL from "../../services/Unify_API/webSocket_URL";
 import { useRouter } from "vue-router";
 import { useAuthStore } from "../../stores/auth.module";
 import {
   generatePrivateKey,
   generatePublicKey,
-} from "../cryptoUtils/DH-Crypto.js";
+} from "../../cryptoUtils/DH-Crypto.js";
 
+// 取得使用者資料
 const authStore = useAuthStore();
-
 const currentUser = computed(() => {
   return authStore.dataStatus.user;
 });

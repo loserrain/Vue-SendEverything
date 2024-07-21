@@ -1,8 +1,8 @@
 <script setup>
 import { ref, computed, onMounted, watch } from "vue";
-import API_URL from "../../services/API_URL";
+import API_URL from "../../services/Unify_API/API_URL";
 import WorkDeleteBoard from "./WorkDeleteBoard.vue";
-import BoardService from "../boardUploadService/BoardRoom";
+import BoardService from "../../services/BoardService";
 import { useAuthStore } from "../../stores/auth.module";
 
 const emits = defineEmits(["sendDownloadStatus"]);

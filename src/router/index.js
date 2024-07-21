@@ -1,20 +1,18 @@
 import { createRouter, createWebHistory } from "vue-router";
-import Home from "@/components/Home.vue";
-import Login from "@/components/Login.vue";
-import Register from "@/components/Register.vue";
+import Home from "@/views/Home.vue";
+import Login from "@/views/Login.vue";
+import Register from "@/views/Register.vue";
 import UploadFileViews from "../views/Upload.vue";
-import CheckGoogle from "../components/CheckGoogle.vue";
+import CheckGoogle from "../views/CheckGoogle.vue";
 import BulletinBoard from "../components/bulletinBoard/BulletinBoard.vue";
 import RoomBoard from "../components/bulletinBoard/RoomBoard.vue";
 import WorkBoard from "../components/workBoard/WorkBoard.vue";
 import WorkRoomBoard from "../components/workBoard/WorkRoomBoard.vue";
 import BulletinLogin from "../components/bulletinBoard/LoginBoard.vue";
 import WorkLogin from "../components/workBoard/WorkLoginBoard.vue";
-import BoardUploadService from "../components/boardUploadService/BoardRoom.js";
 import chatRoom from "../components/chatRoom/chatRoom.vue";
 
-const Profile = () => import("@/components/Profile.vue");
-const FilesCard = () => import("../views/FilesCard.vue");
+import BoardUploadService from "../services/BoardService.js";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -39,11 +37,6 @@ const router = createRouter({
       component: Register,
     },
     {
-      path: "/profile",
-      name: "profile",
-      component: Profile,
-    },
-    {
       path: "/uploadfile",
       name: "uploadfile",
       component: UploadFileViews,
@@ -52,11 +45,6 @@ const router = createRouter({
       path: "/checkGoogle",
       name: "checkGoogle",
       component: CheckGoogle,
-    },
-    {
-      path: "/filesCard",
-      name: "fileCsard",
-      component: FilesCard,
     },
     {
       path: "/BulletinBoard",

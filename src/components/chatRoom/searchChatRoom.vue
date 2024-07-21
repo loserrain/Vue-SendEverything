@@ -1,8 +1,8 @@
 <script setup>
 import { ref, computed } from "vue";
-import BoardRoom from "../boardUploadService/BoardRoom";
+import BoardRoom from "../../services/BoardService";
 import webstomp from "webstomp-client";
-import socketURL from "../../services/webSocket_URL";
+import socketURL from "../../services/Unify_API/webSocket_URL";
 import { useAuthStore } from "../../stores/auth.module";
 import {
   generatePrivateKey,
@@ -10,7 +10,7 @@ import {
   digestMessage,
   aesGcmEncrypt,
   generateSharedSecretKey,
-} from "../cryptoUtils/DH-Crypto.js";
+} from "../../cryptoUtils/DH-Crypto.js";
 import chatService from "../../services/chatService";
 
 const emits = defineEmits(["sendSearchStatus", "sendSearchAccess"]);

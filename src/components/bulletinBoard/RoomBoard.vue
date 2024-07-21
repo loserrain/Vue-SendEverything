@@ -5,17 +5,17 @@ import UploadBoard from "./UploadBoard.vue";
 import DeleteBoard from "./DeleteBoard.vue";
 import { useRouter } from "vue-router";
 import { useAuthStore } from "../../stores/auth.module";
-import BoardUploadService from "../boardUploadService/BoardRoom.js";
+import BoardUploadService from "../../services/BoardService.js";
 import chatService from "../../services/chatService";
-import API_URL from "../../services/API_URL";
+import API_URL from "../../services/Unify_API/API_URL";
 import webstomp from "webstomp-client";
-import socketURL from "../../services/webSocket_URL";
+import socketURL from "../../services/Unify_API/webSocket_URL";
 import {
   generateSharedSecretKey,
   digestMessage,
   aesGcmEncrypt,
   aesGcmDecrypt,
-} from "../cryptoUtils/DH-Crypto";
+} from "../../cryptoUtils/DH-Crypto";
 
 const contentRef = ref(null);
 

@@ -1,7 +1,7 @@
 <script setup>
 import { ref, watchEffect } from "vue";
 import { useUploadInfo } from "../../stores/upload";
-import UploadService from "../../services/uploadFilesService";
+import UploadService from "../../services/FilesService";
 
 const uploadInfo = useUploadInfo();
 

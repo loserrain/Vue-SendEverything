@@ -1,4 +1,4 @@
-import http from "./http-common.js";
+import http from "./Unify_API/http-common";
 
 class UploadFilesService {
   upload(file, onUploadProgress) {

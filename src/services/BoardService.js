@@ -1,4 +1,4 @@
-import http from "../../services/http-common.js";
+import http from "./Unify_API/http-common";
 
 class BoardUploadService {
   uploadMessageWithImage(roomData, imageFile) {

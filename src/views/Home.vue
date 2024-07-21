@@ -1,24 +1,12 @@
 <script setup>
 import { RouterLink } from "vue-router";
 import { useUploadInfo } from "../stores/upload";
-import chatService from "../services/chatService";
-import { onMounted } from "vue";
 
 const uploadTab = useUploadInfo();
 
 function setSelectedTab(tab) {
   uploadTab.setSelectedTab(tab);
 }
-
-onMounted(() => {
-  // chatService.test2("HICOVUTI").then((res) => {
-  //   console.log(res.data);
-  // });
-//   chatService.test().then((res) => {
-//     const testt = BigInt(res.data)
-//     console.log(testt.toString());
-//   })
-});
 
 </script>
 

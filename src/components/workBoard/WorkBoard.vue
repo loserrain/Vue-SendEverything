@@ -2,15 +2,15 @@
 import { ref, onMounted, computed, watch } from "vue";
 import WorkCreateBoard from "./WorkCreateBoard.vue";
 import WorkLoginBoard from "./WorkLoginBoard.vue";
-import BoardUploadService from "../boardUploadService/BoardRoom.js";
+import BoardUploadService from "../../services/BoardService.js";
 import webstomp from "webstomp-client";
-import socketURL from "../../services/webSocket_URL";
+import socketURL from "../../services/Unify_API/webSocket_URL";
 import { useAuthStore } from "../../stores/auth.module";
 import { useRouter } from "vue-router";
 import {
   generatePrivateKey,
   generatePublicKey,
-} from "../cryptoUtils/DH-Crypto.js";
+} from "../../cryptoUtils/DH-Crypto.js";
 
 const authStore = useAuthStore();
 const currentUser = computed(() => {

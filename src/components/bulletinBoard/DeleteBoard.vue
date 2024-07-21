@@ -1,6 +1,6 @@
 <script setup>
 import { ref } from "vue";
-import BoardUploadService from "../boardUploadService/BoardRoom.js";
+import BoardUploadService from "../../services/BoardService.js";
 
 const emits = defineEmits(["sendDeleteStatus"]);
 function handleSendDeleteStatus(newStatus) {

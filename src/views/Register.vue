@@ -105,13 +105,11 @@ const getImageUrl = () => {
 
 const defaultImageStatus = ref(false);
 function handlePreviewDefault() {
-  // const reader = new FileReader();
   fetch(getImageUrl())
     .then((response) => response.blob()) // 將文件轉換為 Blob 對象
     .then((blob) => {
       defaultImageStatus.value = true;
       fileBlob.value = blob;
-      console.log(blob)
     })
     .catch((error) => {
       console.error("Error fetching local image:", error);
