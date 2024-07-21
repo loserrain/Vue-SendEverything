@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watchEffect, onMounted, watch, computed } from "vue";
+import { ref, watchEffect, onMounted } from "vue";
 import API_URL from "../../services/API_URL";
 import UploadService from "../../services/uploadFilesService";
 import Webstomp from "webstomp-client";
@@ -29,17 +29,16 @@ onMounted(() => {
 function downloadFiles() {
   progress.value = 0;
   if (/[a-zA-Z]/.test(code.value)) {
-    UploadService.getMessage(code.value)
-      .then((response) => {
-        uploadInfo.setTextReceiveResult(response.data.verificationCode);
-      })
+    UploadService.getMessage(code.value).then((response) => {
+      uploadInfo.setTextReceiveResult(response.data.verificationCode);
+    });
   } else {
     downloadFile();
-  } 
+  }
 }
 
 async function downloadFile() {
-  if(!isComplete.value) {
+  if (!isComplete.value) {
     return;
   }
   downloadStatus.value = true;
@@ -47,7 +46,7 @@ async function downloadFile() {
   progressStatus.value = false;
   uploadStatus.value = true;
   const url =
-  API_URL + "/downloadFileByCode/" + code.value + "/" + downloadUUID.value;
+    API_URL + "/downloadFileByCode/" + code.value + "/" + downloadUUID.value;
   code.value = "";
   downloadStatus.value = true;
   const a = document.createElement("a");
@@ -67,10 +66,7 @@ function connectWebSocket(downloadUUID) {
       client.subscribe(`/topic/downloadProgress/${downloadUUID}`, (message) => {
         progress.value = Math.round(JSON.parse(message.body));
         if (progress.value === 100) {
-          client.disconnect();
-          progressStatus.value = true;
-          uploadStatus.value = false;
-          downloadStatus.value = false;
+          updateProgressComplete()
         }
       });
     },
@@ -78,6 +74,13 @@ function connectWebSocket(downloadUUID) {
       console.error("WebSocket Connection error: ", error);
     }
   );
+}
+
+function updateProgressComplete() {
+  client.disconnect();
+  progressStatus.value = true;
+  uploadStatus.value = false;
+  downloadStatus.value = false;
 }
 </script>
 
@@ -88,7 +91,12 @@ function connectWebSocket(downloadUUID) {
       <p class="upload-receive-fileName">input code</p>
     </div>
     <div class="upload-code-box" v-if="!downloadStatus">
-      <input type="text" v-model="code" @keyup.enter="downloadFiles()" placeholder="" />
+      <input
+        type="text"
+        v-model="code"
+        @keyup.enter="downloadFiles()"
+        placeholder=""
+      />
       <div @click="downloadFiles()"><font-awesome-icon icon="download" /></div>
     </div>
     <div v-else>
@@ -104,9 +112,7 @@ function connectWebSocket(downloadUUID) {
         </div>
       </div>
       <div class="upload-progress-percent">
-        <p :style="{ width: progress + '%' }">
-          {{ progress }}%
-        </p>
+        <p :style="{ width: progress + '%' }">{{ progress }}%</p>
       </div>
     </div>
     <a ref="downloadLink"></a>

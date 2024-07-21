@@ -44,30 +44,17 @@ const outputFileName = ref("");
 // 檔案上傳目錄
 const fileList = ref([]);
 
-// 檔案大小格式化
+// 轉換檔案大小單位
 function formatFileSize(fileSize) {
-  const KB = 1024;
-  const MB = KB * 1024;
-  const GB = MB * 1024;
+  let units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+  let unitIndex = 0;
 
-  let sizeUnit;
-  let sizeValue;
-
-  if (fileSize < KB) {
-    sizeValue = fileSize;
-    sizeUnit = "B";
-  } else if (fileSize < MB) {
-    sizeValue = (fileSize / KB).toFixed(0);
-    sizeUnit = "KB";
-  } else if (fileSize < GB) {
-    sizeValue = (fileSize / MB).toFixed(2);
-    sizeUnit = "MB";
-  } else {
-    sizeValue = (fileSize / GB).toFixed(2);
-    sizeUnit = "GB";
+  while (fileSize >= 1024 && unitIndex < units.length - 1) {
+    fileSize /= 1024;
+    unitIndex++;
   }
 
-  return `${sizeValue}  ${sizeUnit}`;
+  return `${fileSize.toFixed(2)} ${units[unitIndex]}`;
 }
 
 // 儲存拖曳上傳的檔案
@@ -141,7 +128,7 @@ const zipFileName = ref("SendEverything");
 const zipFileStatus = ref(false);
 const ckZipIcon = computed(() => {
   return zipFileStatus.value ? ["far", "square-check"] : ["far", "square"];
-});
+}); // 根據zipFileStatus的值，更改checkbox的icon
 
 function handleZipFileStatus() {
   zipFileStatus.value = !zipFileStatus.value;
@@ -206,7 +193,7 @@ watch(zipFileStatus, (newValue) => {
 // ---------------------------- zip壓縮 ----------------------------
 
 // 增加檔案分割的資料
-const chunkSize =10 * 1024 * 1024; // 檔案分片
+const chunkSize = 10 * 1024 * 1024; // 檔案分片
 const currentChunkIndex = ref(0); // 當前分片索引
 const totalThreads = navigator.hardwareConcurrency || 2; // 硬體執行緒數量
 const workerResult = ref([]); // 檔案分片worker的結果
@@ -216,9 +203,9 @@ const fileListSize = ref([]); // 檔案列表大小
 const fileSendSize = ref(0); // 傳送至後端的檔案大小
 const sendTextInput = ref([]); // 檔案描述
 const confirmOpened = ref(false); // 確認視窗是否開啟
-const chunksFileInfo = ref([]);
+const chunksFileInfo = ref([]); // 檔案分割資料
 
-// 處理檔案分割與檔案數量不對等時的資料
+// 處理檔案分片與檔案數量不對等時的資料(如檔案分為十片時，只會有一筆檔案描述與檔案大小的資料)
 function handleFileChunkData(chunksInfo) {
   chunksInfo.forEach((chunkInfo) => {
     sendTextInput.value.push(chunkInfo.textInput);
@@ -226,7 +213,7 @@ function handleFileChunkData(chunksInfo) {
   });
 }
 
-// 計算檔案分割資料，如檔案分為十片時，則會有十筆這個檔案描述、進度條與檔案大小的資料
+// 計算檔案分割資料，建立List，將檔案描述、檔案大小與進度條的資料分別放入各自對應的檔案分片List中
 function calculateFileChunks(fileList, chunkSize) {
   const chunksInfo = [];
   let progressFileNumber = 0;
@@ -249,11 +236,11 @@ function calculateFileChunks(fileList, chunkSize) {
   return chunksInfo;
 }
 
-// 初始化檔案資料，如檔案描述、檔案大小與
+// 初始化檔案資料
 function initialFileData(file) {
   sendTextInput.value = []; // 清空sendTextInput
   fileListSize.value = []; // 清空fileListSize
-  chunksFileInfo.value = []; // 清空chunksFileInfo
+  chunksFileInfo. value = []; // 清空chunksFileInfo
   for (let i = 0; i < file.length; i++) {
     progress.value[i] = 0;
   }
@@ -294,9 +281,6 @@ async function uploadChunks() {
 
   // 初始化檔案資料與進度條
   initialFileData(fileList.value);
-
-  // 利用分片計算檔案描述、檔案大小與進度條
-  // chunksFileInfo.value = calculateFileChunks(fileList.value, chunkSize);
 
   if (zipFileStatus.value) {
     await createZipFile();
@@ -373,25 +357,28 @@ async function uploadChunkThreads(file) {
     }
     // 分片處理上傳的檔案 (多執行緒) ------------------------------------------------------------------------------------
 
-    await uoloadChunksRecurively(0);
+    await uploadChunksRecurively(0);
     // 當上傳完成後，可點擊確認按鈕
     confirmOpened.value = false;
   } catch (error) {
     console.error("Error in uploadChunkThreads: ", error);
   }
 
-  async function uoloadChunksRecurively(index) {
+  // 使用遞迴上傳分片
+  async function uploadChunksRecurively(index) {
+    // 若index大於等於分片數量，則表示檔案上傳完成，結束遞迴
     if (index >= workerMultiple.value.length) {
       fileListUploadStatus.value = true;
       workerMultiple.value = [];
       return;
     }
 
+    // 取得分片資料
     const { fileChunk, totalChunks, fileId, chunkId } =
       workerMultiple.value[index];
     const chunkNumber = workerMultiple.value[index].chunkNumber + 1;
 
-    // 根據是否壓縮檔案更改檔案大小邏輯
+    // 根據是否壓縮檔案更改檔案大小
     if (zipFileStatus.value) {
       fileSendSize.value = zipFileBlob.value[0].size;
     } else {
@@ -432,7 +419,7 @@ async function uploadChunkThreads(file) {
       );
     }
     // 遞迴上傳下一個分片
-    await uoloadChunksRecurively(index + 1);
+    await uploadChunksRecurively(index + 1);
   }
 }
 

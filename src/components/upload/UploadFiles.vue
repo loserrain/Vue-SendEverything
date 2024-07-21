@@ -1,17 +1,9 @@
 <script setup>
-import { ref, onMounted, computed, watch } from "vue";
+import { ref, onMounted, watch } from "vue";
 import UploadService from "../../services/uploadFilesService";
-import API_URL from "../../services/API_URL";
 import { v4 as uuidv4 } from "uuid";
 import QRCode from "qrcode";
-import { useAuthStore } from "../../stores/auth.module";
 import DeleteBoard from "../upload/DeleteBoard.vue";
-
-const authStore = useAuthStore();
-
-const currentUser = computed(() => {
-  return authStore.dataStatus.user;
-});
 
 const emits = defineEmits([
   "sendFileInfo",
@@ -53,30 +45,42 @@ function userConfirm() {
   }, 200);
 }
 
+// 轉換檔案大小單位
 function formatFileSize(fileSize) {
-  const KB = 1024;
-  const MB = KB * 1024;
-  const GB = MB * 1024;
+  let units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+  let unitIndex = 0;
 
-  let sizeUnit;
-  let sizeValue;
-
-  if (fileSize < KB) {
-    sizeValue = fileSize;
-    sizeUnit = "B";
-  } else if (fileSize < MB) {
-    sizeValue = (fileSize / KB).toFixed(2);
-    sizeUnit = "KB";
-  } else if (fileSize < GB) {
-    sizeValue = (fileSize / MB).toFixed(2);
-    sizeUnit = "MB";
-  } else {
-    sizeValue = (fileSize / GB).toFixed(2);
-    sizeUnit = "GB";
+  while (fileSize >= 1024 && unitIndex < units.length - 1) {
+    fileSize /= 1024;
+    unitIndex++;
   }
 
-  return `${sizeValue} ${sizeUnit}`;
+  return `${fileSize.toFixed(2)} ${units[unitIndex]}`;
 }
+
+//   const KB = 1024;
+//   const MB = KB * 1024;
+//   const GB = MB * 1024;
+
+//   let sizeUnit;
+//   let sizeValue;
+
+//   if (fileSize < KB) {
+//     sizeValue = fileSize;
+//     sizeUnit = "B";
+//   } else if (fileSize < MB) {
+//     sizeValue = (fileSize / KB).toFixed(2);
+//     sizeUnit = "KB";
+//   } else if (fileSize < GB) {
+//     sizeValue = (fileSize / MB).toFixed(2);
+//     sizeUnit = "MB";
+//   } else {
+//     sizeValue = (fileSize / GB).toFixed(2);
+//     sizeUnit = "GB";
+//   }
+
+//   return `${sizeValue} ${sizeUnit}`;
+// }
 
 // 儲存拖曳上傳的檔案
 const files = ref(null);
@@ -112,7 +116,6 @@ function selectFile() {
   selectedFiles.value = file.value.files;
   outputFileName.value = file.value.files[0].name;
   selectFileName.value = shortenFileName(file.value.files[0].name, 24, 10, -14);
-
   handleFileSelectAndDrop(file.value.files);
 }
 
@@ -121,8 +124,8 @@ function handleFileSelectAndDrop(file) {
   for (let i = 0; i < file.length; i++) {
     fileList.value.push(file[i]);
 
-    // 計算傳給Upload.vue的Name與Size
-    sendEmitFileName.value.push(shortenFileName(file[i].name, 12, 4, -8));
+    // 計算傳給Upload.vue組件的Name、Size與TotalSize
+    sendEmitFileName.value.push(shortenFileName(file[i].name, 10, 4, -6));
     sendEmitFileSize.value.push(formatFileSize(file[i].size));
     TotalFileSize.value += file[i].size;
   }
@@ -284,7 +287,7 @@ const fileInfos = ref([]);
 const fileReceive = ref([]);
 
 // 增加檔案分割的資料
-const chunkSize = 10 * 1024 * 1024; // 5MB
+const chunkSize = 10 * 1024 * 1024; // 10MB
 const totalChunks = ref(0);
 const currentChunkIndex = ref(0);
 const totalThreads = navigator.hardwareConcurrency || 2;
@@ -306,7 +309,7 @@ async function uploadChunkThreads(file) {
           type: "module",
         }
       );
-
+      // 計算每個 worker 要處理的分片範圍
       const startIndex = i * workerChunkCount;
       let endIndex = startIndex + workerChunkCount;
       if (endIndex >= chunkCount) {
@@ -314,6 +317,7 @@ async function uploadChunkThreads(file) {
       }
       // 使用 Promise 包裹 worker 的執行
       const workerPromise = new Promise((resolve) => {
+        // 傳送訊息給 worker
         worker.postMessage({
           file,
           chunkSize,
@@ -323,6 +327,7 @@ async function uploadChunkThreads(file) {
           zipFileName: zipFileName.value,
         });
 
+        // 接收 worker 的訊息
         worker.onmessage = (e) => {
           for (let i = startIndex; i < endIndex; i++) {
             workerResult.value[i] = e.data[i - startIndex];

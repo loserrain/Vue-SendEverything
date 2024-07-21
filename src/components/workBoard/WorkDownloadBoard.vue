@@ -74,33 +74,20 @@ async function downloadFile(code) {
   document.body.removeChild(a);
 }
 
+// 轉換檔案大小單位
 function formatFileSize(fileSize) {
-  const KB = 1024;
-  const MB = KB * 1024;
-  const GB = MB * 1024;
+  let units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+  let unitIndex = 0;
 
-  let sizeUnit;
-  let sizeValue;
-
-  if (fileSize < KB) {
-    sizeValue = fileSize;
-    sizeUnit = "B";
-  } else if (fileSize < MB) {
-    sizeValue = (fileSize / KB).toFixed(0);
-    sizeUnit = "KB";
-  } else if (fileSize < GB) {
-    sizeValue = (fileSize / MB).toFixed(2);
-    sizeUnit = "MB";
-  } else {
-    sizeValue = (fileSize / GB).toFixed(2);
-    sizeUnit = "GB";
+  while (fileSize >= 1024 && unitIndex < units.length - 1) {
+    fileSize /= 1024;
+    unitIndex++;
   }
 
-  return `${sizeValue} ${sizeUnit}`;
+  return `${fileSize.toFixed(2)} ${units[unitIndex]}`;
 }
 
 // download
-
 const roomDataDBFiles = ref([]);
 const roomDataDBFilesStatus = ref(false);
 function handleRoomDataDBFiles(dataFilesLength) {

@@ -71,7 +71,6 @@ async function handleCreate(room) {
         roomInitVector: initVector,
         roomCode: response.data.roomCode,
       }
-      console.log("response: ", response.data.roomCode);
       handleSendCreateCode(chatKeyData);
     })
     .catch((error) => {

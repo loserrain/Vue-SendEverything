@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, computed, nextTick, watch } from "vue";
+import { ref, onMounted, computed, nextTick } from "vue";
 import { useAuthStore } from "../../stores/auth.module";
 import { useRouter } from "vue-router";
 import webstomp from "webstomp-client";
@@ -78,7 +78,6 @@ async function getHistoryKey(roomCode) {
         historyAesKey.value[historyUserCurrentIndex.value[i]] =
           await digestMessage(historyRoomSharedKey.value.toString());
       }
-      console.log("historyAesKey", historyAesKey.value);
     });
 }
 
@@ -334,29 +333,17 @@ function handleChatRoomTopInfo(roomCode) {
   });
 }
 
+// 轉換檔案大小單位
 function formatFileSize(fileSize) {
-  const KB = 1024;
-  const MB = KB * 1024;
-  const GB = MB * 1024;
+  let units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+  let unitIndex = 0;
 
-  let sizeUnit;
-  let sizeValue;
-
-  if (fileSize < KB) {
-    sizeValue = fileSize;
-    sizeUnit = "B";
-  } else if (fileSize < MB) {
-    sizeValue = (fileSize / KB).toFixed(0);
-    sizeUnit = "KB";
-  } else if (fileSize < GB) {
-    sizeValue = (fileSize / MB).toFixed(2);
-    sizeUnit = "MB";
-  } else {
-    sizeValue = (fileSize / GB).toFixed(2);
-    sizeUnit = "GB";
+  while (fileSize >= 1024 && unitIndex < units.length - 1) {
+    fileSize /= 1024;
+    unitIndex++;
   }
 
-  return `${sizeValue} ${sizeUnit}`;
+  return `${fileSize.toFixed(2)} ${units[unitIndex]}`;
 }
 
 // 聊天室檔案資訊
