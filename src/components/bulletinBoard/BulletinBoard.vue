@@ -112,7 +112,7 @@ const connect = async (roomCode) => {
       stompClient.subscribe(`/topic/${roomCode}`);
       stompClient.onopen = () => {
         joinMessage(roomCode);
-      }
+      };
     },
     onError
   );
@@ -134,7 +134,7 @@ const joinMessage = async (roomCode) => {
     roomCode: roomCode,
   };
 
-  if(stompClient && stompClient.connected) {
+  if (stompClient && stompClient.connected) {
     stompClient.send(
       `/app/join.joinMessage/${roomCode}`,
       JSON.stringify(chatMessage),
@@ -142,7 +142,9 @@ const joinMessage = async (roomCode) => {
     );
     disconnect();
   } else {
-    console.error("Could not connect to WebSocket server. Please refresh this page to try again!");
+    console.error(
+      "Could not connect to WebSocket server. Please refresh this page to try again!"
+    );
   }
 };
 
@@ -163,11 +165,9 @@ const roomType = ref([]);
 
 // 透過房間代碼編號，將房間代碼傳送至LoginBoard元件
 async function sendRoomNumber(roomNumber) {
-  if (roomCurrentPage.value === 1) {
-    roomCodeNumber.value = roomNumber;
-  } else {
-    roomCodeNumber.value = roomNumber + (roomCurrentPage.value - 1) * 12;
-  }
+  roomCodeNumber.value =
+    roomNumber + Math.max(0, (roomCurrentPage.value - 1) * 12);
+
   const sendVerifyRoomCode = roomCode.value[roomCodeNumber.value];
   const sendVerifyRoomType = roomType.value[roomCodeNumber.value];
   try {
@@ -188,7 +188,6 @@ async function sendRoomNumber(roomNumber) {
     } else {
       const roomPrivateKey = generatePrivateKey();
       const roomPublicKey = generatePublicKey(roomPrivateKey);
-      connect(sendVerifyRoomCode);
       BoardUploadService.accessRoom(
         "",
         sendVerifyRoomCode,
@@ -225,9 +224,6 @@ function updataPageNumber() {
     filteredSearchRoomData.value.length / roomNumber.value,
     0
   );
-  for (let i = 0; i < roomNumber.value; i++) {
-    roomDataPageLength.value[i] = i;
-  }
 }
 
 const boardType = ref("BULLETIN_BOARD");
@@ -236,7 +232,6 @@ onMounted(() => {
   BoardUploadService.getAllRooms(boardType.value)
     .then((response) => {
       roomData.value = response.data;
-      console.log(roomData.value);
       roomData.value.sort((a, b) => {
         const dateA = new Date(a.createTime);
         const dateB = new Date(b.createTime);
@@ -245,7 +240,6 @@ onMounted(() => {
       roomData.value.forEach((room) => {
         room.createTime = new Date(room.createTime).toLocaleString();
       });
-      updataPageNumber();
     })
     .catch((error) => {
       console.error(error);
@@ -256,7 +250,7 @@ onMounted(() => {
 const roomNumber = ref(12);
 const roomActiveTab = ref(1);
 const roomDataPage = ref(1);
-const roomDataPageLength = ref([]);
+const roomDataPageLength = ref([]); // 當前房間頁數的資料序列
 const roomCurrentPage = ref(1);
 const roomCurrentRouter = ref(router.currentRoute.value.query.page);
 
@@ -267,10 +261,11 @@ function clickPageNumber(page) {
   let endIndex = page * roomNumber.value - 1;
   endIndex = Math.min(endIndex, filteredSearchRoomData.value.length - 1);
 
-  roomDataPageLength.value = [];
-  for (let i = startIndex; i <= endIndex; i++) {
-    roomDataPageLength.value.push(i);
-  }
+  // Revise
+  roomDataPageLength.value = Array.from(
+    { length: endIndex - startIndex + 1 },
+    (_, i) => i + startIndex
+  )
   roomActiveTab.value = page;
   router.push({ query: { page: page } });
 }
@@ -281,25 +276,14 @@ watch(router.currentRoute, (newRoute) => {
   clickPageNumber(Number(roomCurrentRouter.value));
 });
 
-// 監聽搜尋房間資料，並更新房間資料，並同時處理資料、更新頁數與轉換頁數
+// 監聽搜尋房間資料，並更新房間資料，並同時處理資料、更新頁數與轉換頁數 Revise
 watch(filteredSearchRoomData, (newFilteredSearchRoomData) => {
-  roomDataPageLength.value = [];
-  if (newFilteredSearchRoomData.length < 13) {
-    roomNumber.value = newFilteredSearchRoomData.length;
-    roomDataPageLength.value = [];
-    for (let i = 0; i < newFilteredSearchRoomData.length; i++) {
-      roomDataPageLength.value.push(i);
-    }
-    updataPageNumber();
-    clickPageNumber(Number(router.currentRoute.value.query.page));
-    processRoomData(newFilteredSearchRoomData);
-  } else {
-    roomNumber.value = 12;
-    updataPageNumber();
-    clickPageNumber(Number(router.currentRoute.value.query.page));
-    processRoomData(newFilteredSearchRoomData);
-  }
-});
+  const totalRooms = newFilteredSearchRoomData.length;
+  roomNumber.value = totalRooms < 13 ? totalRooms : 12;
+  updataPageNumber();
+  clickPageNumber(Number(router.currentRoute.value.query.page));
+  processRoomData(newFilteredSearchRoomData);
+})
 </script>
 
 <template>

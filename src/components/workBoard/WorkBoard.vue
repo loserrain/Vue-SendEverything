@@ -236,9 +236,6 @@ function updataPageNumber() {
     filteredSearchRoomData.value.length / roomNumber.value,
     0
   );
-  for (let i = 0; i < roomNumber.value; i++) {
-    roomDataPageLength.value[i] = i;
-  }
 }
 
 const boardType = ref("ASSIGNMENT_BOARD");
@@ -255,7 +252,6 @@ onMounted(() => {
       roomData.value.forEach((room) => {
         room.createTime = new Date(room.createTime).toLocaleString();
       });
-      updataPageNumber();
     })
     .catch((error) => {
       console.error(error);
@@ -277,10 +273,11 @@ function clickPageNumber(page) {
   let endIndex = page * roomNumber.value - 1;
   endIndex = Math.min(endIndex, filteredSearchRoomData.value.length - 1);
 
-  roomDataPageLength.value = [];
-  for (let i = startIndex; i <= endIndex; i++) {
-    roomDataPageLength.value.push(i);
-  }
+  // Revise
+  roomDataPageLength.value = Array.from(
+    { length: endIndex - startIndex + 1 },
+    (_, i) => i + startIndex
+  )
   roomActiveTab.value = page;
   router.push({ query: { page: page } });
 }
@@ -293,23 +290,12 @@ watch(router.currentRoute, (newRoute) => {
 
 // 監聽搜尋房間資料，並更新房間資料，並同時處理資料、更新頁數與轉換頁數
 watch(filteredSearchRoomData, (newFilteredSearchRoomData) => {
-  roomDataPageLength.value = [];
-  if (newFilteredSearchRoomData.length < 13) {
-    roomNumber.value = newFilteredSearchRoomData.length;
-    roomDataPageLength.value = [];
-    for (let i = 0; i < newFilteredSearchRoomData.length; i++) {
-      roomDataPageLength.value.push(i);
-    }
-    updataPageNumber();
-    clickPageNumber(Number(router.currentRoute.value.query.page));
-    processRoomData(newFilteredSearchRoomData);
-  } else {
-    roomNumber.value = 12;
-    updataPageNumber();
-    clickPageNumber(Number(router.currentRoute.value.query.page));
-    processRoomData(newFilteredSearchRoomData);
-  }
-});
+  const totalRooms = newFilteredSearchRoomData.length;
+  roomNumber.value = totalRooms < 13 ? totalRooms : 12;
+  updataPageNumber();
+  clickPageNumber(Number(router.currentRoute.value.query.page));
+  processRoomData(newFilteredSearchRoomData);
+})
 </script>
 
 <template>

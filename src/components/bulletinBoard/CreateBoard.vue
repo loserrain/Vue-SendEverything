@@ -102,7 +102,7 @@ const roomPrime = rfc3526roomPrime();
 const roomPrivateKey = generatePrivateKey();
 const roomPublicKey = generatePublicKey(roomPrivateKey);
 const initVector = crypto.getRandomValues(new Uint8Array(12));
-const base64FromInitVector = btoa(String.fromCharCode.apply(null, initVector));
+const base64FromInitVector = btoa(String.fromCharCode.apply(null, initVector));// Uint8Array to base64
 
 function handleLoginData(password, roomCode, roomType) {
   BoardUploadService.accessRoom(password, roomCode, roomType, roomPublicKey, roomPrivateKey)
@@ -155,7 +155,7 @@ const formData = ref({
 const getImageUrl = (fileIndex) => {
   return new URL(
     `../../assets/image/Default_picture${fileIndex}.jpg`,
-    import.meta.url
+    import.meta.url // import.meta.url 會回傳目前模組的 URL，這裡是 src/components/bulletinBoard/CreateBoard.vue
   ).href;
 };
 

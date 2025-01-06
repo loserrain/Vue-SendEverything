@@ -1,7 +1,7 @@
 <script setup>
 import { ref, watchEffect, onMounted } from "vue";
 import API_URL from "../../services/Unify_API/API_URL";
-import UploadService from "../../services/FilesService";
+import UploadFilesService from "../../services/FilesService";
 import Webstomp from "webstomp-client";
 import socketURL from "../../services/Unify_API/webSocket_URL";
 import { v4 as uuidv4 } from "uuid";
@@ -15,6 +15,7 @@ const downloadLink = ref(null);
 const uploadStatus = ref(false);
 const progressStatus = ref(true);
 const progress = ref(0);
+// UUID 是唯一識別碼，用於連接 WebSocket 並監控下載進度
 const downloadUUID = ref(uuidv4());
 const downloadStatus = ref(false);
 
@@ -22,6 +23,7 @@ let client;
 
 onMounted(() => {
   watchEffect(() => {
+    // 將 code 的長度設為 6
     isComplete.value = code.value.length === 6;
   });
 });
@@ -29,7 +31,7 @@ onMounted(() => {
 function downloadFiles() {
   progress.value = 0;
   if (/[a-zA-Z]/.test(code.value)) {
-    UploadService.getMessage(code.value).then((response) => {
+    UploadFilesService.getMessage(code.value).then((response) => {
       uploadInfo.setTextReceiveResult(response.data.verificationCode);
     });
   } else {

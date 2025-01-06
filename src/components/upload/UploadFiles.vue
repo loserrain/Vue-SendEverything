@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted, watch } from "vue";
-import UploadService from "../../services/FilesService";
+import UploadFilesService from "../../services/FilesService";
 import { v4 as uuidv4 } from "uuid";
 import QRCode from "qrcode";
 import DeleteBoard from "../upload/DeleteBoard.vue";
@@ -58,30 +58,6 @@ function formatFileSize(fileSize) {
   return `${fileSize.toFixed(2)} ${units[unitIndex]}`;
 }
 
-//   const KB = 1024;
-//   const MB = KB * 1024;
-//   const GB = MB * 1024;
-
-//   let sizeUnit;
-//   let sizeValue;
-
-//   if (fileSize < KB) {
-//     sizeValue = fileSize;
-//     sizeUnit = "B";
-//   } else if (fileSize < MB) {
-//     sizeValue = (fileSize / KB).toFixed(2);
-//     sizeUnit = "KB";
-//   } else if (fileSize < GB) {
-//     sizeValue = (fileSize / MB).toFixed(2);
-//     sizeUnit = "MB";
-//   } else {
-//     sizeValue = (fileSize / GB).toFixed(2);
-//     sizeUnit = "GB";
-//   }
-
-//   return `${sizeValue} ${sizeUnit}`;
-// }
-
 // 儲存拖曳上傳的檔案
 const files = ref(null);
 const dropActive = ref(false);
@@ -100,6 +76,7 @@ function handleDragNoActive(event) {
 }
 
 function handleFileDrop(event) {
+  // 取消預設行為，否則會打開圖片
   event.preventDefault();
 
   files.value = event.dataTransfer.files;
@@ -206,7 +183,7 @@ const fileSort = ref([]);
 const verificationCode = ref("");
 // 上傳檔案後取得資料
 function uploadGetFiles() {
-  UploadService.getFiles().then((response) => {
+  UploadFilesService.getFiles().then((response) => {
     fileInfos.value = response.data;
     const fileNames = fileInfos.value.map(
       (fileInfo) => fileInfo.fileName || []
@@ -239,14 +216,14 @@ function uploadGetFiles() {
   });
 }
 
-// QRCODE與驗證碼產生
+// -----------------------------QRCODE與驗證碼產生-----------------------------
 const qrCodeUrl = ref("");
 const downloadUUID = ref("");
 
 async function generateQRCode(code, uuid, size) {
   try {
-    // const url = `${API_URL}/downloadFileByCode/${code}/${uuid}`;
-    const url = `http://api.imbig404.com/api/auth/downloadFileByCode/${code}/${uuid}`;
+    const url = `${API_URL}/downloadFileByCode/${code}/${uuid}`;
+    // const url = `http://api.imbig404.com/api/auth/downloadFileByCode/${code}/${uuid}`;
     const qrCodeDataUrl = await QRCode.toDataURL(url, { width: size });
     qrCodeUrl.value = qrCodeDataUrl;
   } catch (error) {
@@ -267,6 +244,8 @@ async function produceQRCode(index) {
   emits("sendFileInfo", sendFileInfo);
 }
 
+// -----------------------------QRCODE與驗證碼產生-----------------------------
+
 // 複製驗證碼
 const copyVerificationCode = (downloadCode) => {
   const blob = new Blob([downloadCode], { type: "text/plain" });
@@ -280,7 +259,6 @@ onMounted(() => {
 });
 // ---------------------------- 上傳檔案區 ----------------------------
 
-// --------------------------------------------------------
 const currentFile = ref(undefined);
 const progress = ref(0);
 const fileInfos = ref([]);
@@ -391,7 +369,7 @@ async function uploadChunkThreads(file) {
         formData.append("outputFileName", outputFileName.value);
 
         // 調用上傳函數
-        UploadService.uploadChunk(formData).then(() => {
+        UploadFilesService.uploadChunk(formData).then(() => {
           // 計算當前分片數量
           currentChunkIndex.value++;
 
@@ -400,11 +378,11 @@ async function uploadChunkThreads(file) {
             (100 * currentChunkIndex.value) / totalChunks
           );
 
-          // 若分片數量與總分片數量相同，通知後端合併
+          // 若分片數量與總分片數量相同，通知後端回傳驗證碼
           if (currentChunkIndex.value === totalChunks) {
             (async () => {
               try {
-                const response = await UploadService.completeFileUpload(
+                const response = await UploadFilesService.completeFileUpload(
                   fileId,
                   outputFileName.value,
                   chunkId

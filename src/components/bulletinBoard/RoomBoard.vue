@@ -113,7 +113,7 @@ function handleRoomData(length) {
 
 // 轉換檔案大小單位
 function formatFileSize(fileSize) {
-  let units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+  let units = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
   let unitIndex = 0;
 
   while (fileSize >= 1024 && unitIndex < units.length - 1) {
@@ -225,10 +225,11 @@ const roomSharedKey = ref(undefined);
 const roomInitVector = ref(undefined);
 
 function getHistoryKey() {
-  BoardUploadService.getChatMessageHistorySharedKey(roomCode).then(
-    async (response) => {
+  chatService
+    .getChatMessageHistorySharedKey(roomCode)
+    .then(async (response) => {
       historyUserCurrentIndex.value = Object.keys(response.data);
-      console.log('response.data:', response.data);
+      console.log("response.data:", response.data);
       for (let i = 0; i < historyUserCurrentIndex.value.length; i++) {
         if (historyUserCurrentIndex.value[i] == 2) {
           historyRoomPrivateKey.value =
@@ -242,12 +243,11 @@ function getHistoryKey() {
         historyAesKey.value[historyUserCurrentIndex.value[i]] =
           await digestMessage(historyRoomPrivateKey.value.toString());
       }
-    }
-  );
+    });
 }
 
 async function getRoomKeyInfo() {
-  BoardUploadService.getChatMessageKeyAndIV(roomCode).then(async (response) => {
+  chatService.getChatMessageKeyAndIV(roomCode).then(async (response) => {
     roomPublicKey.value = BigInt(response.data.PublicKey);
     roomPrivateKey.value = BigInt(response.data.PrivateKey);
     roomInitVector.value = Uint8Array.from(
@@ -298,17 +298,15 @@ async function downloadFile(code) {
 }
 
 function updataPageNumber() {
-  if (roomDataFileLength.value == 0) {
-    roomDataPage.value = 1;
-  } else {
-    roomDataPage.value = Math.ceil(
-      roomDataFileLength.value / roomDataNumber.value,
-      0
-    );
-  }
-  for (let i = 0; i < roomDataNumber.value; i++) {
-    roomDataPageLength.value[i] = i;
-  }
+  roomDataPage.value =
+    roomDataFileLength.value == 0
+      ? 1
+      : Math.ceil(roomDataFileLength.value / roomDataNumber.value);
+      
+  roomDataPageLength.value = Array.from(
+    { length: roomDataNumber.value },
+    (_, i) => i
+  );
 }
 
 function clickPageNumber(page) {
@@ -316,10 +314,10 @@ function clickPageNumber(page) {
   let endIndex = page * roomDataNumber.value - 1;
   endIndex = Math.min(endIndex, roomDataFileLength.value - 1);
 
-  roomDataPageLength.value = [];
-  for (let i = startIndex; i <= endIndex; i++) {
-    roomDataPageLength.value.push(i);
-  }
+  roomDataPageLength.value = Array.from(
+    { length: endIndex - startIndex + 1 },
+    (_, i) => startIndex + i
+  );
   roomActiveTab.value = page;
 }
 

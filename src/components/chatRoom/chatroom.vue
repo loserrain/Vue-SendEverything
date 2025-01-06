@@ -52,8 +52,7 @@ const handleTabClick = (tab) => {
 };
 
 async function getHistoryKey(roomCode) {
-  await chatService
-    .getChatMessageHistorySharedKey(roomCode)
+  await chatService.getChatMessageHistorySharedKey(roomCode)
     .then(async (response) => {
       const targetKey = roomUserKey.value.find(
         (key) => key.roomCode === roomCode
@@ -104,8 +103,10 @@ async function chatGetNewMessages(roomCode) {
     for (let i = 0; i < response.data.length; i++) {
       messages.value.push(response.data[i]);
 
+      // 根據發送訊息時的人數，取得歷史訊息的金鑰
       let key = 0;
       const currentCount = messages.value[i].chatRoomMessage.userCurrentCount;
+      // 判斷該訊息是否有對應的金鑰
       if (historyAesKey.value.hasOwnProperty(currentCount)) {
         key = currentCount;
       } else {
@@ -144,7 +145,7 @@ async function chatGetNewMessages(roomCode) {
 // 更新聊天室訊息，並將畫面滾動至最底部
 const contentRef = ref(null);
 const scrollToBottom = () => {
-  nextTick(() => {
+  nextTick(() => {// nextTick() 會在當前的同步處理程式碼執行完畢後，才會執行傳入的 callback 函式
     const contentElement = contentRef.value;
     if (contentElement) {
       contentElement.scrollTop = contentElement.scrollHeight;
@@ -370,7 +371,6 @@ async function chatRoomFileDownload(index) {
   const fileCode =
     chatRoomFilesInfo.value.fileNameResponse[index].verificationCode;
   const url = `${API_URL}/downloadRoomFileByCode/${fileCode}`;
-  console.log(fileCode);
   const a = document.createElement("a");
   a.href = url;
   a.download = "";
@@ -444,7 +444,6 @@ async function getMessageByUser() {
 async function getSecretMessageByUser() {
   chatService.getSecretMessageByUser().then(async (response) => {
     const keyMap = new Map(roomUserKey.value.map((key) => [key.roomCode, key]));
-    console.log("keyMap", keyMap);
     const decryptMessages = response.data.map(async (message) => {
       const roomUserKeyObject = keyMap.get(message.chatRoomCode);
       if (roomUserKeyObject) {
@@ -526,7 +525,7 @@ const roomSharedKey = ref(undefined);
 const roomInitVector = ref(undefined);
 const roomUserKey = ref([]);
 
-// 根據 roomCodd 取得房間的金鑰資訊
+// 根據 roomCode 取得房間的金鑰資訊
 async function getRoomKeyInfo(roomCode) {
   chatService.getChatMessageKeyAndIV(roomCode).then(async (response) => {
     roomPublicKey.value = BigInt(response.data.PublicKey);

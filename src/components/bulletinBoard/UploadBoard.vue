@@ -1,7 +1,7 @@
 <script setup>
 import { ref, watch, computed, onMounted } from "vue";
 import { useAuthStore } from "../../stores/auth.module";
-import UploadService from "../../services/FilesService";
+import UploadFilesService from "../../services/FilesService";
 
 const emits = defineEmits(["sendUploadStatus"]);
 const props = defineProps(["roomCode"]);
@@ -401,7 +401,7 @@ async function uploadChunkThreads(file) {
     formData.append("roomCode", props.roomCode);
     formData.append("uploaderName", textUserId.value);
 
-    await UploadService.uploadRoomFileChunk(formData);
+    await UploadFilesService.uploadRoomFileChunk(formData);
     // 每上傳一個分片，進度條就會增加1
     currentChunkIndex.value++;
     // 進度條的值
@@ -412,7 +412,7 @@ async function uploadChunkThreads(file) {
     if (currentChunkIndex.value === totalChunks) {
       // 重製分片索引
       currentChunkIndex.value = 0;
-      await UploadService.completeUploadRoomFile(
+      await UploadFilesService.completeUploadRoomFile(
         fileId,
         outputFileName.value,
         chunkId

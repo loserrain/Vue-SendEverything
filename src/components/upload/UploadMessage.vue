@@ -1,14 +1,14 @@
 <script setup>
 import { ref, watchEffect } from "vue";
 import { useUploadInfo } from "../../stores/upload";
-import UploadService from "../../services/FilesService";
+import UploadFilesService from "../../services/FilesService";
 
 const uploadInfo = useUploadInfo();
 
 const textInput = ref("");
 
 function uploadMessage() {
-  UploadService.uploadMessage(textInput.value)
+  UploadFilesService.uploadMessage(textInput.value)
     .then((response) => {
       uploadInfo.setTextReceiveStatus(true);
       uploadInfo.setTextReceiveCode(response.data.verificationCode);

@@ -22,6 +22,7 @@ const authStore = useAuthStore();
 const currentUser = computed(() => {
   return authStore.dataStatus.user;
 });
+
 // Create Room
 
 const schema = yup.object().shape({
@@ -61,10 +62,9 @@ async function handleCreate(room) {
     roomPrivateKey,
     roomPrivateKey,
   );
-  console.log("roomSharedKey: ", roomSharedKey);
+
   const asekey = await digestMessage(roomSharedKey.toString());
-  chatService
-  .createSecretChat(chatData)
+  chatService.createSecretChat(chatData)
   .then((response) => {
       const chatKeyData = {
         aseKey: asekey,
