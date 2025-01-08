@@ -49,25 +49,36 @@ const handleTabClick = (tab) => {
 };
 
 // 篩選房間類型，關鍵資料，一切資料都由這個變數控制
+const filterConditions = {
+  [RoomType.ALL]: () => true,
+  [RoomType.PUBLIC]: (room) => room.roomType === RoomType.PUBLIC,
+  [RoomType.PRIVATE]: (room) => room.roomType === RoomType.PRIVATE,
+  [RoomType.CREATED]: (room) => room.isOwner === true,
+  [RoomType.JOINED]: (room) => room.isMember === true,
+}
+
 const filteredRoomData = computed(() => {
-  if (activeTab.value === RoomType.ALL) {
-    return roomData.value;
-  } else if (activeTab.value === RoomType.PUBLIC) {
-    // 只顯示公共房間
-    return roomData.value.filter((room) => room.roomType === RoomType.PUBLIC);
-  } else if (activeTab.value === RoomType.PRIVATE) {
-    // 只顯示私人房間
-    return roomData.value.filter((room) => room.roomType === RoomType.PRIVATE);
-  } else if (activeTab.value === RoomType.CREATED) {
-    // 只顯示由當前用戶創建的房間
-    return roomData.value.filter((room) => room.isOwner === true);
-  } else if (activeTab.value === RoomType.JOINED) {
-    // 只顯示由當前用戶創建的房間
-    return roomData.value.filter((room) => room.isMember === true);
-  } else {
-    return []; // 預設返回空數組
-  }
-});
+  const filterCondition = filterConditions[activeTab.value] || (() => false);
+  return roomData.value.filter(filterCondition);
+})
+
+// const filteredRoomData = computed(() => {
+//   if (activeTab.value === RoomType.ALL) {
+//     return roomData.value;
+//   } else if (activeTab.value === RoomType.PUBLIC) {
+//     // 只顯示公共房間
+//     return roomData.value.filter((room) => room.roomType === RoomType.PUBLIC);
+//   } else if (activeTab.value === RoomType.PRIVATE) {
+//     // 只顯示私人房間
+//     return roomData.value.filter((room) => room.roomType === RoomType.PRIVATE);
+//   } else if (activeTab.value === RoomType.CREATED) {
+//     return roomData.value.filter((room) => room.isOwner === true);
+//   } else if (activeTab.value === RoomType.JOINED) {
+//     return roomData.value.filter((room) => room.isMember === true);
+//   } else {
+//     return []; // 預設返回空數組
+//   }
+// });
 
 // 房間類型鎖定
 const roomTypeLock = computed(() => {
@@ -87,6 +98,7 @@ const roomTypeStatus = computed(() => {
 const searchWordFilter = ref("");
 
 const filteredSearchRoomData = computed(() => {
+  console.log(filteredRoomData.value);
   const searchWord = searchWordFilter.value.toLowerCase().trim();
   if (searchWord) {
     return filteredRoomData.value.filter((room) => {
@@ -165,8 +177,7 @@ const roomType = ref([]);
 
 // 透過房間代碼編號，將房間代碼傳送至LoginBoard元件
 async function sendRoomNumber(roomNumber) {
-  roomCodeNumber.value =
-    roomNumber + Math.max(0, (roomCurrentPage.value - 1) * 12);
+  roomCodeNumber.value = roomNumber;
 
   const sendVerifyRoomCode = roomCode.value[roomCodeNumber.value];
   const sendVerifyRoomType = roomType.value[roomCodeNumber.value];
@@ -388,13 +399,13 @@ watch(filteredSearchRoomData, (newFilteredSearchRoomData) => {
           class="board-main-room"
           v-for="(data, index) in roomDataPageLength"
           :key="index"
-          @click="sendRoomNumber(index)"
+          @click="sendRoomNumber(data)"
         >
           <p
             class="board-main-room-status"
-            :class="roomTypeStatus[index] ? 'board-main-room-type-red' : ''"
+            :class="roomTypeStatus[data] ? 'board-main-room-type-red' : ''"
           >
-            <font-awesome-icon :icon="roomTypeLock[index]" />
+            <font-awesome-icon :icon="roomTypeLock[data]" />
           </p>
           <div class="board-main-room-number">
             <p>{{ filteredSearchRoomData[data].title }}</p>

@@ -175,11 +175,7 @@ const roomPublicKey = generatePublicKey(roomPrivateKey);
 
 // 透過房間代碼編號，將房間代碼傳送至LoginBoard元件
 async function sendRoomNumber(roomNumber) {
-  if (roomCurrentPage.value === 1) {
-    roomCodeNumber.value = roomNumber;
-  } else {
-    roomCodeNumber.value = roomNumber + (roomCurrentPage.value - 1) * 12;
-  }
+  roomCodeNumber.value = roomNumber;
   const sendVerifyRoomCode = roomCode.value[roomCodeNumber.value];
   const sendVerifyRoomType = roomType.value[roomCodeNumber.value];
   try {
@@ -402,13 +398,13 @@ watch(filteredSearchRoomData, (newFilteredSearchRoomData) => {
           class="board-main-room"
           v-for="(data, index) in roomDataPageLength"
           :key="index"
-          @click="sendRoomNumber(index)"
+          @click="sendRoomNumber(data)"
         >
           <p
             class="board-main-room-status"
-            :class="roomTypeStatus[index] ? 'board-main-room-type-red' : ''"
+            :class="roomTypeStatus[data] ? 'board-main-room-type-red' : ''"
           >
-            <font-awesome-icon :icon="roomTypeLock[index]" />
+            <font-awesome-icon :icon="roomTypeLock[data]" />
           </p>
           <div class="board-main-room-number">
             <p>{{ filteredSearchRoomData[data].title }}</p>
