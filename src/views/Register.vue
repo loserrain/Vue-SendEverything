@@ -33,7 +33,7 @@ function handleRegister(user) {
   loading.value = true;
   message.value = "";
   successful.value = false;
-  if(!defaultImageStatus.value) {
+  if (!defaultImageStatus.value) {
     fileBlob.value = file.value.files[0]
   }
 

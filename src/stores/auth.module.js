@@ -48,13 +48,13 @@ export const useAuthStore = defineStore("auth", () => {
   }
 
   function handleAuthError(error) {
-    if (error.response && error.response.status === 400) {
+    if (error.response && error.response.status === 401) {
       console.log("Redirecting to login page...", error.response.data);
       errorRef.value = error.response.status;
       localStorage.removeItem("user");
       logoutSuccess();
     } else {
-      console.error("An error occurred:", error.message);
+      console.error("An error occurred:asdasddas", error.message);
       errorRef.value = { status: 500, message: error.response.data };
     }
   }

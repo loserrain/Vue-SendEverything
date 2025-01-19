@@ -57,26 +57,30 @@ function handleLoginData() {
           <h2>{{ roomCode }}</h2>
         </div>
       </div>
-      <h3>Password</h3>
-      <div class="login-board-password-input">
-        <span><font-awesome-icon icon="lock" /></span>
-        <label for="pwd"></label>
-        <input v-model="pwd" name="pwd" id="pwd" :type="inputType" />
-        <span @click="togglePasswordVisibility"
-          ><font-awesome-icon :icon="elIcon"
-        /></span>
-      </div>
-      <div class="login-board-decide">
-        <button
-          class="login-board-cancel"
-          @click="handleSendLoginStatus(false)"
-        >
-          Cancel
-        </button>
-        <button class="login-board-confirm" @click="handleLoginData">
-          Confirm
-        </button>
-      </div>
+      <form @submit.prevent="handleLoginData">
+        <h3>Password</h3>
+        <input type="text" name="username" style="display: none;" autocomplete="username" />
+
+        <div class="login-board-password-input">
+          <span><font-awesome-icon icon="lock" /></span>
+          <label for="pwd"></label>
+          <input v-model="pwd" name="pwd" id="pwd" :type="inputType" autocomplete="current-password"/>
+          <span @click="togglePasswordVisibility"
+            ><font-awesome-icon :icon="elIcon"
+          /></span>
+        </div>
+        <div class="login-board-decide">
+          <button
+            class="login-board-cancel"
+            @click="handleSendLoginStatus(false)"
+          >
+            Cancel
+          </button>
+          <button class="login-board-confirm">
+            Confirm
+          </button>
+        </div>
+      </form>
       <p @click="clearPassword">Reset Password.</p>
       <span @click="handleSendLoginStatus(false)"
         ><font-awesome-icon icon="xmark"

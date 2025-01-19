@@ -17,32 +17,21 @@ function handleSendCreateStatus(newStatus) {
   emits("sendCreateStatus", newStatus);
 }
 
-const isPublicChecked = ref(true);
-const isPrivateChecked = ref(false);
+const selectedCheck = ref('PUBLIC');
 
 const ckPublicIcon = computed(() => {
-  return isPublicChecked.value ? ["far", "square-check"] : ["far", "square"];
+  return selectedCheck.value === 'PUBLIC' ? ["far", "square-check"] : ["far", "square"];
 });
-
 const ckPrivateIcon = computed(() => {
-  return isPrivateChecked.value ? ["far", "square-check"] : ["far", "square"];
+  return selectedCheck.value === 'PRIVATE' ? ["far", "square-check"] : ["far", "square"];
 });
 
-watch(isPublicChecked, (newValue) => {
-  if (newValue) {
-    isPrivateChecked.value = false;
-  } else {
-    isPrivateChecked.value = true;
-  }
-});
-
-watch(isPrivateChecked, (newValue) => {
-  if (newValue) {
-    isPublicChecked.value = false;
-  } else {
-    isPublicChecked.value = true;
-  }
-});
+const selectPublic = () => {
+  selectedCheck.value = 'PUBLIC';
+}
+const selectPrivate = () => {
+  selectedCheck.value = 'PRIVATE';
+}
 
 // 檔案預覽
 const file = ref(undefined);
@@ -116,11 +105,11 @@ function handleLoginData(password, roomCode, roomType) {
 // Create Room
 const boardType = ref("BULLETIN_BOARD");
 function handleCreate(room) {
-  if (formData.value.pwd === undefined && isPrivateChecked.value) {
+  if (formData.value.pwd === undefined && selectedCheck.value === "PRIVATE") {
     alert("Please enter the password.");
     return;
   }
-  const roomType = isPublicChecked.value ? "PUBLIC" : "PRIVATE";
+
   if (previewImageStatue.value !== true) {
     fileBlob.value = file.value.files[0];
   }
@@ -128,7 +117,7 @@ function handleCreate(room) {
     title: room.title,
     description: room.description,
     pwd: room.pwd,
-    roomType: roomType,
+    roomType: selectedCheck.value,
     file: fileBlob.value,
     boardType: boardType.value,
     userPublicKey: roomPublicKey,
@@ -160,7 +149,7 @@ const getImageUrl = (fileIndex) => {
 };
 
 // 當public被選取時，清空pwd
-watch(isPublicChecked, (newValue) => {
+watch(selectedCheck === 'PUBLIC', (newValue) => {
   if (newValue) {
     formData.value.pwd = "";
   }
@@ -214,7 +203,7 @@ onMounted(() => {
                   name="pwd"
                   id="pwd"
                   v-model="formData.pwd"
-                  :disabled="isPublicChecked"
+                  :disabled="selectedCheck === 'PUBLIC'"
                 />
                 <ErrorMessage name="pwd" class="error-feedback" />
               </div>
@@ -225,8 +214,8 @@ onMounted(() => {
                     type="checkbox"
                     name="public"
                     id="public"
-                    :checked="isPublicChecked"
-                    @input="isPublicChecked = !isPublicChecked"
+                    :checked="selectedCheck === 'PUBLIC'"
+                    @input="selectPublic"
                   />
                   <span><font-awesome-icon :icon="ckPublicIcon" /></span>
                   Public
@@ -236,8 +225,8 @@ onMounted(() => {
                     type="checkbox"
                     name="private"
                     id="private"
-                    :checked="isPrivateChecked"
-                    @input="isPrivateChecked = !isPrivateChecked"
+                    :checked="selectedCheck === 'PRIVATE'"
+                    @input="selectPrivate"
                   />
                   <span><font-awesome-icon :icon="ckPrivateIcon" /></span>
                   Private

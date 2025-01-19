@@ -48,34 +48,18 @@ const handleTabClick = (tab) => {
 };
 
 // 篩選房間類型，關鍵資料，一切資料都由這個變數控制
-const filteredRoomData = computed(() => {
-  if (activeTab.value === RoomType.ALL) {
-    return roomData.value;
-  } else if (activeTab.value === RoomType.PUBLIC) {
-    // 只顯示公共房間
-    return roomData.value.filter((room) => room.roomType === RoomType.PUBLIC);
-  } else if (activeTab.value === RoomType.PRIVATE) {
-    // 只顯示私人房間
-    return roomData.value.filter((room) => room.roomType === RoomType.PRIVATE);
-  } else if (activeTab.value === RoomType.CREATED) {
-    // 只顯示由當前用戶創建的房間
-    return roomData.value.filter((room) => room.isOwner === true);
-  } else if (activeTab.value === RoomType.JOINED) {
-    // 只顯示由當前用戶創建的房間
-    return roomData.value.filter((room) => room.isMember === true);
-  } else {
-    return []; // 預設返回空數組
-  }
-});
+const filterConditions = {
+  [RoomType.ALL]: () => true,
+  [RoomType.PUBLIC]: (room) => room.roomType === RoomType.PUBLIC,
+  [RoomType.PRIVATE]: (room) => room.roomType === RoomType.PRIVATE,
+  [RoomType.CREATED]: (room) => room.isOwner === true,
+  [RoomType.JOINED]: (room) => room.isMember === true,
+};
 
-// // 篩選房間類型
-// const filteredRoomData = computed(() => {
-//   if (activeTab.value === RoomType.ALL) {
-//     return roomData.value;
-//   } else {
-//     return roomData.value.filter((room) => room.roomType === activeTab.value);
-//   }
-// });
+const filteredRoomData = computed(() => {
+  const filterCondition = filterConditions[activeTab.value] || (() => false);
+  return roomData.value.filter(filterCondition);
+});
 
 // 房間類型鎖定
 const roomTypeLock = computed(() => {
@@ -143,7 +127,7 @@ const joinMessage = async (roomCode) => {
     roomCode: roomCode,
   };
 
-  if(stompClient && stompClient.connected) {
+  if (stompClient && stompClient.connected) {
     stompClient.send(
       `/app/join.joinMessage/${roomCode}`,
       JSON.stringify(chatMessage),
@@ -151,7 +135,9 @@ const joinMessage = async (roomCode) => {
     );
     disconnect();
   } else {
-    console.error("Could not connect to WebSocket server. Please refresh this page to try again!");
+    console.error(
+      "Could not connect to WebSocket server. Please refresh this page to try again!"
+    );
   }
 };
 
@@ -170,48 +156,58 @@ const roomCode = ref([]);
 const roomCodeNumber = ref(0);
 // 房間類型
 const roomType = ref([]);
-const roomPrivateKey = generatePrivateKey();
-const roomPublicKey = generatePublicKey(roomPrivateKey);
+
+async function handlePrivateRoom(roomCode) {
+  if (!currentUser.value) {
+    return alert("Please login first.");
+  }
+
+  connect(roomCode);
+
+  const response = await BoardUploadService.verifyCookie(roomCode);
+  if (response.status === 200) {
+    router.push({
+      name: "WorkBoard",
+      params: { roomCode: roomCode },
+    });
+  }
+}
+
+async function handlePubilcRoom(roomCode, roomType) {
+  try {
+    const roomPrivateKey = generatePrivateKey();
+    const roomPublicKey = generatePublicKey(roomPrivateKey);
+
+    await BoardUploadService.accessRoom(
+      "",
+      roomCode,
+      roomType,
+      roomPublicKey,
+      roomPrivateKey
+    );
+    router.push(`/WorkBoard/WorkRoomBoard/${roomCode}`);
+  } catch (error) {
+    console.log("Failed to access public room:", error);
+    throw error;
+  }
+}
 
 // 透過房間代碼編號，將房間代碼傳送至LoginBoard元件
 async function sendRoomNumber(roomNumber) {
   roomCodeNumber.value = roomNumber;
-  const sendVerifyRoomCode = roomCode.value[roomCodeNumber.value];
-  const sendVerifyRoomType = roomType.value[roomCodeNumber.value];
+
+  const sendVerifyRoomCode = roomCode.value[roomNumber];
+  const sendVerifyRoomType = roomType.value[roomNumber];
+  const sendRoomType = filteredSearchRoomData.value[roomNumber].roomType;
+
   try {
-    if (filteredSearchRoomData.value[roomNumber].roomType === "PRIVATE") {
-      if (!currentUser.value) {
-        return alert("Please login first.");
-      }
-      connect(sendVerifyRoomCode);
-      const response = await BoardUploadService.verifyCookie(
-        sendVerifyRoomCode
-      );
-      if (response.status === 200) {
-        router.push({
-          name: "WorkBoard",
-          params: { roomCode: sendVerifyRoomCode },
-        });
-      }
+    if (sendRoomType === "PRIVATE") {
+      await handlePrivateRoom(sendVerifyRoomCode);
     } else {
-      BoardUploadService.accessRoom(
-        "",
-        roomCode.value[roomCodeNumber.value],
-        sendVerifyRoomType,
-        roomPublicKey,
-        roomPrivateKey
-      )
-        .then(() => {
-          router.push(
-            `/WorkBoard/WorkRoomBoard/${roomCode.value[roomCodeNumber.value]}`
-          );
-        })
-        .catch((error) => {
-          console.log(error);
-        });
+      await handlePubilcRoom(sendVerifyRoomCode, sendVerifyRoomType);
     }
   } catch (error) {
-    console.error(error);
+    console.error("Failed to access public room:", error);
     handleLoginStatus(true);
   }
 }
@@ -235,8 +231,8 @@ function updataPageNumber() {
 }
 
 const boardType = ref("ASSIGNMENT_BOARD");
-// 獲取所有房間資料
-onMounted(() => {
+
+function getAllRooms() {
   BoardUploadService.getAllRooms(boardType.value)
     .then((response) => {
       roomData.value = response.data;
@@ -252,6 +248,11 @@ onMounted(() => {
     .catch((error) => {
       console.error(error);
     });
+}
+
+// 獲取所有房間資料
+onMounted(() => {
+  getAllRooms();
 });
 
 // 頁數房間號碼
@@ -272,8 +273,8 @@ function clickPageNumber(page) {
   // Revise
   roomDataPageLength.value = Array.from(
     { length: endIndex - startIndex + 1 },
-    (_, i) => i + startIndex
-  )
+    (_, i) => i + startIndex // 
+  );
   roomActiveTab.value = page;
   router.push({ query: { page: page } });
 }
@@ -291,7 +292,7 @@ watch(filteredSearchRoomData, (newFilteredSearchRoomData) => {
   updataPageNumber();
   clickPageNumber(Number(router.currentRoute.value.query.page));
   processRoomData(newFilteredSearchRoomData);
-})
+});
 </script>
 
 <template>

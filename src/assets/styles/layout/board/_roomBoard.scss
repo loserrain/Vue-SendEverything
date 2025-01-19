@@ -91,6 +91,8 @@
         img {
           width: 45px;
           border-radius: 30px;
+          aspect-ratio: 1/1;
+          object-fit: cover;
         }
       }
 

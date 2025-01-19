@@ -62,24 +62,6 @@ const filteredRoomData = computed(() => {
   return roomData.value.filter(filterCondition);
 })
 
-// const filteredRoomData = computed(() => {
-//   if (activeTab.value === RoomType.ALL) {
-//     return roomData.value;
-//   } else if (activeTab.value === RoomType.PUBLIC) {
-//     // 只顯示公共房間
-//     return roomData.value.filter((room) => room.roomType === RoomType.PUBLIC);
-//   } else if (activeTab.value === RoomType.PRIVATE) {
-//     // 只顯示私人房間
-//     return roomData.value.filter((room) => room.roomType === RoomType.PRIVATE);
-//   } else if (activeTab.value === RoomType.CREATED) {
-//     return roomData.value.filter((room) => room.isOwner === true);
-//   } else if (activeTab.value === RoomType.JOINED) {
-//     return roomData.value.filter((room) => room.isMember === true);
-//   } else {
-//     return []; // 預設返回空數組
-//   }
-// });
-
 // 房間類型鎖定
 const roomTypeLock = computed(() => {
   return filteredSearchRoomData.value.map((room) => {
@@ -98,7 +80,6 @@ const roomTypeStatus = computed(() => {
 const searchWordFilter = ref("");
 
 const filteredSearchRoomData = computed(() => {
-  console.log(filteredRoomData.value);
   const searchWord = searchWordFilter.value.toLowerCase().trim();
   if (searchWord) {
     return filteredRoomData.value.filter((room) => {
@@ -175,43 +156,51 @@ const roomCodeNumber = ref(0);
 // 房間類型
 const roomType = ref([]);
 
+async function handlePrivateRoom(roomCode) {
+  if (!currentUser.value) {
+    return alert("Please Login first.");
+  }
+  connect(roomCode);
+  const response = await BoardUploadService.verifyCookie(roomCode);
+  if (response.status === 200) {
+    router.push({
+      name: "RoomBoard",
+      params: { roomCode: roomCode },
+    });
+  }
+}
+
+async function handlePublicRoom(roomCode, roomType) {
+  try {
+    const roomPrivateKey = generatePrivateKey();
+    const roomPublicKey = generatePublicKey(roomPrivateKey);
+    
+    await BoardUploadService.accessRoom(
+      "",
+      roomCode,
+      roomType,
+      roomPublicKey,
+      roomPrivateKey
+    );
+    router.push(`/BulletinBoard/roomboard/${roomCode}`);
+  } catch (error) {
+    console.error("Failed to access public room:", error);
+    throw error; //此處的throw error是為了讓外部可以捕獲到錯誤
+  }
+}
+
 // 透過房間代碼編號，將房間代碼傳送至LoginBoard元件
 async function sendRoomNumber(roomNumber) {
   roomCodeNumber.value = roomNumber;
 
   const sendVerifyRoomCode = roomCode.value[roomCodeNumber.value];
   const sendVerifyRoomType = roomType.value[roomCodeNumber.value];
+  const sendRoomType = filteredSearchRoomData.value[roomNumber].roomType;
   try {
-    if (filteredSearchRoomData.value[roomNumber].roomType === "PRIVATE") {
-      if (!currentUser.value) {
-        return alert("Please login first.");
-      }
-      connect(sendVerifyRoomCode);
-      const response = await BoardUploadService.verifyCookie(
-        sendVerifyRoomCode
-      );
-      if (response.status === 200) {
-        router.push({
-          name: "RoomBoard",
-          params: { roomCode: sendVerifyRoomCode },
-        });
-      }
+    if (sendRoomType === "PRIVATE") {
+      await handlePrivateRoom(sendVerifyRoomCode);
     } else {
-      const roomPrivateKey = generatePrivateKey();
-      const roomPublicKey = generatePublicKey(roomPrivateKey);
-      BoardUploadService.accessRoom(
-        "",
-        sendVerifyRoomCode,
-        sendVerifyRoomType,
-        roomPublicKey,
-        roomPrivateKey
-      )
-        .then(() => {
-          router.push(`/BulletinBoard/roomboard/${sendVerifyRoomCode}`);
-        })
-        .catch((error) => {
-          console.log(error);
-        });
+      await handlePublicRoom(sendVerifyRoomCode, sendVerifyRoomType);
     }
   } catch (error) {
     console.error(error);
@@ -237,10 +226,10 @@ function updataPageNumber() {
   );
 }
 
-const boardType = ref("BULLETIN_BOARD");
-// 獲取所有房間資料
-onMounted(() => {
-  BoardUploadService.getAllRooms(boardType.value)
+const boardType = "BULLETIN_BOARD";
+
+function getAllRooms() {
+  BoardUploadService.getAllRooms(boardType)
     .then((response) => {
       roomData.value = response.data;
       roomData.value.sort((a, b) => {
@@ -255,6 +244,11 @@ onMounted(() => {
     .catch((error) => {
       console.error(error);
     });
+}
+
+// 獲取所有房間資料
+onMounted(() => {
+  getAllRooms();
 });
 
 // 頁數房間號碼
