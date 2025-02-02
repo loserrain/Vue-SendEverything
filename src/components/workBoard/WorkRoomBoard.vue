@@ -42,14 +42,13 @@ function handleSendDownloadStatus(newStatus) {
   downloadStatus.value = newStatus;
 }
 
-watch(
-  [uploadStatus, downloadStatus],
-  ([newUploadStatus, newdownloadStatus]) => {
-    if (!newUploadStatus || !newdownloadStatus) {
-      showRoomContent(roomCode);
-    }
+const shouldShowRoomContent = computed(() => !uploadStatus.value && !downloadStatus.value);
+watch(shouldShowRoomContent, (showStatus) => {
+  if(showStatus && roomCode) {
+    showRoomContent(roomCode);
   }
-);
+});
+
 function handleRoomData(length) {
   // 對 roomData.dbRoomFiles 根據 timestamp 進行排序
   roomData.value.dbRoomFiles.sort((a, b) => {
@@ -63,8 +62,8 @@ function handleRoomData(length) {
     roomData.value.dbRoomFiles[i].timestamp = new Date(
       roomData.value.dbRoomFiles[i].timestamp
     ).toLocaleString();
-    roomDataFileSize.value.push(
-      formatFileSize(roomData.value.dbRoomFiles[i].fileSize)
+    roomDataFileSize.value[i] = formatFileSize(
+      roomData.value.dbRoomFiles[i].fileSize
     );
   }
 }

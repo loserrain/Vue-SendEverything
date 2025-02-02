@@ -92,7 +92,6 @@ function selectFile() {
   selectFileName.value = file.value.files[0].name;
   outputFileName.value = file.value.files[0].name;
   handleFileSelectAndDrop(file.value.files);
-  updateSelectedZipFileSize();
 }
 
 function initialUpload() {
@@ -168,21 +167,16 @@ const createZipFile = async () => {
 };
 
 // zip檔案壓縮模式的檔案大小計算
-const selectedZipFileSize = ref(0);
-// 定義更新檔案大小的函數
-function updateSelectedZipFileSize() {
-  selectedZipFileSize.value = 0;
-  for (let i = 0; i < fileList.value.length; i++) {
-    selectedZipFileSize.value += parseFloat(fileList.value[i].size);
-  }
-  selectedZipFileSize.value = formatFileSize(selectedZipFileSize.value);
-}
+const selectedZipFileSize = computed(() => {
+  const totalSize = (fileList.value || []).reduce((sum, file) => sum + file.size, 0);
+  return formatFileSize(totalSize);
+})
+
 // 監聽zip檔案狀態，若為true，則更新zip檔案大小，並為zip檔案命名
 watch(zipFileStatus, (newValue) => {
   if (newValue) {
     zipFileName.value = "SendEverything";
     zipFileName.value += "_" + Date.now() + ".zip";
-    updateSelectedZipFileSize();
   } else {
     zipFileName.value = "SendEverything";
   }

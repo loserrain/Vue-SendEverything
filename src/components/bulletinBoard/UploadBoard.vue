@@ -94,7 +94,6 @@ function selectFile() {
   selectFileName.value = file.value.files[0].name;
   outputFileName.value = file.value.files[0].name;
   handleFileSelectAndDrop(file.value.files);
-  updateSelectedZipFileSize();
 }
 
 function initialUpload() {
@@ -171,21 +170,15 @@ const createZipFile = async () => {
 };
 
 // zip檔案壓縮模式的檔案大小計算
-const selectedZipFileSize = ref(0);
-// 定義更新檔案大小的函數
-function updateSelectedZipFileSize() {
-  selectedZipFileSize.value = 0;
-  for (let i = 0; i < fileList.value.length; i++) {
-    selectedZipFileSize.value += parseFloat(fileList.value[i].size);
-  }
-  selectedZipFileSize.value = formatFileSize(selectedZipFileSize.value);
-}
-// 監聽zip檔案狀態，若為true，則更新zip檔案大小，並為zip檔案命名
+const selectedZipFileSize = computed(() => {
+  const totalSize = (fileList.value || []).reduce((sum, file) => sum + file.size, 0);
+  return formatFileSize(totalSize);
+})
+
+// 監聽zip檔案狀態，若為true，則更新zip檔名
 watch(zipFileStatus, (newValue) => {
   if (newValue) {
-    zipFileName.value = "SendEverything";
     zipFileName.value += "_" + Date.now() + ".zip";
-    updateSelectedZipFileSize();
   } else {
     zipFileName.value = "SendEverything";
   }
@@ -379,11 +372,10 @@ async function uploadChunkThreads(file) {
     const chunkNumber = workerMultiple.value[index].chunkNumber + 1;
 
     // 根據是否壓縮檔案更改檔案大小
-    if (zipFileStatus.value) {
-      fileSendSize.value = zipFileBlob.value[0].size;
-    } else {
-      fileSendSize.value = fileListSize.value[index];
-    }
+    fileSendSize.value = zipFileStatus.value
+      ? zipFileBlob.value[0].size
+      : fileListSize.value[index];
+      
     outputFileName.value = workerMultiple.value[index].fileName;
     // 根據分片檔案計算進度條，第一個檔案有3個分片，其值就會是0,0,0
     const progressIndex = chunksFileInfo.value[index].progress;

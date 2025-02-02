@@ -47,8 +47,9 @@ function handleSendDeleteStatus(newStatus) {
   }
 }
 
-watch([uploadStatus, deleteStatus], ([newUploadStatus, newDeleteStatus]) => {
-  if (!newUploadStatus || !newDeleteStatus) {
+const shouldShowRoomContent = computed(() => !uploadStatus.value && !deleteStatus.value);
+watch(shouldShowRoomContent, (showStatus) => {
+  if (showStatus && roomCode) {
     showRoomContent(roomCode);
   }
 });
@@ -105,8 +106,8 @@ function handleRoomData(length) {
     roomData.value.dbRoomFiles[i].timestamp = new Date(
       roomData.value.dbRoomFiles[i].timestamp
     ).toLocaleString();
-    roomDataFileSize.value.push(
-      formatFileSize(roomData.value.dbRoomFiles[i].fileSize)
+    roomDataFileSize.value[i] = formatFileSize(
+      roomData.value.dbRoomFiles[i].fileSize
     );
   }
 }
@@ -274,8 +275,6 @@ onMounted(() => {
   }
   setTimeout(() => {
     showRoomContent(roomCode);
-    // chatGetNewMessages(roomCode);
-    // joinMessage();
   }, 1000);
 });
 
